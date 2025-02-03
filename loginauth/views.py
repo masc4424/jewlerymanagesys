@@ -1,3 +1,5 @@
 from django.shortcuts import render
 
-# Create your views here.
+
+def login_auth_view(request):
+    return render(request, 'loginauth.html')

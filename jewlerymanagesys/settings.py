@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,7 +24,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-r0kk0sqxt%jf4^a&!@n0l9*dqswkwz)x-it8yi0h-li4f1ub4l'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = []
 
@@ -55,7 +57,10 @@ ROOT_URLCONF = 'jewlerymanagesys.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            os.path.join(BASE_DIR, 'loginauth', 'templates'),
+            os.path.join(BASE_DIR, 'dashboard', 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -88,6 +93,14 @@ DATABASES = {
         'USER': 'root',
         'PASSWORD': '123',
         'HOST':'127.0.0.1',
+        'PORT':'3306',
+    },
+    'server': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'masc4424$jewlerymanagesys',
+        'USER': 'masc4424',
+        'PASSWORD': 'Hello@123',
+        'HOST':'masc4424.mysql.pythonanywhere-services.com',
         'PORT':'3306',
     }
 }
@@ -127,6 +140,10 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+if DEBUG:
+    STATICFILES_DIRS = [os.path.join(BASE_DIR, 'loginauth', 'static')]
+else:
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
