@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -25,7 +26,7 @@ SECRET_KEY = 'django-insecure-r0kk0sqxt%jf4^a&!@n0l9*dqswkwz)x-it8yi0h-li4f1ub4l
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -84,10 +85,10 @@ WSGI_APPLICATION = 'jewlerymanagesys.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'jewlerymanagesys',
-        'USER': 'root',
-        'PASSWORD': '123',
-        'HOST':'127.0.0.1',
+        'NAME': 'masc4424$jewlerymanagesys',
+        'USER': 'masc4424',
+        'PASSWORD': 'Hello@123',
+        'HOST':'masc4424.mysql.pythonanywhere-services.com',
         'PORT':'3306',
     }
 }
@@ -127,6 +128,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
