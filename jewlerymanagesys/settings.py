@@ -24,6 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-r0kk0sqxt%jf4^a&!@n0l9*dqswkwz)x-it8yi0h-li4f1ub4l'
 
 # SECURITY WARNING: don't run with debug turned on in production!
+ENVIRONMENT = os.getenv('DJANGO_ENV', 'development')
 # DEBUG = True
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
@@ -86,24 +87,54 @@ WSGI_APPLICATION = 'jewlerymanagesys.wsgi.application'
 #     }
 # }
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'jewlerymanagesys',
-        'USER': 'root',
-        'PASSWORD': '123',
-        'HOST':'127.0.0.1',
-        'PORT':'3306',
-    },
-    'server': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'masc4424$jewlerymanagesys',
-        'USER': 'masc4424',
-        'PASSWORD': 'Hello@123',
-        'HOST':'masc4424.mysql.pythonanywhere-services.com',
-        'PORT':'3306',
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'jewlerymanagesys',
+#         'USER': 'root',
+#         'PASSWORD': '123',
+#         'HOST':'127.0.0.1',
+#         'PORT':'3306',
+#     },
+#     'server': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'masc4424$jewlerymanagesys',
+#         'USER': 'masc4424',
+#         'PASSWORD': 'Hello@123',
+#         'HOST':'masc4424.mysql.pythonanywhere-services.com',
+#         'PORT':'3306',
+#     }
+# }
+
+if ENVIRONMENT == 'production':
+    # Production-specific settings
+    DEBUG = False  # Ensure DEBUG is False for production
+    ALLOWED_HOSTS = ['masc4424.pythonanywhere.com']  # Add your production host here
+    
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'masc4424$jewlerymanagesys',
+            'USER': 'masc4424',
+            'PASSWORD': 'Hello@123',
+            'HOST': 'masc4424.mysql.pythonanywhere-services.com',
+            'PORT': '3306',
+        }
     }
-}
+else:
+    # Development-specific settings
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+    
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.mysql',
+            'NAME': 'jewlerymanagesys',
+            'USER': 'root',
+            'PASSWORD': '123',
+            'HOST': '127.0.0.1',
+            'PORT': '3306',
+        }
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
