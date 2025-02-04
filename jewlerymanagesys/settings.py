@@ -25,10 +25,17 @@ SECRET_KEY = 'django-insecure-r0kk0sqxt%jf4^a&!@n0l9*dqswkwz)x-it8yi0h-li4f1ub4l
 
 # SECURITY WARNING: don't run with debug turned on in production!
 ENVIRONMENT = os.getenv('DJANGO_ENV', 'development')
+# ENVIRONMENT = os.getenv('DJANGO_ENV', 'development')
 # DEBUG = True
+
+if ENVIRONMENT == 'production':
+    DEBUG = False
+else:
+    DEBUG = True
+
 DEBUG = os.getenv('DJANGO_DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -40,7 +47,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'loginauth'
+    'loginauth',
+    'dashboard'
 ]
 
 MIDDLEWARE = [
@@ -170,15 +178,29 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# STATIC_URL = 'static/'
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# This is optional if you have custom static folders
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, 'loginauth', 'static'),
-]
+# # This is optional if you have custom static folders
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'loginauth', 'static'),
+# ]
+
+if ENVIRONMENT == 'production':
+    STATIC_URL = 'static/'
+    STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+else:
+    STATIC_URL = '/static/'
+    STATICFILES_DIRS = [
+        os.path.join(BASE_DIR, 'loginauth', 'static'),
+    ]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'loginauth.backends.EmailBackend'
+]
