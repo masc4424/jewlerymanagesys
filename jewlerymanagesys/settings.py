@@ -39,7 +39,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'loginauth'
+    'loginauth',
+    'dashboard',
+    'user_role_management',
+    'jewl_metals',
+    'jewl_stones',
+    'jewlerymanagesys'
 ]
 
 MIDDLEWARE = [
