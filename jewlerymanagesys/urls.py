@@ -24,4 +24,5 @@ urlpatterns = [
     path('', include('loginauth.urls')),
     path('', include('dashboard.urls')),
     path('', include('user_role_management.urls')),
+    path('', include('jewl_metals.urls')),
 ]
