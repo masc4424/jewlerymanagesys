@@ -23,6 +23,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('loginauth.urls')),
     path('', include('dashboard.urls')),
-    path('', include('user_role_management.urls')),
+    path('user/', include('user_role_management.urls')),
     path('', include('jewl_metals.urls')),
 ]

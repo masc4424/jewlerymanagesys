@@ -1,5 +1,8 @@
 from django.urls import path
-from .api import *
+from user_role_management.api import *
+
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('create-user/', create_user, name='create_user'),
@@ -10,3 +13,7 @@ urlpatterns = [
     path('delete-role/', delete_role, name='delete_role'),
     path('generate-reset-password-link/', generate_reset_password_link, name='generate_reset_password_link'),
 ]
+
+urlpatterns += [
+    path('update-profile-image/', update_profile_image, name='update_profile_image'),
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

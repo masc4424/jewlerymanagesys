@@ -1,53 +1,48 @@
 {% load static %}
-
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Animated Login Form</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jewelry Management System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="{% static 'css/loginauth.css' %}">
     <link href="https://fonts.googleapis.com/css?family=Poppins:600&display=swap" rel="stylesheet">
     <script src="https://kit.fontawesome.com/a81368914c.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
-    <img class="wave" src="{% static 'img/wave.png' %}">
-    <div class="container">
-        <div class="img">
-            <img src="{% static 'img/bg.svg' %}">
+    <div class="row g-0">
+        <div class="col-md-6 product-image-container">
+            <div class="product-image">
+                <img src="{% static 'img/Login.png' %}" alt="Gold Bracelet">
+            </div>
         </div>
-        <div class="login-content">
-            <form method="POST" action="{% url 'login_api' %}">
-                {% csrf_token %}
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-danger">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
-                <img src="{% static 'img/avatar.svg' %}">
-                <h2 class="title">Welcome</h2>
-                <div class="input-div one">
-                    <div class="i">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="div">
-                        <h5>Email</h5>
-                        <input type="text" name="email" class="input" required>
-                    </div>
+        <div class="col-md-6 login-section">
+            <div class="login-container">
+                <div class="text-center mb-4">
+                    <div class="mb-1">Mr. Pratap</div>
+                    <h4 class="mb-4">Manage your jewellery business at your finger tips</h4>
                 </div>
-                <div class="input-div pass">
-                    <div class="i"> 
-                        <i class="fas fa-lock"></i>
+                <form method="POST" action="{% url 'login_api' %}">
+                    {% csrf_token %}
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-danger">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+                    <div class="mb-3">
+                        <input type="email" class="form-control" name="email" placeholder="Email" required>
                     </div>
-                    <div class="div">
-                        <h5>Password</h5>
-                        <input type="password" name="password" class="input" required>
+                    <div class="mb-3">
+                        <input type="password" class="form-control" name="password" placeholder="Password" required>
                     </div>
-                </div>
-                <a href="#">Forgot Password?</a>
-                <input type="submit" class="btn" value="Login">
-            </form>
+                    <button type="submit" class="login-btn">Login</button>
+                </form>
+            </div>
         </div>
     </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
     <script type="text/javascript" src="{% static 'js/loginauth.js' %}"></script>
 </body>
 </html>
