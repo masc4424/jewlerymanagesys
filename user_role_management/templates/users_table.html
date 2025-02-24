@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% load static %}  <!-- ✅ Add this at the top -->
+
+{% block title %}Users{% endblock %}
+
+{% block content %}
+<!-- Responsive Table -->
+<div class="card">
+    <h5 class="card-header">Users List</h5>
+    <div class="table-responsive text-nowrap">
+        <table class="table" id="usersTable">
+            <thead>
+                <tr class="text-nowrap">
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+<!--/ Responsive Table -->
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/users_table.js' %}"></script>
+{% endblock %}

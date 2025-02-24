@@ -18,7 +18,7 @@ class UserProfile(models.Model):
 
 class Role(models.Model):
     role_name = models.CharField(max_length=50, unique=True)
-    role_unique_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    role_unique_id = models.CharField(max_length=50, unique=True)
 
 class UserRole(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
