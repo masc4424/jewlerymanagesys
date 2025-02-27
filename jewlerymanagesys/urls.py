@@ -25,4 +25,5 @@ urlpatterns = [
     path('', include('dashboard.urls')),
     path('user/', include('user_role_management.urls')),
     path('', include('jewl_metals.urls')),
+    path('', include('jewl_stones.urls')),
 ]
