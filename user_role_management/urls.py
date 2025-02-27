@@ -1,5 +1,6 @@
 from django.urls import path
 from user_role_management.api import *
+from user_role_management.views import *
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -12,6 +13,8 @@ urlpatterns = [
     path('create-role/', create_role, name='create_role'),
     path('delete-role/', delete_role, name='delete_role'),
     path('generate-reset-password-link/', generate_reset_password_link, name='generate_reset_password_link'),
+    path('user_table/', user_table, name='user_table'),
+    path('get_users/', get_users, name='get_users'),
 ]
 
 urlpatterns += [

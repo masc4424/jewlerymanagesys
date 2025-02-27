@@ -178,3 +178,22 @@ def update_profile_image(request):
         profile.save()
         messages.success(request, 'Profile image updated successfully')
     return redirect('profile')
+
+def get_users(request):
+    users = User.objects.exclude(is_superuser=True).values('id', 'first_name', 'last_name', 'email')
+    user_data = []
+
+    for user in users:
+        user_role = UserRole.objects.filter(user_id=user['id']).select_related('role').first()
+        role_name = user_role.role.role_name if user_role else "No Role"
+        
+        full_name = f"{user['first_name']} {user['last_name']}".strip()  # Concatenate first & last name
+
+        user_data.append({
+            'id': user['id'],
+            'name': full_name if full_name else "N/A",  # Handle empty names
+            'email': user['email'],
+            'role': role_name
+        })
+
+    return JsonResponse({'data': user_data})

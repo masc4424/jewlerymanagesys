@@ -1,11 +1,20 @@
 from django.db import models
 
 class Metal(models.Model):
+    UNIT_CHOICES = [
+        ('gram', 'Gram'),
+        ('kg', 'Kilogram'),
+    ]
+
     metal_unique_id = models.CharField(max_length=50, unique=True)  # Custom unique ID for each metal
     name = models.CharField(max_length=100, unique=True)
+    total_available_weight = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Current inventory
+    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='kg')  # Default unit
+    threshold_limit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)  # Minimum stock before warning
+    threshold_unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default='kg')  # Unit for threshold
 
     def __str__(self):
-        return f"{self.metal_id} - {self.name}"
+        return f"{self.metal_unique_id} - {self.name} - {self.total_available_weight} {self.unit} (Threshold: {self.threshold_limit} {self.threshold_unit})"
 
 class MetalRate(models.Model):
     UNIT_CHOICES = [
