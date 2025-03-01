@@ -55,6 +55,27 @@ def create_user(request):
 
 @csrf_exempt
 def edit_user(request, user_id):
+    if request.method == "GET":
+        user = User.objects.get(id=user_id)
+        profile = UserProfile.objects.get(user_id=user)
+        user_role = UserRole.objects.filter(user=user).first()
+        roles = Role.objects.values("id", "role_name")  # Fetch all roles in the same request
+
+        # Set the image URL to STATIC path instead of MEDIA path
+        profile_image = profile.profile_image
+        profile_image_url = f"{settings.STATIC_URL}{profile_image}"
+
+        return JsonResponse({
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "email": user.email,
+            "phone_number": profile.phone_number,
+            "profile_image": profile_image_url,  # Now using STATIC_URL
+            "role_id": user_role.role.id if user_role else None,
+            "role_name": user_role.role.role_name if user_role else "",
+            "all_roles": list(roles)
+        })
     if request.method in ['PUT', 'POST']:  # Support both PUT and POST
         user = get_object_or_404(User, id=user_id)
         profile = get_object_or_404(UserProfile, user=user)

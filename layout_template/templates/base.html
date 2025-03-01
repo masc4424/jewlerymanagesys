@@ -45,6 +45,11 @@
 
     <!-- Page CSS -->
 
+    <!-- Page-Specific CSS -->
+    {% block extra_css %}
+    
+    {% endblock %}
+
     <!-- Helpers -->
     <script src="{% static 'assets/vendor/js/helpers.js' %}"></script>
     <script src="{% static 'assets/js/config.js' %}"></script>
