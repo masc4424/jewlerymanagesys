@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}product{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/product.css' %}">
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-4 mb-5">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item"><a href="#">Products</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Product Details</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Model Info Section -->
+    <div class="row mb-4">
+        <div class="col-md-4 col-12">
+            <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 300px;">
+                <img id="product-image" src="" alt="Product" class="img-fluid">
+            </div>
+        </div>
+        <div class="col-md-8 col-12">
+            <div class="bg-light p-3 rounded">
+                <h2 id="model-number">Model {{ product.model_no }}</h2>
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <p><strong>Category:</strong> <span id="model-category">Jewelry</span></p>
+                        <p><strong>Collection:</strong> <span id="model-collection">Premium</span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Total Weight:</strong> <span id="model-weight">0 gm</span></p>
+                        <p><strong>Price Range:</strong> <span id="model-price">$0 - $0</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div id="loading-spinner" class="d-flex justify-content-center align-items-center" style="height: 300px;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Main Content Container -->
+    <div id="product-content" class="d-none">
+        <!-- Stones Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h3 class="mb-3">Stones <span id="stones-count" class="badge bg-secondary">0</span></h3>
+                <div id="stones-container" class="row">
+                    <!-- Stone cards will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Raw Materials Section -->
+        <div class="row">
+            <div class="col-12">
+                <h3 class="mb-3">Raw Materials</h3>
+                <div id="materials-container" class="row">
+                    <!-- Material cards will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/product.js' %}"></script>
+    <script>
+        var modelNo = "{{ product.model_no|escapejs }}";
+    </script>
+{% endblock %}

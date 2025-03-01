@@ -218,3 +218,7 @@ def get_users(request):
         })
 
     return JsonResponse({'data': user_data})
+
+def get_roles(request):
+    roles = Role.objects.all().values("id", "role_name", "role_unique_id")
+    return JsonResponse({"roles": list(roles)})

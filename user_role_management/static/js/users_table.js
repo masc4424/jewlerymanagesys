@@ -21,7 +21,143 @@ $(document).ready(function () {
         $("#editUserForm")[0].reset();
         $("#editProfileImagePreview").attr("src", "{% static 'user_image/default.png' %}");
     });
+
+    // Handle Create User Form Submission
+    $("#createUserForm").submit(function (event) {
+        event.preventDefault();
+        createUser();
+    });
+
+    // Reset form on modal close
+    $("#createUserModal").on("hidden.bs.modal", function () {
+        $("#createUserForm")[0].reset();
+    });
+
+    $("#createUserModal").on("shown.bs.modal", function () {
+        fetchRoles();
+    });
+
+    // Handle profile image preview for create user
+    $("#createProfileImage").change(function() {
+        const file = this.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $("#createProfileImagePreview").attr('src', e.target.result);
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Make the profile image container clickable
+    $(".profile-image-container").click(function() {
+        $("#createProfileImage").click();
+    });
+    
+    // Add hover effect for the image container
+    $(".profile-image-container").hover(
+        function() {
+            $(this).find(".image-upload-overlay").css("opacity", "1");
+        },
+        function() {
+            $(this).find(".image-upload-overlay").css("opacity", "0");
+        }
+    );
+
+        // Handle profile image preview for edit user
+        $("#editProfileImage").change(function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $("#editProfileImagePreview").attr('src', e.target.result);
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        // Make the edit profile image container clickable
+        $("#editUserModal .profile-image-container").click(function() {
+            $("#editProfileImage").click();
+        });
+        
+        // Add hover effect for the edit image container
+        $("#editUserModal .profile-image-container").hover(
+            function() {
+                $(this).find(".image-upload-overlay").css("opacity", "1");
+            },
+            function() {
+                $(this).find(".image-upload-overlay").css("opacity", "0");
+            }
+        );
 });
+
+function fetchRoles() {
+    let roleDropdown = $("#createUserRole");
+
+    // Fetch roles only if not loaded
+    if (roleDropdown.children("option").length === 1) {
+        $.get("/user/get-roles/", function (data) {
+            roleDropdown.empty().append('<option value="">Select Role</option>');
+            data.roles.forEach(function (role) {
+                roleDropdown.append(`<option role_id="${role.id}" value="${role.role_unique_id}">${role.role_name}</option>`);
+            });
+        });
+    }
+}
+
+function createUser() {
+    // Create a new FormData object
+    let formData = new FormData();
+    
+    // Get values from each field individually
+    const username = $("#createUsername").val();
+    const fullName = $("#createFullName").val();
+    const email = $("#createEmail").val();
+    const phoneNumber = $("#createPhoneNumber").val();
+    const roleUniqueId = $("#createUserRole").val();
+    const password = $("#createPassword").val();
+    
+    // Add each field to the FormData object
+    formData.append("username", username);
+    formData.append("name", fullName);
+    formData.append("email", email);
+    formData.append("phone_number", phoneNumber);
+    formData.append("role_unique_id", roleUniqueId);
+    
+    // Only add password if it's not empty
+    if (password) {
+        formData.append("password", password);
+    }
+    
+    // Handle file upload separately
+    const profileImage = $("#createProfileImage")[0].files[0];
+    if (profileImage) {
+        formData.append("profile_image", profileImage);
+    }
+    
+    // Log the form data for debugging (optional)
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
+
+    $.ajax({
+        url: "/user/create-user/",
+        method: "POST",
+        data: formData,
+        contentType: false,
+        processData: false,
+        success: function (response) {
+            $("#createUserModal").modal("hide");
+            fetchUsers(); // Refresh table
+            alert("User created successfully!");
+        },
+        error: function (xhr) {
+            console.error("Error creating user:", xhr.responseText);
+            alert("Failed to create user.");
+        }
+    });
+}
 
 // Fetch and Populate Users Table
 function fetchUsers() {
@@ -35,8 +171,8 @@ function fetchUsers() {
 
             users.forEach((user, index) => {
                 let actionButtons = `
-                    <button class="btn btn-sm btn-primary edit-user-btn" data-id="${user.id}" onclick="fetchUserDetails(${user.id})"><box-icon name='edit-alt'></box-icon></button>
-                    <button class="btn btn-sm btn-danger delete-user-btn" data-id="${user.id}" data-name="${user.name}"><box-icon name='trash' ></box-icon></button>
+                    <button class="btn btn-sm btn-primary edit-user-btn" data-id="${user.id}" onclick="fetchUserDetails(${user.id})"><i class="fa-solid fa-pencil"></i></button>
+                    <button class="btn btn-sm btn-danger delete-user-btn" data-id="${user.id}" data-name="${user.name}"><i class="fa-solid fa-trash"></i></button>
                 `;
 
                 let row = `<tr>

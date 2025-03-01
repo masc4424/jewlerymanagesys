@@ -15,6 +15,7 @@ urlpatterns = [
     path('generate-reset-password-link/', generate_reset_password_link, name='generate_reset_password_link'),
     path('user_table/', user_table, name='user_table'),
     path('get_users/', get_users, name='get_users'),
+    path('get-roles/', get_roles, name='get_roles'),
 ]
 
 urlpatterns += [
