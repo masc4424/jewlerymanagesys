@@ -60,16 +60,12 @@ function renderStoneCard(stone) {
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">${stone.stone_name}</h5>
                     <div>
-                        <span class="badge bg-primary">${stone.percentage_in_model}%</span>
-                        <span class="badge bg-secondary">&#8593;</span>
-                        <span class="badge bg-secondary">gm</span>
+                        <span class="badge bg-label-primary">${stone.percentage_in_model}%</span>
+                        <span class="badge bg-label-secondary">${stone.total_rate}&#8377;</span>
+                        <span class="badge bg-label-secondary">${stone.total_weight}gm</span>
                     </div>
                 </div>
-                <div class="card-body">
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" style="width: ${stone.percentage_in_model}%;" 
-                            aria-valuenow="${stone.percentage_in_model}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
+                <div class="card-body custom-scrollbar" style="max-height: 148px; overflow-y: auto;">
                     <div class="stone-types">`;
     
     // Add stone types
@@ -80,13 +76,9 @@ function renderStoneCard(stone) {
                     <div>${type.type_name}</div>
                     <div>
                         <span class="badge bg-secondary">${type.percentage_in_stone}%</span>
-                        <span class="badge bg-secondary">&#8593;</span>
-                        <span class="badge bg-secondary">gm</span>
+                        <span class="badge bg-secondary">${type.type_stone_total_rate}&#8377;</span>
+                        <span class="badge bg-secondary">${type.type_stone_total_weight}gm</span>
                     </div>
-                </div>
-                <div class="progress mb-2">
-                    <div class="progress-bar" role="progressbar" style="width: ${type.percentage_in_stone}%;" 
-                        aria-valuenow="${type.percentage_in_stone}" aria-valuemin="0" aria-valuemax="100"></div>
                 </div>`;
         
         // Add details for each type
@@ -109,10 +101,6 @@ function renderStoneCard(stone) {
                             <small>Rate: ${detail.rate}</small>
                         </div>
                     </div>
-                    <div class="progress mt-1" style="height: 6px;">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: ${detail.percentage}%;" 
-                            aria-valuenow="${detail.percentage}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
                 </div>`;
         });
         
@@ -131,23 +119,15 @@ function renderStoneCard(stone) {
 
 function renderMaterialCard(material) {
     let materialCard = `
-        <div class="col-lg-3 col-md-6 col-12 mb-3">
+        <div class="col-12 col-md-4 mb-3">
             <div class="card shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">${material.metal_name}</h5>
                     <div>
                         <span class="badge bg-primary">${material.percentage_in_model}%</span>
-                        <span class="badge bg-secondary">&#8593;</span>
-                        <span class="badge bg-secondary">gm</span>
+                        <span class="badge bg-secondary">${material.total_weight}gm</span>
                     </div>
-                </div>
-                <div class="card-body">
-                    <div class="progress mb-3">
-                        <div class="progress-bar" role="progressbar" style="width: ${material.percentage_in_model}%;" 
-                            aria-valuenow="${material.percentage_in_model}" aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <p><strong>ID:</strong> ${material.metal_unique_id}</p>
-                    <p><strong>Weight:</strong> ${material.total_weight} gm</p>`;
+                </div>`;
     
     // Add rate information if available
     if (material.latest_rate) {

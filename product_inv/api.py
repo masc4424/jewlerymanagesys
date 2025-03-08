@@ -3,6 +3,7 @@ from jewl_stones.models import Stone, StoneType, StoneTypeDetail
 from product_inv.models import *
 from django.db.models import Sum
 from django.http import JsonResponse
+from decimal import Decimal
 
 def get_model_distribution(model_no):
     try:
@@ -34,14 +35,20 @@ def get_model_distribution(model_no):
                 stone=stone,
                 stone_type__in=stone_types
             )
+            stone_total_rate = sum(Decimal(detail.rate) for detail in stone_details)
+
             stone_total_weight = sum(detail.weight for detail in stone_details) or 0
             
             # Calculate percentage of this stone in the model
             stone_percentage = (stone_total_weight / model_total_stone_weight * 100)
+
+
             
             stone_data = {
                 'stone_id': stone.id,
                 'stone_name': stone.name,
+                'total_weight': round(stone_total_weight, 2),  # Add total weight
+                'total_rate': round(stone_total_rate, 2),  # Add total rate
                 'percentage_in_model': round(stone_percentage, 2),
                 'stone_distribution': []
             }
@@ -60,12 +67,18 @@ def get_model_distribution(model_no):
                 
                 # Calculate percentage of this type in the overall model
                 type_percentage_in_model = (type_total_weight / model_total_stone_weight * 100)
+
+                type_stone_total_rate = sum(detail.rate for detail in type_details) or Decimal(0)
+
+                type_stone_total_weight = sum(detail.weight for detail in type_details) or 0
                 
                 type_info = {
                     'type_id': stone_type.id,
                     'type_name': stone_type.type_name,
                     'percentage_in_stone': round(type_percentage_in_stone, 2),
                     'percentage_in_model': round(type_percentage_in_model, 2),
+                    'type_stone_total_rate':type_stone_total_rate,
+                    'type_stone_total_weight':type_stone_total_weight,
                     'distribution': []
                 }
                 
@@ -83,7 +96,8 @@ def get_model_distribution(model_no):
                         'percentage': round(detail_percentage, 2)
                     })
                 
-                stone_data['stone_distribution'].append(type_info)
+                if type_info['distribution']:
+                    stone_data['stone_distribution'].append(type_info)
             
             stone_result.append(stone_data)
             

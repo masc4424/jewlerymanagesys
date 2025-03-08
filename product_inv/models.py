@@ -22,12 +22,18 @@ class Model(models.Model):
 
 
 class RawMaterial(models.Model):
+    UNIT_CHOICES = [
+        ('kg', 'Kilograms'),
+        ('g', 'Grams'),
+    ]
+
     model = models.ForeignKey(Model, on_delete=models.CASCADE, related_name='raw_materials')
     metal = models.ForeignKey(Metal, on_delete=models.CASCADE, related_name='raw_materials')
     weight = models.DecimalField(max_digits=10, decimal_places=2)
+    unit = models.CharField(max_length=2, choices=UNIT_CHOICES, default='g')  # Default to grams
 
     def __str__(self):
-        return f"{self.metal.name} ({self.metal.metal_unique_id}) for {self.model.model_no} - {self.weight}g"
+        return f"{self.metal.name} ({self.metal.metal_unique_id}) for {self.model.model_no} - {self.weight}{self.unit}"
     
 class RawStones(models.Model):
     model = models.ForeignKey(Model, on_delete=models.CASCADE, related_name='raw_stones')
