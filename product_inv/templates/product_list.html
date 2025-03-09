@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Models{% endblock %}
+
+{% block content %}
+
+<div class="content-wrapper">
+    <div class="container-xxl flex-grow-1 container-p-y p-0">
+      <div class="card">
+        <h5 class="card-header">Models</h5>
+        <div class="table-responsive text-nowrap p-3">
+          <table id="modelTable" class="table">
+            <thead>
+                <tr>
+                    <th>Sr No.</th>
+                    <th>Model No</th>
+                    <th>Length</th>
+                    <th>Breadth</th>
+                    <th>Weight</th>
+                    <th>Image</th>
+                    <th>Material</th>
+                    <th>No of Pieces</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+    </div>
+</div>
+<!-- Image Modal -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="imageModalLabel">Model Image</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body text-center">
+          <img id="modalImage" src="" alt="Model Image" class="img-fluid" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/product_list.js' %}"></script>
+    <script>
+        var jewelry_type_name = "{{ jewelry_type_name }}";
+    </script>
+{% endblock %}

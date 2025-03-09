@@ -4,6 +4,7 @@ from product_inv.models import *
 from django.db.models import Sum
 from django.http import JsonResponse
 from decimal import Decimal
+from django.db.models import Count
 
 def get_model_distribution(model_no):
     try:
@@ -154,3 +155,26 @@ def get_model_distribution(model_no):
 def stone_distribution_view(request, model_no):
     stone_data = get_model_distribution(model_no)
     return JsonResponse({'stone_and_material_distribution': stone_data})
+
+def get_jewelry_types_with_model_count(request):
+    jewelry_data = JewelryType.objects.annotate(model_count=Count('models')).values('id', 'name', 'unique_id', 'model_count')
+    return JsonResponse({'data': list(jewelry_data)})
+
+def get_models_by_jewelry_type(request, jewelry_type_name=None):
+    if jewelry_type_name:
+        try:
+            # Try getting by name first
+            jewelry_type = JewelryType.objects.get(name=jewelry_type_name)
+        except JewelryType.DoesNotExist:
+            # Fallback to ID if it's actually a numeric ID
+            try:
+                jewelry_id = int(jewelry_type_name)
+                jewelry_type = JewelryType.objects.get(id=jewelry_id)
+            except (ValueError, JewelryType.DoesNotExist):
+                return JsonResponse({'error': 'Jewelry type not found'}, status=404)
+                
+        models = Model.objects.filter(jewelry_type=jewelry_type).values('id', 'model_no', 'length', 'breadth', 'weight').annotate(no_of_pieces=Count('model_no')) 
+        return JsonResponse({'data': list(models)}, safe=False)
+
+   
+    

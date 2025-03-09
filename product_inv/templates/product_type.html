@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inventory{% endblock %}
+
+{% block content %}
+
+<div class="content-wrapper">
+    <div class="container-xxl flex-grow-1 container-p-y p-0">
+      <div class="card">
+        <div class="table-responsive text-nowrap p-3 pt-5">
+          <table id="jewelryTable" class="table">
+            <thead>
+                <tr>
+                    <th>Sr No.</th>
+                    <th>Jewelry Type</th>
+                    <th>Models</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+          </table>
+        </div>
+      </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/product_type.js' %}"></script>
+{% endblock %}
