@@ -20,6 +20,16 @@ class Model(models.Model):
     def __str__(self):
         return self.model_no
 
+class ModelColor(models.Model):
+    model = models.ForeignKey(Model, on_delete=models.CASCADE, related_name='model_colors')
+    color = models.CharField(max_length=50)  # Text field for color
+
+    class Meta:
+        unique_together = ('model', 'color')  # Ensures a model can't have duplicate colors
+
+    def __str__(self):
+        return f"{self.model.model_no} - {self.color}"
+
 
 class RawMaterial(models.Model):
     UNIT_CHOICES = [

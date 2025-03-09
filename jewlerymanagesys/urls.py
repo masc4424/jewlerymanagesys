@@ -27,4 +27,5 @@ urlpatterns = [
     path('', include('jewl_metals.urls')),
     path('', include('jewl_stones.urls')),
     path('', include('product_inv.urls')),
+    path('', include('order.urls'))
 ]
