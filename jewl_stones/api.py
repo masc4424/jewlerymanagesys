@@ -12,7 +12,7 @@ def get_complete_stone_data(request):
                     'stone_name': stone.name,
                     'stone_type': stone_type.type_name,
                     'shape': detail.shape,
-                    'size': detail.size,
+                    'size': f"{detail.length}x{detail.breadth}",
                     'weight': detail.weight,
                     'rate': detail.rate
                 })
