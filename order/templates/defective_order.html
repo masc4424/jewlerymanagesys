@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Defected Orders{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/order.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between">
+        <h4 class="mt-4">Defected Orders</h4>
+        <div class="d-flex justify-content-end m-3">
+            <a class="btn btn-success text-white" id="" data-bs-toggle="" data-bs-target=""><i class='bx bx-plus'></i>Defect Order</a>
+        </div>
+    </div>
+    <div class="table-responsive text-nowrap">
+        <table class="table" id="usersTable">
+            <thead>
+                <tr>
+                    <th>Sl No.</th>
+                    <th>Name</th>
+                    <th>Item Type</th>
+                    <th>Model No.</th>
+                    <th>Reason</th>
+                    <th>Date of Order</th>
+                    <th>Est. Delivery Date</th>
+                    <th>Contact No.</th>
+                    <th>MRP</th>
+                    <th>Selling Price</th>
+                    <th>Discount</th>
+                    <th>Color</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/order.js' %}"></script>
+{% endblock %}
