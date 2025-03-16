@@ -7,6 +7,11 @@
 
 <div class="content-wrapper">
     <div class="container-xxl flex-grow-1 container-p-y p-0">
+      <div class="text-end pe-3 pt-3 mb-3">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createModelModal">
+          <i class="bx bx-plus"></i> Create Model
+        </button>
+      </div>
       <div class="card">
         <h5 class="card-header">Models</h5>
         <div class="table-responsive text-nowrap p-3">
@@ -42,13 +47,98 @@
         </div>
       </div>
     </div>
-  </div>
+</div>
 
+<!-- Create Model Modal -->
+<div class="modal fade" id="createModelModal" tabindex="-1" aria-labelledby="createModelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="createModelModalLabel">Create New Model</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="createModelForm" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="jewelry_type" value="{{ jewelry_type_id }}">
+            <div class="mb-3">
+              <label for="model_no" class="form-label">Model No</label>
+              <input type="text" class="form-control" id="model_no" name="model_no" required>
+            </div>
+            <div class="mb-3">
+              <label for="length" class="form-label">Length</label>
+              <input type="number" step="0.01" class="form-control" id="length" name="length" required>
+            </div>
+            <div class="mb-3">
+              <label for="breadth" class="form-label">Breadth</label>
+              <input type="number" step="0.01" class="form-control" id="breadth" name="breadth" required>
+            </div>
+            <div class="mb-3">
+              <label for="weight" class="form-label">Weight</label>
+              <input type="number" step="0.01" class="form-control" id="weight" name="weight" required>
+            </div>
+            <div class="mb-3">
+              <label for="model_img" class="form-label">Model Image</label>
+              <input type="file" class="form-control" id="model_img" name="model_img" accept="image/png" required>
+            </div>
+            <div class="text-end">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="submit" class="btn btn-primary">Create Model</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+</div>
+<!-- Edit Model Modal -->
+<div class="modal fade" id="editModelModal" tabindex="-1" aria-labelledby="editModelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="editModelModalLabel">Edit Model</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <form id="editModelForm" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <input type="hidden" id="edit_model_id" name="model_id">
+                  <div class="mb-3">
+                      <label for="edit_model_no" class="form-label">Model No</label>
+                      <input type="text" class="form-control" id="edit_model_no" name="model_no" required>
+                  </div>
+                  <div class="mb-3">
+                      <label for="edit_length" class="form-label">Length</label>
+                      <input type="number" step="0.01" class="form-control" id="edit_length" name="length" required>
+                  </div>
+                  <div class="mb-3">
+                      <label for="edit_breadth" class="form-label">Breadth</label>
+                      <input type="number" step="0.01" class="form-control" id="edit_breadth" name="breadth" required>
+                  </div>
+                  <div class="mb-3">
+                      <label for="edit_weight" class="form-label">Weight</label>
+                      <input type="number" step="0.01" class="form-control" id="edit_weight" name="weight" required>
+                  </div>
+                  <div class="mb-3">
+                      <label for="edit_model_img" class="form-label">Model Image</label>
+                      <input type="file" class="form-control" id="edit_model_img" name="model_img" accept="image/png">
+                  </div>
+                  <div class="text-end">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                      <button type="submit" class="btn btn-primary">Update Model</button>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script src="{% static 'js/product_list.js' %}"></script>
     <script>
         var jewelry_type_name = "{{ jewelry_type_name }}";
+        var jewelry_type_id = "{{ jewelry_type_id }}";
     </script>
 {% endblock %}

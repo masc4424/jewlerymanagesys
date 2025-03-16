@@ -17,5 +17,6 @@ def product_list(request, jewelry_type_name):
     response = get_models_by_jewelry_type(request, jewelry_type.id)  # Pass the ID to your existing function
     models_data = response.content.decode('utf-8')
     return render(request, 'product_list.html', {
-        'jewelry_type_name': jewelry_type_name
+        'jewelry_type_name': jewelry_type_name,
+        'jewelry_type_id': jewelry_type.id
     })

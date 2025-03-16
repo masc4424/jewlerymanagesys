@@ -14,7 +14,7 @@ class Model(models.Model):
     length = models.DecimalField(max_digits=10, decimal_places=2)
     breadth = models.DecimalField(max_digits=10, decimal_places=2)
     weight = models.DecimalField(max_digits=10, decimal_places=2)
-    model_img = models.ImageField(upload_to='models/')
+    model_img = models.ImageField(upload_to='model_img/')
     jewelry_type = models.ForeignKey(JewelryType, on_delete=models.CASCADE, related_name='models')
 
     def __str__(self):

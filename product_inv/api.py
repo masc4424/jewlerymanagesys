@@ -5,6 +5,10 @@ from django.db.models import Sum
 from django.http import JsonResponse
 from decimal import Decimal
 from django.db.models import Count
+from django.shortcuts import render, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
+import os
+from django.conf import settings
 
 def get_model_distribution(model_no):
     try:
@@ -173,8 +177,200 @@ def get_models_by_jewelry_type(request, jewelry_type_name=None):
             except (ValueError, JewelryType.DoesNotExist):
                 return JsonResponse({'error': 'Jewelry type not found'}, status=404)
                 
-        models = Model.objects.filter(jewelry_type=jewelry_type).values('id', 'model_no', 'length', 'breadth', 'weight').annotate(no_of_pieces=Count('model_no')) 
+        models = Model.objects.filter(jewelry_type=jewelry_type).values('id', 'model_no', 'length', 'breadth', 'weight','model_img').annotate(no_of_pieces=Count('model_no')) 
         return JsonResponse({'data': list(models)}, safe=False)
 
-   
-    
+@csrf_exempt
+def create_model(request):
+    if request.method == 'POST':
+        try:
+            # Get form data
+            model_no = request.POST.get('model_no')
+            length = request.POST.get('length')
+            breadth = request.POST.get('breadth')
+            weight = request.POST.get('weight')
+            jewelry_type_id = request.POST.get('jewelry_type')
+            model_img = request.FILES.get('model_img')
+
+            # Validate required fields
+            if not all([model_no, length, breadth, weight, jewelry_type_id, model_img]):
+                return JsonResponse({'error': 'All fields are required'}, status=400)
+
+            # Check if model number already exists
+            if Model.objects.filter(model_no=model_no).exists():
+                return JsonResponse({'error': 'Model number already exists'}, status=400)
+
+            # Get the jewelry type
+            jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)
+
+            # Define the target directory
+            target_directory = os.path.join(settings.BASE_DIR, 'product_inv/static/model_img/')
+
+            # Ensure the directory exists
+            os.makedirs(target_directory, exist_ok=True)
+
+            # Extract file extension and rename the file
+            file_extension = os.path.splitext(model_img.name)[1]
+            new_filename = f"{model_no}{file_extension}"
+            file_path = os.path.join(target_directory, new_filename)
+
+            # Save the file manually
+            with open(file_path, 'wb+') as destination:
+                for chunk in model_img.chunks():
+                    destination.write(chunk)
+
+            # Save relative path in the database
+            relative_path = f"model_image/{new_filename}"
+
+            # Create new model
+            model = Model.objects.create(
+                model_no=model_no,
+                length=length,
+                breadth=breadth,
+                weight=weight,
+                model_img=relative_path,  # Save relative path instead of full path
+                jewelry_type=jewelry_type
+            )
+
+            return JsonResponse({
+                'success': True, 
+                'message': 'Model created successfully',
+                'model': {
+                    'id': model.id,
+                    'model_no': model.model_no,
+                    'length': float(model.length),
+                    'breadth': float(model.breadth),
+                    'weight': float(model.weight),
+                    'image_path': relative_path
+                }
+            })
+            
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+def get_model(request, model_id):
+    model = get_object_or_404(Model, id=model_id)
+    return JsonResponse({
+        'id': model.id,
+        'model_no': model.model_no,
+        'length': float(model.length),
+        'breadth': float(model.breadth),
+        'weight': float(model.weight),
+    })
+
+import logging
+import os
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+@csrf_exempt
+def edit_model(request):
+    if request.method == 'POST':
+        try:
+            logging.info("Received POST request to edit model.")
+
+            model_id = request.POST.get('model_id')
+            model_no = request.POST.get('model_no')
+            length = request.POST.get('length')
+            breadth = request.POST.get('breadth')
+            weight = request.POST.get('weight')
+            model_img = request.FILES.get('model_img')
+
+            logging.info(f"Received data: model_id={model_id}, model_no={model_no}, length={length}, breadth={breadth}, weight={weight}")
+
+            if not all([model_id, model_no, length, breadth, weight]):
+                logging.warning("Validation failed: Missing required fields.")
+                return JsonResponse({'error': 'All fields are required'}, status=400)
+
+            model = get_object_or_404(Model, id=model_id)
+            logging.info(f"Fetched model from database: {model}")
+
+            # Check if model number is being changed and already exists
+            if model.model_no != model_no and Model.objects.filter(model_no=model_no).exists():
+                logging.warning(f"Model number conflict: {model_no} already exists.")
+                return JsonResponse({'error': 'Model number already exists'}, status=400)
+
+            # Updating model fields
+            model.model_no = model_no
+            model.length = length
+            model.breadth = breadth
+            model.weight = weight
+
+            # Handling image update
+            if model_img:
+                target_directory = os.path.join(settings.BASE_DIR, 'product_inv/static/model_img/')
+                os.makedirs(target_directory, exist_ok=True)  # Ensure the directory exists
+
+                file_extension = os.path.splitext(model_img.name)[1]
+                new_img_name = f"{model_no}{file_extension}"
+                file_path = os.path.join(target_directory, new_img_name)
+
+                logging.info(f"New image received. Renaming to: {new_img_name}")
+
+                # Check if the model already had an image and remove the old image
+                if model.model_img:
+                    old_image_path = os.path.join(target_directory, os.path.basename(model.model_img.name))
+                    logging.info(f"Old image path: {old_image_path}")
+
+                    if os.path.exists(old_image_path):
+                        os.remove(old_image_path)
+                        logging.info("Old image successfully removed.")
+                    else:
+                        logging.warning("Old image file not found, skipping deletion.")
+
+                # Save new image manually
+                with open(file_path, 'wb+') as destination:
+                    for chunk in model_img.chunks():
+                        destination.write(chunk)
+
+                # Save relative path in the database
+                model.model_img = f"model_img/{new_img_name}"
+                logging.info("New image assigned to model.")
+
+            # Save model
+            model.save()
+            logging.info("Model updated successfully.")
+
+            return JsonResponse({
+                'success': True, 
+                'message': 'Model updated successfully',
+                'model': {
+                    'id': model.id,
+                    'model_no': model.model_no,
+                    'length': float(model.length),
+                    'breadth': float(model.breadth),
+                    'weight': float(model.weight),
+                    'image_updated': model_img is not None
+                }
+            })
+
+        except Exception as e:
+            logging.error(f"Error occurred: {str(e)}", exc_info=True)
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+def delete_model(request, model_id):
+    if request.method == 'DELETE':
+        try:
+            model = get_object_or_404(Model, id=model_id)
+
+            # Delete associated image
+            if model.model_img:  # Ensure model has an image
+                image_path = os.path.join(settings.BASE_DIR, 'product_inv/static/', str(model.model_img))
+                if os.path.exists(image_path):
+                    os.remove(image_path)
+
+            # Delete model entry from database
+            model.delete()
+
+            return JsonResponse({'success': True, 'message': 'Model deleted successfully'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request'}, status=400)
