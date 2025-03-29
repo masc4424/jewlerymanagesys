@@ -1,0 +1,322 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Model{% endblock %}
+
+{% block content %}
+<style>
+    /* Add this to your CSS */
+.nav-tabs .nav-link.active {
+    background-color: #fff !important;
+    color: #696cff !important;
+    border-color: #d9dee3 #d9dee3 #fff !important;
+    border-bottom: 2px solid #696cff !important;
+}
+
+.tab-pane.active {
+    display: block !important;
+}
+</style>
+<div class="content-wrapper">
+    <div class="container-xxl flex-grow-1 container-p-y p-0">
+        <div class="card">
+            <h5 class="card-header">Create New Model</h5>
+            <div class="card-body">
+                <form id="createModelForm" method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" id="jewelry_type" name="jewelry_type" value="{{ jewelry_type_id }}">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="model_no" class="form-label">Model No</label>
+                                <input type="text" class="form-control" id="model_no" name="model_no" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="colors" class="form-label">Model Colors</label>
+                                <select class="form-select select2" id="colors" name="colors" multiple required>
+                                    <option value="Gold">Gold</option>
+                                    <option value="Silver">Silver</option>
+                                    <option value="Rose Gold">Rose Gold</option>
+                                    <option value="Platinum">Platinum</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="length" class="form-label">Length</label>
+                                <input type="number" step="0.01" class="form-control" id="length" name="length" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="breadth" class="form-label">Breadth</label>
+                                <input type="number" step="0.01" class="form-control" id="breadth" name="breadth" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="weight" class="form-label">Weight</label>
+                                <input type="number" step="0.01" class="form-control" id="weight" name="weight" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-12">
+                        <div class="mb-3 col-lg-auto">
+                            <label for="model_img" class="form-label">Model Image</label>
+                            <div class="d-flex align-items-center">
+                                <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/png" required>
+                                <div id="previewContainer" class="border p-1 d-flex justify-content-center align-items-center d-none"
+                                     style="height: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
+                                    <img id="imagePreview" src="#" alt="Image Preview" class="img-fluid"
+                                         style="max-width: 100%; max-height: 100%;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Materials Tabs Section -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" data-bs-toggle="tab" href="#stones-section" role="tab">
+                                        Stones Used
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="tab" href="#raw-material-section" role="tab">
+                                        Raw Material
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-content">
+                                <!-- Stones Used Section -->
+                                <div class="tab-pane fade show active" id="stones-section" role="tabpanel">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="mb-0">Stone Used</h5>
+                                        <button type="button" class="btn btn-primary btn-sm" id="addStoneButton">Add Stone Used</button>
+                                    </div>
+                                    <div id="stonesContainer">
+                                        <!-- Stone forms will be added here dynamically -->
+                                    </div>
+                                    <div id="savedStonesContainer" class="mt-3">
+                                        <h6>Stones Added:</h6>
+                                        <table class="table table-bordered" id="savedStonesTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Stone Name</th>
+                                                    <th>Type Name</th>
+                                                    <th>Shape</th>
+                                                    <th>Weight</th>
+                                                    <th>Length</th>
+                                                    <th>Breadth</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Saved stones will appear here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div id="stoneTotalContainer" class="mt-3">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Total Stone Details</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="d-flex justify-content-between">
+                                                            <strong>Total Rate:</strong>
+                                                            <span id="totalStoneRate">0.00</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="d-flex justify-content-between">
+                                                            <strong>Total Weight:</strong>
+                                                            <span id="totalStoneWeight">0.00</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Raw Material Section -->
+                                <div class="tab-pane fade" id="raw-material-section" role="tabpanel">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h5 class="mb-0">Raw Material</h5>
+                                        <button type="button" class="btn btn-primary btn-sm" id="addRawMaterialButton">Add Raw Material</button>
+                                    </div>
+                                    <div id="rawMaterialsContainer">
+                                        <!-- Raw material forms will be added here dynamically -->
+                                    </div>
+                                    <div id="savedRawMaterialsContainer" class="mt-3">
+                                        <h6>Raw Materials Added:</h6>
+                                        <table class="table table-bordered" id="savedRawMaterialsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>Material</th>
+                                                    <th>Weight (gm)</th>
+                                                    <th>Rate</th>
+                                                    <th>Total Value</th>
+                                                    <th>Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <!-- Saved raw materials will appear here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div id="rawMaterialTotalContainer" class="mt-3">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Total Raw Material Details</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="d-flex justify-content-between">
+                                                            <strong>Total Material Weight:</strong>
+                                                            <span id="totalRawMaterialWeight">0.00</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="d-flex justify-content-between">
+                                                            <strong>Total Material Value:</strong>
+                                                            <span id="totalRawMaterialValue">0.00</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <a href="" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Create Model</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stone Form Template (Hidden) -->
+<template id="stoneFormTemplate">
+    <div class="stone-form-container mb-3 p-3 border rounded">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Stone Name</label>
+                    <select class="form-control stone-name-select" required>
+                        <option value="">Select Stone</option>
+                        <!-- Options will be populated from the database -->
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Type Name</label>
+                    <select class="form-control stone-type-select" required>
+                        <option value="">Select Type</option>
+                        <!-- Options will be populated based on selected stone -->
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label class="form-label">Shape</label>
+                    <input type="text" class="form-control stone-shape" readonly>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label class="form-label">Weight</label>
+                    <input type="number" step="0.01" class="form-control stone-weight" required>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label class="form-label">Length</label>
+                    <input type="text" class="form-control stone-length" required>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label class="form-label">Breadth</label>
+                    <input type="text" class="form-control stone-breadth" required>
+                </div>
+            </div>
+        </div>
+        <div class="text-end">
+            <button type="button" class="btn bg-label-danger cancel-stone-btn me-2">Cancel</button>
+            <button type="button" class="btn btn-primary save-stone-btn">Save</button>
+        </div>
+    </div>
+</template>
+
+<!-- Raw Material Form Template (Hidden) -->
+<template id="rawMaterialFormTemplate">
+    <div class="raw-material-form-container mb-3 p-3 border rounded">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Material</label>
+                    <select class="form-control raw-material-select" required>
+                        <option value="">Select Material</option>
+                        <!-- Options will be populated from the database -->
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Weight (gm)</label>
+                    <div class="input-group">
+                        <input type="number" step="0.01" class="form-control raw-material-weight" required>
+                        <div class="input-group-text">
+                            <input class="form-check-input mt-0 get-rate-checkbox" type="checkbox" value="">
+                            <small class="ms-2">Get Rate</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" id="rateContainer" style="display: none;">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Current Rate</label>
+                    <input type="text" class="form-control raw-material-rate" readonly>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label class="form-label">Total Value</label>
+                    <input type="text" class="form-control raw-material-total-value" readonly>
+                </div>
+            </div>
+        </div>
+        <div class="text-end">
+            <button type="button" class="btn bg-label-danger cancel-raw-material-btn me-2">Cancel</button>
+            <button type="button" class="btn btn-primary save-raw-material-btn">Save</button>
+        </div>
+    </div>
+</template>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'js/model_create.js' %}"></script>
+{% endblock %}

@@ -15,7 +15,9 @@ $(document).ready(function() {
             { 
                 data: null,
                 render: function(data) {
-                    return `<a href="#" class="model-link" data-id="${data.id}" data-name="${data.name}">${data.model_count}</a>`;
+                    return `<a href="#" class="model-link" data-id="${data.id}" data-name="${data.name}">
+                                ${data.model_count}<i class="bx bx-chevron-right"></i>
+                            </a>`;
                 }
             },
             {

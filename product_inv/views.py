@@ -20,3 +20,7 @@ def product_list(request, jewelry_type_name):
         'jewelry_type_name': jewelry_type_name,
         'jewelry_type_id': jewelry_type.id
     })
+
+def create_new_model(request):
+    jewelry_type_id = request.GET.get('jewelry_type_id', '')  # Or fetch dynamically
+    return render(request, 'create_model.html', {'jewelry_type_id': jewelry_type_id})

@@ -1,15 +1,18 @@
 from django.http import JsonResponse
 from .models import Stone, StoneType, StoneTypeDetail
 from product_inv.models import *
+from django.db.models import Count
 
 def get_complete_stone_data(request):
-    stones = Stone.objects.prefetch_related('types__details').all()
+    stones = Stone.objects.annotate(type_count=Count('types')).prefetch_related('types__details').all()
     data = []
     for stone in stones:
+        type_count = stone.type_count 
         for stone_type in stone.types.all():
             for detail in stone_type.details.all():
                 data.append({
                     'stone_name': stone.name,
+                    'type_count': type_count,
                     'stone_type': stone_type.type_name,
                     'shape': detail.shape,
                     'size': f"{detail.length}x{detail.breadth}",

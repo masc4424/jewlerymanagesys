@@ -12,6 +12,7 @@ $(document).ready(function() {
                 }
             },
             { data: 'stone_name' },
+            { data: 'type_count'},
             {
                 data: null,
                 render: function() {

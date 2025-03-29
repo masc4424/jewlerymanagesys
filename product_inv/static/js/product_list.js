@@ -66,57 +66,7 @@ $(document).ready(function() {
         ]
     });
     
-    // Form submission for creating new model
-    $('#createModelForm').on('submit', function(e) {
-        e.preventDefault();
-        
-        // Create FormData object to handle file uploads
-        const formData = new FormData(this);
-        
-        $.ajax({
-            url: '/create_model/',
-            type: 'POST',
-            data: formData,
-            processData: false,  // Important for FormData
-            contentType: false,  // Important for FormData
-            success: function(response) {
-                console.log('Success response:', response);
-                
-                // Explicitly hide the modal using Bootstrap's modal method
-                const createModalElement = document.getElementById('createModelModal');
-                const createModal = bootstrap.Modal.getInstance(createModalElement);
-                createModal.hide();
-                
-                // Or alternatively use jQuery
-                // $('#createModelModal').modal('hide');
-                
-                // Reset the form
-                $('#createModelForm')[0].reset();
-                
-                // Refresh the DataTable
-                modelTable.ajax.reload();
-                
-                // Show success toast or alert
-                Swal.fire({
-                    title: 'Success!',
-                    text: response.message || 'Model created successfully',
-                    icon: 'success',
-                    confirmButtonText: 'OK'
-                });
-            },
-            error: function(xhr, status, error) {
-                console.error('Error:', xhr, status, error);
-                
-                // Show error message
-                Swal.fire({
-                    title: 'Error!',
-                    text: xhr.responseJSON?.error || 'Failed to create model',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-            }
-        });
-    });
+   
     // Fetch model data when clicking the Edit button
     $(document).on('click', '.edit-model-btn', function() {
         let modelId = $(this).data('model-id');
@@ -133,7 +83,23 @@ $(document).ready(function() {
                 $('#edit_length').val(response.length);
                 $('#edit_breadth').val(response.breadth);
                 $('#edit_weight').val(response.weight);
-                
+                let existingImageSrc = `/static/model_img/${response.model_no}.png`;
+                $('#editImagePreview').attr('src', existingImageSrc).removeClass('d-none');
+                $('#edit_colors').val([]);
+                console.log("Colors from response:", response.colors);
+                if (response.colors && Array.isArray(response.colors)) {
+                    $.each(response.colors, function(index, colorValue) {
+                        console.log("Setting color:", colorValue);
+                        $('#edit_colors option[value="' + colorValue + '"]').prop('selected', true);
+                    });
+                    
+                    // If using Select2, refresh it
+                    if ($.fn.select2) {
+                        $('#edit_colors').trigger('change');
+                    }
+                } else {
+                    console.error("Colors not found in response or not an array");
+                }
             },
             error: function(xhr) {
                 Swal.fire({
@@ -151,6 +117,10 @@ $(document).ready(function() {
         e.preventDefault();
         
         const formData = new FormData(this);
+        console.log("Form data being submitted:");
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
         
         $.ajax({
             url: '/edit_model/',
@@ -190,9 +160,9 @@ $(document).ready(function() {
             text: 'You won\'t be able to revert this!',
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonColor: '#d33',
-            cancelButtonColor: '#3085d6',
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonColor: 'btn-primary',
+            cancelButtonColor: 'btn-secondary',
+            confirmButtonText: 'Yes'
         }).then((result) => {
             if (result.isConfirmed) {
                 $.ajax({
@@ -228,6 +198,20 @@ $(document).ready(function() {
         }
         return cookieValue;
     }
+
+  
+    $('#edit_model_img').on('change', function () {
+        let file = this.files[0];
+        if (file) {
+            let reader = new FileReader();
+            reader.onload = function (e) {
+                $('#editImagePreview').attr('src', e.target.result).removeClass('d-none');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#editImagePreview').addClass('d-none');
+        }
+    });
     
 });
 
