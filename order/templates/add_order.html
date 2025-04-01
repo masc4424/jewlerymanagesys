@@ -4,117 +4,128 @@
 {% block title %}New Order{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/order.css' %}">
+    <link rel="stylesheet" href="{% static 'css/add_order.css' %}">
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="mb-2 d-flex">      
-        <h4><i class='bx bx-arrow-back' ></i> NEW ORDER</h4>   
-    </div> 
-    <form id="">
-        <div class="mx-1">
-            <h6 class="text-secondary">CUSTOMER DETAILS</h6>
-        </div>
-        <div class="card">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">Customer Name</label>
-                            <input type="text" id="createUsername" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">Contact No.</label>
-                            <input type="text" id="createFullName" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label class="form-label">Address</label>
-                            <input type="text" id="createFullName" class="form-control" required>
-                        </div>
-                    </div>
-                </div>
+    <div class="container">
+        <div class="mb-2 d-flex">      
+            <h4><i class='bx bx-arrow-back' ></i> NEW ORDER</h4>   
+        </div> 
+        <div id="orderForm">
+            <div class="mx-1">
+                <h6 class="text-secondary">CUSTOMER DETAILS</h6>
             </div>
-        </div>    
-        
-        <div class="mx-1 mt-4 mb-2 d-flex justify-content-between">
-            <h6 class="mt-2 text-secondary">ORDER DETAILS</h6>
-            <button class="btn btn-secondary"><i class="bx bx-plus"></i>Add Item</button>
-        </div>
-        <div class="card">
-            <div class="card-header text-end">
-                <button class="border btn btn-close btn-close-white btn-s rounded-circle"></button>
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Customer Name</label>
+                                <input type="text" id="createUsername" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Contact No.</label>
+                                <input type="text" id="createFullName" class="form-control" required>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label">Address</label>
+                                <input type="text" id="customerAddress" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>    
+            
+            <div class="mx-1 mt-4 mb-2 d-flex justify-content-between">
+                <h6 class="mt-2 text-secondary">ORDER DETAILS</h6>
+                <button class="btn btn-secondary"><i class="bx bx-plus"></i>Add Item</button>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <label class="form-label">Item Type</label>
-                        <select class="form-select" name="" id="">
-                            <option value="">Bracelet</option>
-                        </select>
+            <div class="card order-item">
+                <div class="card-header text-end">
+                    <button class="border btn btn-close btn-close-white btn-s rounded-circle"></button>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="form-label">Item Type</label>
+                            <select class="form-select item-type" name="model" id="itemType">
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Model No.</label>
+                                <select class="form-select item-type" name="model" id="model_no">
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">Model No.</label>
-                            <input type="text" id="" class="form-control" required>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="sameColor" checked="">
+                                <label class="form-check-label" for="sameColor">Same Color</label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-sm btn-secondary"><i class="bx bx-plus"></i>Color</button>
+                        </div>
+                    </div>
+                    <div class="row mt-2 color-row">
+                        <div class="col-md-5">
+                            <label class="form-label">Color</label>
+                            <select class="form-select color-select" name="modelcolor" id="model_color">
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">No. of Pieces</label>
+                                <input type="number" id="pieces_1" name="pieces[]" class="form-control pieces-input" required>
+                            </div>
+                        </div>
+                        <div class="col-md-1">
+                            <button class="bg-transparent btn btn-lg mt-3 remove-color"><i class="bx bx-trash"></i></button>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">MRP</label>
+                            <input type="number" id="mrp" name="mrp" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Discount (%)</label>
+                                <input type="number" id="discount" name="discount" class="form-control" value="0">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label">Date of Order</label>
+                            <input type="date" id="dateOfOrder" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Estimated Delivery Date</label>
+                                <input type="date" id="estDeliveryDate" class="form-control" required>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="row mt-2">
-                    <div class="col-md-6">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" value="" id="" checked="">
-                            <label class="form-check-label" for="">Same Color</label>
-                        </div>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <button class="btn btn-sm btn-secondary"><i class="bx bx-plus"></i>Color</button>
-                    </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col-md-5">
-                        <label class="form-label">Color</label>
-                        <select class="form-select" name="" id="">
-                            <option value=""></option>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">No. of Pieces</label>
-                            <input type="number" id="" class="form-control" required>
-                        </div>
-                    </div>
-                    <div class="col-md-1">
-                        <button class="bg-transparent btn btn-lg mt-3"><i class="bx bx-trash"></i></button>
-                    </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col-md-6">
-                        <label class="form-label">Date of Order</label>
-                        <input type="date" id="" class="form-control" required>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label class="form-label">Estimated Delivery Date</label>
-                            <input type="date" id="" class="form-control" required>
-                        </div>
-                    </div>
-                </div>
+            </div>    
+            
+            <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-primary me-2" id="submitOrder">Create</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
             </div>
-        </div>    
-        
-        <div class="d-flex justify-content-end mt-3">
-            <button type="submit" class="btn btn-primary me-2">Create</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
         </div>
-    </form>
-</div>
+    </div>
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/order.js' %}"></script>
+    <script src="{% static 'js/add_order.js' %}"></script>
 {% endblock %}
