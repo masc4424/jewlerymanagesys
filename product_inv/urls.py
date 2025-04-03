@@ -7,8 +7,7 @@ urlpatterns = [
     path('product/<str:model_no>/', product, name='product'),
     path('product_type', product_type, name='product_type'),
     path('product_list/<str:jewelry_type_name>/', product_list, name='product_list'),   
-    path('create_new_model', create_new_model, name='create_new_model'),
-
+    path('create_new_model/<str:jewelry_type_name>/', create_new_model, name='create_new_model'),
 ]
 
 # api end point
@@ -27,6 +26,9 @@ urlpatterns += [
 
     path('get_materials/', get_materials, name='get_materials'),
     path('get_material_rate/<int:metal_id>/', get_material_rate, name='get_material_rate'),
+    path('create_jewelry_type/', create_jewelry_type, name='create_jewelry_type'),
+    path('edit_jewelry_type/<int:id>/', edit_jewelry_type, name='create_jewelry_type'),
+    path('delete_jewelry_type/<int:id>/', delete_jewelry_type, name='create_jewelry_type'),
 
 ]
 

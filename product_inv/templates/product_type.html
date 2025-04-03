@@ -7,6 +7,12 @@
 
 <div class="content-wrapper">
     <div class="container-xxl flex-grow-1 container-p-y p-0">
+      <div class="text-end pe-3 pt-3 mb-3">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createJewelryTypeModal">
+          <i class="bx bx-plus"></i> Create Jewelry Type
+        </button>
+      </div>
+      
       <div class="card">
         <div class="table-responsive text-nowrap p-3 pt-5">
           <table id="jewelryTable" class="table">
@@ -24,8 +30,62 @@
     </div>
 </div>
 
+<!-- Create Jewelry Type Modal -->
+<div class="modal fade" id="createJewelryTypeModal" tabindex="-1" aria-labelledby="createJewelryTypeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createJewelryTypeModalLabel">Create Jewelry Type</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="createJewelryTypeForm">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="jewelry_type_name" class="form-label">Jewelry Type Name</label>
+            <input type="text" class="form-control" id="jewelry_type_name" name="name" required>
+          </div>
+          <div class="text-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Edit Jewelry Type Modal -->
+<div class="modal fade" id="editJewelryTypeModal" tabindex="-1" aria-labelledby="editJewelryTypeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editJewelryTypeModalLabel">Edit Jewelry Type</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="editJewelryTypeForm">
+          {% csrf_token %}
+          <input type="hidden" id="editJewelryTypeId">
+          <div class="mb-3">
+            <label for="editJewelryTypeName" class="form-label">Jewelry Type Name</label>
+            <input type="text" class="form-control" id="editJewelryTypeName" name="name" required>
+          </div>
+          <div class="text-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 {% endblock %}
 
 {% block extra_js %}
     <script src="{% static 'js/product_type.js' %}"></script>
+    <!-- Include SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 {% endblock %}

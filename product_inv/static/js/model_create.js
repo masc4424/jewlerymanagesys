@@ -176,10 +176,16 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(data) {
                 if (data) {
-                    stoneForm.find('.stone-weight').val(data.weight);
-                    stoneForm.find('.stone-length').val(data.length);
-                    stoneForm.find('.stone-breadth').val(data.breadth);
-                    stoneForm.find('.stone-shape').val(data.shape);
+                    // Set values and disable fields
+                    stoneForm.find('.stone-weight').val(data.weight).prop('disabled', true);
+                    stoneForm.find('.stone-length').val(data.length).prop('disabled', true);
+                    stoneForm.find('.stone-breadth').val(data.breadth).prop('disabled', true);
+                    // Store the shape value in a hidden input instead of showing it in UI
+                    if (!stoneForm.find('.stone-shape-hidden').length) {
+                        stoneForm.append('<input type="hidden" class="stone-shape-hidden" value="' + data.shape + '">');
+                    } else {
+                        stoneForm.find('.stone-shape-hidden').val(data.shape);
+                    }
                 }
             },
             error: function(xhr, status, error) {
@@ -195,7 +201,7 @@ $(document).ready(function() {
         const weight = formContainer.find('.stone-weight').val();
         const length = formContainer.find('.stone-length').val();
         const breadth = formContainer.find('.stone-breadth').val();
-        const shape = formContainer.find('.stone-shape').val();
+        const shape = formContainer.find('.stone-shape-hidden').val();
         
         // Validate form
         if (!stoneNameSelect.val() || !stoneTypeSelect.val() || !weight) {
@@ -463,8 +469,6 @@ $(document).ready(function() {
         $('#totalRawMaterialWeight').text(totalWeight.toFixed(2));
         $('#totalRawMaterialValue').text(totalValue.toFixed(2));
     }
-
-    // Handle form submission
 
     // Handle form submission
     $('#createModelForm').on('submit', function(e) {

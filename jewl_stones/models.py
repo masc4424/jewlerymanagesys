@@ -2,6 +2,15 @@ from django.db import models
 
 class Stone(models.Model):
     name = models.CharField(max_length=255)
+    STATUS_CHOICES = [
+        ('ACTIVE', 'Active'),
+        ('INACTIVE', 'Inactive'),
+    ]
+    is_active = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='ACTIVE'
+    )
 
     def __str__(self):
         return self.name
@@ -15,7 +24,7 @@ class StoneType(models.Model):
         return self.type_name
 
 class StoneTypeDetail(models.Model):
-    shape = models.CharField(max_length=255)
+    # shape = models.CharField(max_length=255)
     length = models.CharField(max_length=255, default='N/A')  # Added default
     breadth = models.CharField(max_length=255, default='N/A')  # Added default
     weight = models.DecimalField(max_digits=10, decimal_places=2)

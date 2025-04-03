@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Stone Types{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container-xxl flex-grow-1 container-p-y p-0">
+        <div class="mb-3 d-flex justify-content-end">
+            <!-- <h4>Stone Types - {{ stone_name }}</h4> -->
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createStoneTypeModal">
+                <i class="bx bx-plus me-1"></i> Add New Type
+            </button>
+        </div>
+
+        <div class="card">
+            <h5 class="card-header">Stone Types - {{ stone_name }}</h5>
+            <div class="table-responsive text-nowrap p-3">
+                <div id="stone-data" data-stone-name="{{ stone_name }}"></div>
+                <table id="stoneTypeTable" class="table">
+                    <thead>
+                        <tr>
+                            <th>Sr No.</th>
+                            <th>Type Name</th>
+                            <th>No of Details</th>
+                          
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Stone Type Modal -->
+<div class="modal fade" id="createStoneTypeModal" tabindex="-1" aria-labelledby="createStoneTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createStoneTypeModalLabel">Add New Stone Type</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="createStoneTypeForm">
+                    <div class="mb-3">
+                        <label for="typeName" class="form-label">Type Name</label>
+                        <input type="text" class="form-control" id="typeName" required>
+                    </div>
+                   
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Create</button>
+                      </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/stone_type.js' %}"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{% endblock %}

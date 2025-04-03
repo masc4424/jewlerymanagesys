@@ -10,10 +10,20 @@
 
     <div class="container-xxl flex-grow-1 container-p-y p-0">
       <!-- <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light">Tables /</span> Basic Tables</h4> -->
-
+     <div class="mb-3 d-flex justify-content-end">
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        data-bs-toggle="modal" 
+        data-bs-target="#createStoneModal">
+        <i class="bx bx-plus me-1"></i> Add New Stone
+      </button>
+     </div>
+      
       <!-- Basic Bootstrap Table -->
       <div class="card">
-        <h5 class="card-header">Stones</h5>
+        <h5 class="card-header">Stones
+          <h5>
         <div class="table-responsive text-nowrap p-3">
           <table id="stoneTable" class="table">
             <thead>
@@ -30,9 +40,94 @@
       </div>
     </div>
 </div>
+<!-- Create Stone Modal -->
+<div class="modal fade" id="createStoneModal" tabindex="-1" aria-labelledby="createStoneModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="createStoneForm">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title" id="createStoneModalLabel">Add New Stone</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label for="stoneName" class="form-label">Stone Name</label>
+              <input
+                type="text"
+                id="stoneName"
+                name="stoneName"
+                class="form-control"
+                placeholder="Enter stone name"
+                required
+              />
+            </div>
+            <div class="col-md-12 mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked />
+                <label class="form-check-label" for="is_active">Active Status</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="text-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Create</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Edit Stone Modal -->
+<div class="modal fade" id="editStoneModal" tabindex="-1" aria-labelledby="editStoneModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="editStoneForm">
+        {% csrf_token %}
+        <input type="hidden" id="editStoneId" name="editStoneId">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editStoneModalLabel">Edit Stone</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-12 mb-3">
+              <label for="editStoneName" class="form-label">Stone Name</label>
+              <input
+                type="text"
+                id="editStoneName"
+                name="editStoneName"
+                class="form-control"
+                placeholder="Enter stone name"
+                required
+              />
+            </div>
+            <div class="col-md-12 mb-3">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="edit_is_active" name="edit_is_active" />
+                <label class="form-check-label" for="edit_is_active">Active Status</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="text-end">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">Update</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 
 {% endblock %}
 {% block extra_js %}
     <script src="{% static 'js/stone_list.js' %}"></script>
-  
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 {% endblock %}

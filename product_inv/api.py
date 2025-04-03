@@ -15,6 +15,7 @@ from django.utils import timezone
 import datetime
 from django.db.models.functions import Abs
 from django.db.models import F
+import uuid
 
 def get_model_distribution(model_no):
     try:
@@ -386,7 +387,7 @@ def get_stone_type_details(request, type_id):
         detail = StoneTypeDetail.objects.filter(stone_type_id=type_id).first()
         if detail:
             return JsonResponse({
-                'shape': detail.shape,
+                # 'shape': detail.shape,
                 'weight': float(detail.weight),
                 'length': detail.length,
                 'breadth': detail.breadth,
@@ -635,3 +636,63 @@ def delete_model(request, model_id):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request'}, status=400)
+
+@csrf_exempt
+def create_jewelry_type(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Name is required'})
+        
+        # Check if a jewelry type with this name already exists
+        if JewelryType.objects.filter(name=name).exists():
+            return JsonResponse({'success': False, 'error': 'A jewelry type with this name already exists'})
+        
+        # Generate a unique ID
+        unique_id = str(uuid.uuid4())[:8]
+        
+        # Create the new jewelry type
+        jewelry_type = JewelryType.objects.create(
+            name=name,
+            unique_id=unique_id
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'jewelry_type_id': jewelry_type.id,
+            'jewelry_type_name': jewelry_type.name
+        })
+        
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def edit_jewelry_type(request, id):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+
+        if not name:
+            return JsonResponse({'success': False, 'error': 'Name is required'})
+
+        try:
+            jewelry_type = JewelryType.objects.get(id=id)
+            jewelry_type.name = name
+            jewelry_type.save()
+            return JsonResponse({'success': True})
+        except JewelryType.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Jewelry Type not found'})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+@csrf_exempt
+def delete_jewelry_type(request, id):
+    if request.method == 'DELETE':
+        try:
+            jewelry_type = JewelryType.objects.get(id=id)
+            jewelry_type.delete()
+            return JsonResponse({'success': True})
+        except JewelryType.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Jewelry Type not found'})
+
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
