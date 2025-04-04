@@ -100,7 +100,7 @@ def get_model_distribution(model_no):
                     
                     type_info['distribution'].append({
                         'detail_id': detail.id,
-                        'shape': detail.shape,
+                        # 'shape': detail.shape,
                         'length': detail.length,  # Changed from size to length
                         'breadth': detail.breadth,  # Added breadth
                         'weight': str(detail.weight),

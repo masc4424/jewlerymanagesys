@@ -8,6 +8,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db.models import F
 import json
 
+import uuid
+from .models import Order
+from django.utils.dateparse import parse_date
+
 from django.templatetags.static import static
 
 def order_view(request):
@@ -40,23 +44,54 @@ def order_view(request):
 def order_add(request):
     if request.method == 'POST':
         try:
+            # Parse the incoming JSON data
             data = json.loads(request.body)
+
+            # Extract necessary fields
+            client_name = data['client_name']
+            date_of_order = parse_date(data['date_of_order'])
+            order_item_order = data.get('order_item_order')  # Fetch orderItemOrder from the request
+
+            # Create the order first
             order = Order.objects.create(
-                client_name=data['client_name'],
+                client_name=client_name,
                 model_id=data['model'],
                 no_of_pieces=data['no_of_pieces'],
-                date_of_order=parse_date(data['date_of_order']),
+                date_of_order=date_of_order,
                 est_delivery_date=parse_date(data['est_delivery_date']),
                 contact_no=data['contact_no'],
                 mrp=data['mrp'],
                 discount=data.get('discount', 0.00),
                 color_id=data['color']
             )
-            return JsonResponse({'message': 'Order created', 'order_id': order.id}, status=201)
+
+            # Use orderItemOrder instead of order.id for unique_id generation
+            unique_id = generate_unique_id(client_name, order_item_order, date_of_order)
+
+            # Update the order with the unique_id
+            order.order_unique_id = unique_id
+            order.save()
+
+            return JsonResponse({'message': 'Order created', 'order_id': order.id, 'order_unique_id': unique_id}, status=201)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+def generate_unique_id(customer_name, order_id, date_of_order):
+    # Extract the first four letters of the customer's name
+    name_part = customer_name[:4].upper()  # Convert to uppercase for consistency
+    
+    # Use the order ID directly as a string
+    order_id_part = str(order_id)  # Ensure order_id is a string
+    
+    # Format the date of order as DDMMYYYY
+    date_part = date_of_order.strftime('%d%m%Y')
+    
+    # Combine parts to create the unique ID
+    unique_id = f"{name_part}_{order_id_part}_{date_part}"
+    
+    return unique_id
 
 def get_model_color(request, model_id):
     model = get_object_or_404(Model, id=model_id)  # Fetch by primary key (id)

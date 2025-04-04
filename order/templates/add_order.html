@@ -43,9 +43,9 @@
             
             <div class="mx-1 mt-4 mb-2 d-flex justify-content-between">
                 <h6 class="mt-2 text-secondary">ORDER DETAILS</h6>
-                <button class="btn btn-secondary"><i class="bx bx-plus"></i>Add Item</button>
+                <button class="btn btn-secondary" id="add-item-order"><i class="bx bx-plus"></i>Add Item</button>
             </div>
-            <div class="card order-item">
+            <div class="card order-item" id="order-item-card" data-item-order="" data-item-id="">
                 <div class="card-header text-end">
                     <button class="border btn btn-close btn-close-white btn-s rounded-circle"></button>
                 </div>
@@ -54,6 +54,10 @@
                         <div class="col-md-6">
                             <label class="form-label">Item Type</label>
                             <select class="form-select item-type" name="model" id="itemType">
+                                <option value="">Select Item Type</option>
+                                {% for type in product_types %}
+                                    <option value="{{ type.id }}">{{ type.name }}</option>
+                                {% endfor %}
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -103,20 +107,21 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row mt-2">
-                        <div class="col-md-6">
-                            <label class="form-label">Date of Order</label>
-                            <input type="date" id="dateOfOrder" class="form-control" required>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Estimated Delivery Date</label>
-                                <input type="date" id="estDeliveryDate" class="form-control" required>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>    
+
+            <div class="row mt-2">
+                <div class="col-md-6">
+                    <label class="form-label">Date of Order</label>
+                    <input type="date" id="dateOfOrder" class="form-control" required>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Estimated Delivery Date</label>
+                        <input type="date" id="estDeliveryDate" class="form-control" required>
+                    </div>
+                </div>
+            </div>
             
             <div class="d-flex justify-content-end mt-3">
                 <button type="submit" class="btn btn-primary me-2" id="submitOrder">Create</button>
