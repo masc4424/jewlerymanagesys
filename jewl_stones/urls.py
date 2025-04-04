@@ -16,6 +16,11 @@ urlpatterns = [
     path('create-stone-type-detail/', create_stone_type_detail, name='create_stone_type_detail'),
     path('update-stone/', update_stone, name='update_stone'),
     path('delete-stone/', delete_stone, name='delete_stone'),
+    path('update-stone-type/', update_stone_type, name='update_stone_type'),
+    path('delete-stone-type/', delete_stone_type, name='delete_stone_type'),
+    path('get-stone-type-detail/<int:detail_id>/', get_stone_type_detail, name='get_stone_type_detail'),
+    path('update-stone-type-detail/<int:detail_id>/', update_stone_type_detail, name='update_stone_type_detail'),
+    path('delete-stone-type-detail/<int:detail_id>/', delete_stone_type_detail, name='delete_stone_type_detail'),
 ]
 
 

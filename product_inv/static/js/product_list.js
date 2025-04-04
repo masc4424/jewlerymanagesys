@@ -13,23 +13,49 @@ $(document).ready(function() {
                 }
             },
             { data: 'model_no' },
-            { data: 'length' },
-            { data: 'breadth' },
-            { data: 'weight' },
-            {
-                data: 'model_no', // Using model_no for the image path
-                render: function(model_no, type, row) {
-                    // const imageSrc = `/static/model_img/${model_no}.png`;
-                    const timestamp = new Date().getTime();
-                    const imageSrc = `/static/model_img/${model_no}.png?t=${timestamp}`;
-                    return `<a href="javascript:void(0);" 
-                               onclick="showImage('${imageSrc}', '${model_no}')"
-                                data-id="${row.id}"
-                                data-model_no="${model_no}">
-                                View &gt; 
-                            </a>`;
+            { 
+                data: null,
+                render: function(data) {
+                    const length = parseFloat(data.length);
+                    const breadth = parseFloat(data.breadth);
+    
+                    // Remove .00 if it's a whole number
+                    const formattedLength = length % 1 === 0 ? length.toFixed(0) : length.toFixed(2);
+                    const formattedBreadth = breadth % 1 === 0 ? breadth.toFixed(0) : breadth.toFixed(2);
+    
+                    return `${formattedLength} × ${formattedBreadth}`; // Dimensions column
                 }
             },
+            { data: 'weight' },
+            // {
+            //     data: 'model_no',
+            //     render: function(model_no, type, row) {
+            //         const timestamp = new Date().getTime();
+            //         const imageSrc = `/static/model_img/${model_no}.png?t=${timestamp}`;
+            //         return `<a href="javascript:void(0);" 
+            //                    onclick="showImage('${imageSrc}', '${model_no}')"
+            //                    data-id="${row.id}"
+            //                    data-model_no="${model_no}">
+            //                    View &gt; 
+            //                 </a>`;
+            //     }
+            // },
+            {
+                data: 'model_no',
+                render: function(model_no, type, row) {
+                    const timestamp = new Date().getTime();
+                    const imageSrc = `/static/model_img/${model_no}.png?t=${timestamp}`;
+                    
+                    return `
+                        <a href="javascript:void(0);" onclick="showImage('${imageSrc}', '${model_no}')" 
+                           data-id="${row.id}" data-model_no="${model_no}" class="d-flex gap-2">
+                            <img src="${imageSrc}" alt="Model Image" class="img-thumbnail" 
+                                 style="width: 25px; height: 25px; object-fit: cover;" />  &gt;
+                        </a>
+                    `;
+                }
+            },
+            
             {
                 data: 'model_no',
                 render: function(model_no) {
@@ -54,7 +80,7 @@ $(document).ready(function() {
                                     data-model-id="${data.id}">
                                     <i class="bx bx-edit-alt me-1"></i> Edit
                                 </a>
-
+    
                                 <a class="dropdown-item delete-model-btn" href="javascript:void(0);" data-model-id="${data.id}">
                                     <i class="bx bx-trash me-1"></i> Delete
                                 </a>
@@ -65,6 +91,7 @@ $(document).ready(function() {
             }
         ]
     });
+    
     
    
     // Fetch model data when clicking the Edit button

@@ -2,6 +2,9 @@
 {% load static %}
 
 {% block title %}Stones{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/stone_list.css' %}">
+{% endblock %}
 
 {% block content %}
 
@@ -10,22 +13,22 @@
 
     <div class="container-xxl flex-grow-1 container-p-y p-0">
       <!-- <h4 class="fw-bold py-3 mb-4"><span class="text-muted fw-light">Tables /</span> Basic Tables</h4> -->
-     <div class="mb-3 d-flex justify-content-end">
-      <button 
-        type="button" 
-        class="btn btn-primary" 
-        data-bs-toggle="modal" 
-        data-bs-target="#createStoneModal">
-        <i class="bx bx-plus me-1"></i> Add New Stone
-      </button>
-     </div>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="fw-bold mb-1">Stones</h4>
+        <button 
+          type="button" 
+          class="btn btn-primary" 
+          data-bs-toggle="modal" 
+          data-bs-target="#createStoneModal">
+          <i class="bx bx-plus me-1"></i> Add New Stone
+        </button>
+      </div>
       
       <!-- Basic Bootstrap Table -->
       <div class="card">
-        <h5 class="card-header">Stones
-          <h5>
+       
         <div class="table-responsive text-nowrap p-3">
-          <table id="stoneTable" class="table">
+          <table id="stoneTable" class="table mb-3">
             <thead>
                 <tr>
                     <th>Sr No.</th>

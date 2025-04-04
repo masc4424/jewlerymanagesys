@@ -36,10 +36,56 @@
                             <div class="mb-3">
                                 <label for="colors" class="form-label">Model Colors</label>
                                 <select class="form-select select2" id="colors" name="colors" multiple required>
-                                    <option value="Gold">Gold</option>
+                                    <option value="Black">Black</option>
+                                    <option value="White">White</option>
+                                    <option value="Gray">Gray</option>
                                     <option value="Silver">Silver</option>
+                                    <option value="Gold">Gold</option>
                                     <option value="Rose Gold">Rose Gold</option>
                                     <option value="Platinum">Platinum</option>
+                                    <option value="Bronze">Bronze</option>
+                                    <option value="Copper">Copper</option>
+                                    <option value="Red">Red</option>
+                                    <option value="Crimson">Crimson</option>
+                                    <option value="Maroon">Maroon</option>
+                                    <option value="Burgundy">Burgundy</option>
+                                    <option value="Pink">Pink</option>
+                                    <option value="Hot Pink">Hot Pink</option>
+                                    <option value="Magenta">Magenta</option>
+                                    <option value="Salmon">Salmon</option>
+                                    <option value="Peach">Peach</option>
+                                    <option value="Orange">Orange</option>
+                                    <option value="Amber">Amber</option>
+                                    <option value="Coral">Coral</option>
+                                    <option value="Yellow">Yellow</option>
+                                    <option value="Mustard">Mustard</option>
+                                    <option value="Beige">Beige</option>
+                                    <option value="Ivory">Ivory</option>
+                                    <option value="Lime">Lime</option>
+                                    <option value="Olive">Olive</option>
+                                    <option value="Green">Green</option>
+                                    <option value="Emerald">Emerald</option>
+                                    <option value="Jade">Jade</option>
+                                    <option value="Mint">Mint</option>
+                                    <option value="Teal">Teal</option>
+                                    <option value="Turquoise">Turquoise</option>
+                                    <option value="Blue">Blue</option>
+                                    <option value="Sky Blue">Sky Blue</option>
+                                    <option value="Azure">Azure</option>
+                                    <option value="Cyan">Cyan</option>
+                                    <option value="Navy Blue">Navy Blue</option>
+                                    <option value="Royal Blue">Royal Blue</option>
+                                    <option value="Indigo">Indigo</option>
+                                    <option value="Purple">Purple</option>
+                                    <option value="Violet">Violet</option>
+                                    <option value="Lavender">Lavender</option>
+                                    <option value="Lilac">Lilac</option>
+                                    <option value="Brown">Brown</option>
+                                    <option value="Chocolate">Chocolate</option>
+                                    <option value="Tan">Tan</option>
+                                    <option value="Mahogany">Mahogany</option>
+                                    <option value="Bistre">Bistre</option>
+                                    <option value="Charcoal">Charcoal</option>
                                 </select>
                             </div>
                         </div>
@@ -203,7 +249,7 @@
                     </div>
 
                     <div class="text-end">
-                        <a href="" class="btn btn-secondary">Cancel</a>
+                        <a href="{% url 'product_list' jewelry_type_name %}" class="btn btn-secondary">Cancel</a>
                         <button type="submit" class="btn btn-primary">Create Model</button>
                     </div>
                 </form>
@@ -235,7 +281,7 @@
                 </div>
             </div>
         </div>
-        <div class="row">
+        <!-- <div class="row">
             <div class="col-md-4">
                 <div class="mb-3">
                     <label class="form-label">Weight</label>
@@ -254,7 +300,7 @@
                     <input type="text" class="form-control stone-breadth" required>
                 </div>
             </div>
-        </div>
+        </div> -->
         <div class="text-end">
             <button type="button" class="btn bg-label-danger cancel-stone-btn me-2">Cancel</button>
             <button type="button" class="btn btn-primary save-stone-btn">Save</button>

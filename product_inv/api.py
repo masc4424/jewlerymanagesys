@@ -383,21 +383,22 @@ def get_stone_types(request, stone_id):
 # New endpoint to get stone type details
 def get_stone_type_details(request, type_id):
     try:
-        # Get the first detail for this type as an example
-        detail = StoneTypeDetail.objects.filter(stone_type_id=type_id).first()
-        if detail:
-            return JsonResponse({
-                # 'shape': detail.shape,
+        # Get all details for this type
+        details = StoneTypeDetail.objects.filter(stone_type_id=type_id)
+        if details.exists():
+            details_list = [{
                 'weight': float(detail.weight),
                 'length': detail.length,
                 'breadth': detail.breadth,
                 'rate': float(detail.rate)
-            })
-        return JsonResponse({}, status=404)
+                # Add 'shape' back if needed
+                # 'shape': detail.shape,
+            } for detail in details]
+            return JsonResponse(details_list, safe=False)
+        return JsonResponse([], safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-
-
+    
 def get_model(request, model_id):
     model = get_object_or_404(Model, id=model_id)
     model_colors = ModelColor.objects.filter(model=model).values_list('color', flat=True)

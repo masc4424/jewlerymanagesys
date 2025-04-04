@@ -4,6 +4,8 @@ from product_inv.models import *
 from django.db.models import Count
 import json
 from django.views.decorators.csrf import csrf_exempt
+from django.db.models import Sum
+from django.http import JsonResponse
 
 
 def get_complete_stone_data(request):
@@ -42,8 +44,54 @@ def create_stone(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)})
 
-from django.db.models import Sum
-from django.http import JsonResponse
+@csrf_exempt
+def update_stone(request):
+    try:
+        stone_id = request.POST.get('stone_id')
+        stone_name = request.POST.get('stone_name')
+        is_active = request.POST.get('is_active')
+        
+        if not stone_id or not stone_name:
+            return JsonResponse({'status': 'error', 'message': 'Stone ID and name are required'})
+        
+        stone = Stone.objects.get(id=stone_id)
+        stone.name = stone_name
+        stone.is_active = is_active
+        stone.save()
+        
+        return JsonResponse({'status': 'success', 'message': 'Stone updated successfully'})
+    except Stone.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Stone not found'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+@csrf_exempt
+def delete_stone(request):
+    try:
+        stone_id = request.POST.get('stone_id')
+        
+        if not stone_id:
+            return JsonResponse({'status': 'error', 'message': 'Stone ID is required'})
+        
+        stone = Stone.objects.get(id=stone_id)
+        
+        # Check if there are any associated types
+        type_count = stone.types.count()
+        if type_count > 0:
+            return JsonResponse({
+                'status': 'error', 
+                'message': f'Cannot delete. This stone has {type_count} associated type(s)'
+            })
+        
+        stone.delete()
+        
+        return JsonResponse({'status': 'success', 'message': 'Stone deleted successfully'})
+    except Stone.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Stone not found'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)})
+
+
 
 def get_model_distribution(model_no):
     try:
@@ -116,7 +164,7 @@ def get_model_distribution(model_no):
                     
                     type_info['distribution'].append({
                         'detail_id': detail.id,
-                        'shape': detail.shape,
+                        # 'shape': detail.shape,
                         'length': detail.length,  # Changed from size to length
                         'breadth': detail.breadth,  # Added breadth
                         'weight': str(detail.weight),
@@ -225,74 +273,120 @@ def create_stone_type(request):
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 @csrf_exempt
-def update_stone(request):
-    try:
-        stone_id = request.POST.get('stone_id')
-        stone_name = request.POST.get('stone_name')
-        is_active = request.POST.get('is_active')
-        
-        if not stone_id or not stone_name:
-            return JsonResponse({'status': 'error', 'message': 'Stone ID and name are required'})
-        
-        stone = Stone.objects.get(id=stone_id)
-        stone.name = stone_name
-        stone.is_active = is_active
-        stone.save()
-        
-        return JsonResponse({'status': 'success', 'message': 'Stone updated successfully'})
-    except Stone.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Stone not found'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)})
+def update_stone_type(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            stone_name = data.get("stone_name")
+            original_type_name = data.get("original_type_name")
+            new_type_name = data.get("new_type_name")
+            
+            # Find the stone instance
+            try:
+                stone = Stone.objects.get(name=stone_name)
+            except Stone.DoesNotExist:
+                return JsonResponse({"error": "Stone not found"}, status=404)
+                
+            # Find the stone type by stone and original type name
+            try:
+                stone_type = StoneType.objects.get(stone=stone, type_name=original_type_name)
+            except StoneType.DoesNotExist:
+                return JsonResponse({"error": "Stone Type not found"}, status=404)
+            
+            # Update the type name
+            stone_type.type_name = new_type_name
+            stone_type.save()
+            
+            return JsonResponse({"message": "Stone Type updated successfully"}, status=200)
+            
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+            
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 @csrf_exempt
-def delete_stone(request):
-    try:
-        stone_id = request.POST.get('stone_id')
-        
-        if not stone_id:
-            return JsonResponse({'status': 'error', 'message': 'Stone ID is required'})
-        
-        stone = Stone.objects.get(id=stone_id)
-        
-        # Check if there are any associated types
-        type_count = stone.types.count()
-        if type_count > 0:
-            return JsonResponse({
-                'status': 'error', 
-                'message': f'Cannot delete. This stone has {type_count} associated type(s)'
-            })
-        
-        stone.delete()
-        
-        return JsonResponse({'status': 'success', 'message': 'Stone deleted successfully'})
-    except Stone.DoesNotExist:
-        return JsonResponse({'status': 'error', 'message': 'Stone not found'})
-    except Exception as e:
-        return JsonResponse({'status': 'error', 'message': str(e)})
+def delete_stone_type(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            stone_name = data.get("stone_name")
+            type_name = data.get("type_name")
+            
+            # Find the stone instance
+            try:
+                stone = Stone.objects.get(name=stone_name)
+            except Stone.DoesNotExist:
+                return JsonResponse({"error": "Stone not found"}, status=404)
+                
+            # Find the stone type by stone and type name
+            try:
+                stone_type = StoneType.objects.get(stone=stone, type_name=type_name)
+            except StoneType.DoesNotExist:
+                return JsonResponse({"error": "Stone Type not found"}, status=404)
+            
+            # Delete the stone type
+            stone_type.delete()
+            
+            return JsonResponse({"message": "Stone Type deleted successfully"}, status=200)
+            
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+            
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+# def get_stone_type_detail_data(request):
+#     stone_name = request.GET.get('stone_name', '')
+#     type_name = request.GET.get('type_name', '')
+
+#     try:
+#         stone = Stone.objects.get(name=stone_name)
+#         stone_type = StoneType.objects.get(stone=stone, type_name=type_name)
+#     except (Stone.DoesNotExist, StoneType.DoesNotExist):
+#         return JsonResponse({'data': []})  # Return empty data if stone or type not found
+
+#     details = StoneTypeDetail.objects.filter(stone_type=stone_type)
+#     data = []
+
+#     for detail in details:
+#         data.append({
+#             'length': detail.length,
+#             'breadth': detail.breadth,
+#             'weight': str(detail.weight),
+#             'rate': str(detail.rate),
+#         })
+
+#     return JsonResponse({'data': data})
 
 def get_stone_type_detail_data(request):
     stone_name = request.GET.get('stone_name', '')
     type_name = request.GET.get('type_name', '')
+    
+    print(f"Fetching data for stone_name: {stone_name}, type_name: {type_name}")
 
     try:
         stone = Stone.objects.get(name=stone_name)
         stone_type = StoneType.objects.get(stone=stone, type_name=type_name)
-    except (Stone.DoesNotExist, StoneType.DoesNotExist):
+    except (Stone.DoesNotExist, StoneType.DoesNotExist) as e:
+        print(f"Error: {str(e)}")
         return JsonResponse({'data': []})  # Return empty data if stone or type not found
 
     details = StoneTypeDetail.objects.filter(stone_type=stone_type)
     data = []
 
     for detail in details:
-        data.append({
+        detail_data = {
+            'id': detail.id,  # Make sure this ID is included!
             'length': detail.length,
             'breadth': detail.breadth,
             'weight': str(detail.weight),
             'rate': str(detail.rate),
-        })
+        }
+        print(f"Adding detail: {detail_data}")
+        data.append(detail_data)
 
-    return JsonResponse({'data': data})
+    response_data = {'data': data}
+    print(f"Returning response: {response_data}")
+    return JsonResponse(response_data)
 
 @csrf_exempt
 def create_stone_type_detail(request):
@@ -322,6 +416,67 @@ def create_stone_type_detail(request):
 
             return JsonResponse({"message": "Detail created successfully"}, status=201)
 
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+def get_stone_type_detail(request, detail_id):
+    try:
+        detail = StoneTypeDetail.objects.get(id=detail_id)
+        data = {
+            'id': detail.id,
+            'length': detail.length,
+            'breadth': detail.breadth,
+            'weight': str(detail.weight),
+            'rate': str(detail.rate),
+        }
+        return JsonResponse(data)
+    except StoneTypeDetail.DoesNotExist:
+        return JsonResponse({"error": "Detail not found"}, status=404)
+    
+@csrf_exempt
+def update_stone_type_detail(request, detail_id):
+    if request.method == "PUT":
+        try:
+            data = json.loads(request.body)
+            stone_name = data.get("stone_name")
+            type_name = data.get("type_name")
+            length = data.get("length")
+            breadth = data.get("breadth")
+            weight = data.get("weight")
+            rate = data.get("rate")
+
+            # Get Stone and StoneType
+            stone = Stone.objects.get(name=stone_name)
+            stone_type = StoneType.objects.get(stone=stone, type_name=type_name)
+            
+            # Get and update the detail
+            detail = StoneTypeDetail.objects.get(id=detail_id)
+            detail.length = length
+            detail.breadth = breadth
+            detail.weight = weight
+            detail.rate = rate
+            detail.save()
+
+            return JsonResponse({"message": "Detail updated successfully"})
+
+        except StoneTypeDetail.DoesNotExist:
+            return JsonResponse({"error": "Detail not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+@csrf_exempt
+def delete_stone_type_detail(request, detail_id):
+    if request.method == "DELETE":
+        try:
+            detail = StoneTypeDetail.objects.get(id=detail_id)
+            detail.delete()
+            return JsonResponse({"message": "Detail deleted successfully"})
+        except StoneTypeDetail.DoesNotExist:
+            return JsonResponse({"error": "Detail not found"}, status=404)
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=400)
 

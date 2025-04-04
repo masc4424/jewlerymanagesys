@@ -1,0 +1,21 @@
+.dataTables_length{
+    margin-bottom: 17px;
+    font-size: 14px;
+  }
+  .dataTables_wrapper {
+    margin-top: 10px;
+  }
+  .dataTables_info {
+    font-size: 14px;
+    margin-top: 6px;
+  }
+  .dataTables_paginate {
+    font-size: 14px;
+    margin-top: 6px;
+  }
+  .dataTable {
+    margin-bottom: 10px;
+  }
+  #stoneTypeTable {
+    margin-bottom: 10px;
+  }

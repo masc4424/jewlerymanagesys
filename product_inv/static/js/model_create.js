@@ -163,29 +163,94 @@ $(document).ready(function() {
         });
     }
     
-    // Function to load stone details based on selected stone type
+  // Function to load stone details based on selected stone type
     function loadStoneDetails(typeSelect) {
         const typeId = typeSelect.val();
         const stoneForm = typeSelect.closest('.stone-form-container');
         
         if (!typeId) return;
         
+        // Clear any existing detail rows first
+        stoneForm.find('.stone-detail-row').remove();
+        
         $.ajax({
             url: `/get_stone_type_details/${typeId}/`,
             type: 'GET',
             dataType: 'json',
             success: function(data) {
-                if (data) {
-                    // Set values and disable fields
-                    stoneForm.find('.stone-weight').val(data.weight).prop('disabled', true);
-                    stoneForm.find('.stone-length').val(data.length).prop('disabled', true);
-                    stoneForm.find('.stone-breadth').val(data.breadth).prop('disabled', true);
-                    // Store the shape value in a hidden input instead of showing it in UI
-                    if (!stoneForm.find('.stone-shape-hidden').length) {
-                        stoneForm.append('<input type="hidden" class="stone-shape-hidden" value="' + data.shape + '">');
-                    } else {
-                        stoneForm.find('.stone-shape-hidden').val(data.shape);
-                    }
+                if (data && data.length > 0) {
+                    // Get the reference point for inserting detail rows
+                    const lastRow = stoneForm.find('.row').last();
+                    
+                    // Create container for all detail rows
+                    const detailsContainer = $('<div class="stone-details-container mt-3"></div>');
+                    
+                    // Add a header for the details section
+                    detailsContainer.append('<h6 class="mb-2">Available Stone Details:</h6>');
+                    
+                    // Add each detail as a row of input fields
+                    $.each(data, function(i, detail) {
+                        const detailRow = $(`
+                            <div class="row stone-detail-row mb-2">
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text">Weight</span>
+                                        <input type="text" class="form-control" value="${detail.weight}" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text">Length</span>
+                                        <input type="text" class="form-control" value="${detail.length}" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text">Breadth</span>
+                                        <input type="text" class="form-control" value="${detail.breadth}" disabled>
+                                    </div>
+                                </div>
+                                <div class="col-12 text-end mt-1">
+                                    <button type="button" class="btn btn-outline-primary btn-sm select-detail-btn" 
+                                            data-weight="${detail.weight}" 
+                                            data-length="${detail.length}" 
+                                            data-breadth="${detail.breadth}"
+                                            data-rate="${detail.rate}">
+                                        Use This Detail
+                                    </button>
+                                </div>
+                            </div>
+                        `);
+                        
+                        detailsContainer.append(detailRow);
+                    });
+                    
+                    // Add the details container after the last row
+                    lastRow.after(detailsContainer);
+                    
+                    // Add event listeners to the "Use This Detail" buttons
+                    stoneForm.find('.select-detail-btn').on('click', function() {
+                        const weight = $(this).data('weight');
+                        const length = $(this).data('length');
+                        const breadth = $(this).data('breadth');
+                        const rate = $(this).data('rate');
+                        
+                        // Set the values in the main form fields
+                        stoneForm.find('.stone-weight').val(weight);
+                        stoneForm.find('.stone-length').val(length);
+                        stoneForm.find('.stone-breadth').val(breadth);
+                        
+                        // Store rate in a hidden field
+                        if (!stoneForm.find('.stone-rate-hidden').length) {
+                            stoneForm.append(`<input type="hidden" class="stone-rate-hidden" value="${rate}">`);
+                        } else {
+                            stoneForm.find('.stone-rate-hidden').val(rate);
+                        }
+                        
+                        // Highlight the selected row
+                        stoneForm.find('.stone-detail-row').removeClass('bg-light');
+                        $(this).closest('.stone-detail-row').addClass('bg-light');
+                    });
                 }
             },
             error: function(xhr, status, error) {

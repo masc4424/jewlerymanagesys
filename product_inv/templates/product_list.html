@@ -2,33 +2,34 @@
 {% load static %}
 
 {% block title %}Models{% endblock %}
-
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/product_list.css' %}">
+{% endblock %}
 {% block content %}
-<style>
-  th {
-    text-transform: none !important;
-}
-
-</style>
-
 <div class="content-wrapper">
     <div class="container-xxl flex-grow-1 container-p-y p-0">
-      <div class="text-end pe-3 pt-3 mb-3">
-        <a href="{% url 'create_new_model' jewelry_type_name=jewelry_type_name %}" class="btn btn-primary">
-          <i class="bx bx-plus"></i> Create Model
-        </a>
       
+      <div class="d-flex justify-content-between align-items-center mb-3">
+          <h4 class="fw-bold mb-1">
+              <a href="{% url 'product_type' %}" class="text-dark text-decoration-none">
+                  <i class="bx bx-arrow-back me-2"></i>
+              </a>
+              Models
+          </h4>
+          <a href="{% url 'create_new_model' jewelry_type_name=jewelry_type_name %}" class="btn btn-primary">
+            <i class="bx bx-plus"></i> Create Model
+          </a>
       </div>
       <div class="card">
-        <h5 class="card-header">Models</h5>
         <div class="table-responsive text-nowrap p-3">
           <table id="modelTable" class="table">
             <thead>
                 <tr>
                     <th>Sr No.</th>
                     <th>Model No</th>
-                    <th>Length (gm)</th>
-                    <th>Breadth (gm)</th>
+                    <!-- <th>Length (mm)</th>
+                    <th>Breadth (gm)</th> -->
+                    <th>Dimensions (LxB)(mm)</th>
                     <th>Weight (gm)</th>
                     <th>Image</th>
                     <th>Material</th>
@@ -76,10 +77,56 @@
                   <div class="mb-3">
                     <label for="edit_colors" class="form-label">Model Colors</label>
                     <select class="form-select select2" id="edit_colors" name="colors[]" multiple="multiple" required>
-                        <option value="Gold">Gold</option>
-                        <option value="Silver">Silver</option>
-                        <option value="Rose Gold">Rose Gold</option>
-                        <option value="Platinum">Platinum</option>
+                      <option value="Black">Black</option>
+                      <option value="White">White</option>
+                      <option value="Gray">Gray</option>
+                      <option value="Silver">Silver</option>
+                      <option value="Gold">Gold</option>
+                      <option value="Rose Gold">Rose Gold</option>
+                      <option value="Platinum">Platinum</option>
+                      <option value="Bronze">Bronze</option>
+                      <option value="Copper">Copper</option>
+                      <option value="Red">Red</option>
+                      <option value="Crimson">Crimson</option>
+                      <option value="Maroon">Maroon</option>
+                      <option value="Burgundy">Burgundy</option>
+                      <option value="Pink">Pink</option>
+                      <option value="Hot Pink">Hot Pink</option>
+                      <option value="Magenta">Magenta</option>
+                      <option value="Salmon">Salmon</option>
+                      <option value="Peach">Peach</option>
+                      <option value="Orange">Orange</option>
+                      <option value="Amber">Amber</option>
+                      <option value="Coral">Coral</option>
+                      <option value="Yellow">Yellow</option>
+                      <option value="Mustard">Mustard</option>
+                      <option value="Beige">Beige</option>
+                      <option value="Ivory">Ivory</option>
+                      <option value="Lime">Lime</option>
+                      <option value="Olive">Olive</option>
+                      <option value="Green">Green</option>
+                      <option value="Emerald">Emerald</option>
+                      <option value="Jade">Jade</option>
+                      <option value="Mint">Mint</option>
+                      <option value="Teal">Teal</option>
+                      <option value="Turquoise">Turquoise</option>
+                      <option value="Blue">Blue</option>
+                      <option value="Sky Blue">Sky Blue</option>
+                      <option value="Azure">Azure</option>
+                      <option value="Cyan">Cyan</option>
+                      <option value="Navy Blue">Navy Blue</option>
+                      <option value="Royal Blue">Royal Blue</option>
+                      <option value="Indigo">Indigo</option>
+                      <option value="Purple">Purple</option>
+                      <option value="Violet">Violet</option>
+                      <option value="Lavender">Lavender</option>
+                      <option value="Lilac">Lilac</option>
+                      <option value="Brown">Brown</option>
+                      <option value="Chocolate">Chocolate</option>
+                      <option value="Tan">Tan</option>
+                      <option value="Mahogany">Mahogany</option>
+                      <option value="Bistre">Bistre</option>
+                      <option value="Charcoal">Charcoal</option>
                     </select>
                   </div>
                   <div class="mb-3">

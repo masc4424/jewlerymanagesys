@@ -24,4 +24,7 @@ def product_list(request, jewelry_type_name):
 def create_new_model(request, jewelry_type_name):
     jewelry_type = get_object_or_404(JewelryType, name=jewelry_type_name)
     jewelry_type_id = jewelry_type.id
-    return render(request, 'create_model.html', {'jewelry_type_id': jewelry_type_id})
+    return render(request, 'create_model.html', {
+        'jewelry_type_id': jewelry_type_id, 
+        'jewelry_type_name': jewelry_type_name  # Pass jewelry_type_name to template
+    })

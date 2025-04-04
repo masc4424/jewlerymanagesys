@@ -9,7 +9,10 @@ $(document).ready(function() {
     var dataTable = $('#detailTable').DataTable({
         ajax: {
             url: `/get-stone-type-detail-data/?stone_name=${encodeURIComponent(stoneName)}&type_name=${encodeURIComponent(typeName)}`,
-            dataSrc: 'data'
+            dataSrc: function(json) {
+                console.log("API response:", json);  // Log the entire API response
+                return json.data;
+            }
         },
         columns: [
             { 
@@ -18,33 +21,47 @@ $(document).ready(function() {
                     return meta.row + 1; // Sr No.
                 }
             },
-            { data: 'length' },
-            { data: 'breadth' },
+            { 
+                data: null,
+                render: function(data) {
+                    const length = parseFloat(data.length);
+                    const breadth = parseFloat(data.breadth);
+    
+                    // Remove .00 if it's a whole number
+                    const formattedLength = length % 1 === 0 ? length.toFixed(0) : length.toFixed(2);
+                    const formattedBreadth = breadth % 1 === 0 ? breadth.toFixed(0) : breadth.toFixed(2);
+    
+                    return `${formattedLength} × ${formattedBreadth}`; // Dimensions column
+                }
+            },
             { data: 'weight' },
             { data: 'rate' },
             {
                 data: null,
-                render: function() {
+                render: function(data, type, row) {
+                    // Debug why id is undefined
+                    console.log("Row data in render:", row);
+                    
+                    // Fallback to using an object property that definitely exists if id is undefined
+                    const id = row.id || 'missing-id';
+                    
                     return `
-                        <div class="dropdown">
-                            <button type="button" class="btn p-0 dropdown-toggle hide-arrow" data-bs-toggle="dropdown">
-                                <i class="bx bx-dots-vertical-rounded"></i>
-                            </button>
-                            <div class="dropdown-menu">
-                                <a class="dropdown-item" href="javascript:void(0);">
-                                    <i class="bx bx-edit-alt me-1"></i> Edit
-                                </a>
-                                <a class="dropdown-item" href="javascript:void(0);">
-                                    <i class="bx bx-trash me-1"></i> Delete
-                                </a>
-                            </div>
+                        <div class="d-flex gap-3">
+                           <a class="edit-detail" href="javascript:void(0);" data-detail-id="${id}">
+                                <i class="bx bx-edit-alt me-1 text-secondary"></i>
+                            </a>
+                            <a class="delete-detail" href="javascript:void(0);" data-detail-id="${id}">
+                                <i class="bx bx-trash me-1 text-secondary"></i>
+                            </a>
                         </div>
+                       
                     `;
                 }
             }
         ]
     });
     
+    // Create detail form submission
     $('#createDetailForm').submit(function(event) {
         event.preventDefault();
         
@@ -81,6 +98,133 @@ $(document).ready(function() {
             error: function(xhr, status, error) {
                 console.error("Error:", error);
                 Swal.fire('Error', 'Failed to add Detail.', 'error');
+            }
+        });
+    });
+    
+    // Edit detail - using data attributes and checking the DOM element
+    $('#detailTable').on('click', '.edit-detail', function(e) {
+        console.log("Edit button clicked", this);
+        
+        // Directly access the attribute with attr() instead of data()
+        var detailId = $(this).attr('data-detail-id');
+        console.log("Edit clicked, Detail ID from attr():", detailId);
+        
+        // As a fallback, try data()
+        if (!detailId) {
+            detailId = $(this).data('detail-id');
+            console.log("Fallback to data(): Detail ID:", detailId);
+        }
+        
+        if (!detailId || detailId === 'undefined' || detailId === 'missing-id') {
+            Swal.fire('Error', 'Cannot identify the detail to edit.', 'error');
+            return;
+        }
+        
+        // Fetch the detail data
+        $.ajax({
+            type: 'GET',
+            url: `/get-stone-type-detail/${detailId}/`,
+            success: function(response) {
+                console.log("Detail data received:", response);
+                
+                // Populate the edit form with data
+                $('#editDetailId').val(detailId);
+                $('#editLength').val(response.length);
+                $('#editBreadth').val(response.breadth);
+                $('#editWeight').val(response.weight);
+                $('#editRate').val(response.rate);
+                
+                // Show the edit modal
+                $('#editDetailModal').modal('show');
+            },
+            error: function(xhr, status, error) {
+                console.error("Error fetching detail:", xhr.status, error);
+                Swal.fire('Error', 'Failed to fetch detail data.', 'error');
+            }
+        });
+    });
+    
+    // Update detail form submission
+    $('#editDetailForm').submit(function(event) {
+        event.preventDefault();
+        
+        var detailId = $('#editDetailId').val();
+        console.log("Submitting edit form for Detail ID:", detailId);
+        
+        var formData = {
+            stone_name: stoneName,
+            type_name: typeName,
+            length: $('#editLength').val(),
+            breadth: $('#editBreadth').val(),
+            weight: $('#editWeight').val(),
+            rate: $('#editRate').val()
+        };
+        
+        $.ajax({
+            type: 'PUT',
+            url: `/update-stone-type-detail/${detailId}/`,
+            data: JSON.stringify(formData),
+            contentType: 'application/json',
+            success: function(response) {
+                // Close the modal
+                $('#editDetailModal').modal('hide');
+                
+                // Reload the DataTable
+                dataTable.ajax.reload();
+                
+                // Show success message
+                Swal.fire('Success', 'Detail updated successfully!', 'success');
+            },
+            error: function(xhr, status, error) {
+                console.error("Error:", error);
+                Swal.fire('Error', 'Failed to update Detail.', 'error');
+            }
+        });
+    });
+    
+    // Delete detail - using attr() instead of data()
+    $('#detailTable').on('click', '.delete-detail', function() {
+        // Direct access the attribute
+        var detailId = $(this).attr('data-detail-id');
+        console.log("Delete clicked, Detail ID from attr():", detailId);
+        
+        // As a fallback, try data()
+        if (!detailId) {
+            detailId = $(this).data('detail-id');
+            console.log("Fallback to data(): Detail ID:", detailId);
+        }
+        
+        if (!detailId || detailId === 'undefined' || detailId === 'missing-id') {
+            Swal.fire('Error', 'Cannot identify the detail to delete.', 'error');
+            return;
+        }
+        
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: 'btn-primary',
+            cancelButtonColor: 'btn-secondary',
+            confirmButtonText: 'Yes'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $.ajax({
+                    type: 'DELETE',
+                    url: `/delete-stone-type-detail/${detailId}/`,
+                    success: function(response) {
+                        // Reload the DataTable
+                        dataTable.ajax.reload();
+                        
+                        // Show success message
+                        Swal.fire('Deleted!', 'Detail has been deleted.', 'success');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error:", error);
+                        Swal.fire('Error', 'Failed to delete Detail.', 'error');
+                    }
+                });
             }
         });
     });

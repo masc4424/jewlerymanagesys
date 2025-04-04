@@ -2,29 +2,38 @@
 {% load static %}
 
 {% block title %}Stone Type Details{% endblock %}
+{% block extra_css %}
+    <link rel="stylesheet" href="{% static 'css/stone_type_details.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="content-wrapper">
     <div class="container-xxl flex-grow-1 container-p-y p-0">
-        <div class="mb-3 d-flex justify-content-end">
-            <!-- <h4>Details for {{ stone_name }} - {{ type_name }}</h4> -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+           
+            <h4 class="fw-bold mb-1">
+                <a href="{% url 'stone_types' %}?stone_name={{ stone_name|urlencode }}" class="text-dark text-decoration-none">
+                    <i class="bx bx-arrow-back me-2"></i>
+                </a>
+                Stone Type Details - {{ type_name }}
+            </h4>
             <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDetailModal">
                 <i class="bx bx-plus me-1"></i> Add New Detail
             </button>
         </div>
 
         <div class="card">
-            <h5 class="card-header">Stone Type Details - {{ type_name }}</h5>
             <div class="table-responsive text-nowrap p-3">
                 <div id="detail-data" data-stone-name="{{ stone_name }}" data-type-name="{{ type_name }}"></div>
                 <table id="detailTable" class="table">
                     <thead>
                         <tr>
                             <th>Sr No.</th>
-                            <th>Length</th>
-                            <th>Breadth</th>
-                            <th>Weight</th>
-                            <th>Rate</th>
+                            <th>Dimensions (LxB)(mm)</th>
+                            <!-- <th>Length</th>
+                            <th>Breadth</th> -->
+                            <th>Weight (gm)</th>
+                            <th>Rate (<i class="bx bx-rupee"></i>)</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -46,19 +55,19 @@
                 <form id="createDetailForm">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="length" class="form-label">Length</label>
+                            <label for="length" class="form-label">Length (mm)</label>
                             <input type="text" class="form-control" id="length" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="breadth" class="form-label">Breadth</label>
+                            <label for="breadth" class="form-label">Breadth (mm)</label>
                             <input type="text" class="form-control" id="breadth" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="weight" class="form-label">Weight</label>
+                            <label for="weight" class="form-label">Weight (gm)</label>
                             <input type="number" step="0.01" class="form-control" id="weight" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="rate" class="form-label">Rate</label>
+                            <label for="rate" class="form-label">Rate(<i class="bx bx-rupee"></i>)</label>
                             <input type="number" step="0.01" class="form-control" id="rate" required>
                         </div>
                     </div>
@@ -69,6 +78,44 @@
                 </form>
             </div>
             
+        </div>
+    </div>
+</div>
+<!-- Edit Detail Modal -->
+<div class="modal fade" id="editDetailModal" tabindex="-1" aria-labelledby="editDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editDetailModalLabel">Edit Detail</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editDetailForm">
+                    <input type="hidden" id="editDetailId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="editLength" class="form-label">Length</label>
+                            <input type="text" class="form-control" id="editLength" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editBreadth" class="form-label">Breadth</label>
+                            <input type="text" class="form-control" id="editBreadth" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editWeight" class="form-label">Weight</label>
+                            <input type="number" step="0.01" class="form-control" id="editWeight" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="editRate" class="form-label">Rate</label>
+                            <input type="number" step="0.01" class="form-control" id="editRate" required>
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
