@@ -5,7 +5,7 @@ from product_inv.models import *  # Importing Model from product_inv
 
 class Order(models.Model):
     client_name = models.CharField(max_length=255)
-    order_unique_id = models.CharField(max_length=50, null=True, blank=True, default="")
+    order_unique_id = models.CharField(max_length=255, null=True, blank=True, default="")
     model = models.ForeignKey(Model, on_delete=models.CASCADE, related_name='orders')
     no_of_pieces = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     date_of_order = models.DateField(default=date.today)

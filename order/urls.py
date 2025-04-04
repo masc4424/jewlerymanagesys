@@ -4,10 +4,10 @@ from order.views import*
 
 # view
 urlpatterns = [
-    path('order_list', order_list, name='product'),
-    path('add_order', add_order, name='product_list'),
-    path('defective_order', defective_order, name='product_type'),
-    path('repeted_order', repeted_order, name='product_type'),
+    path('order_list', order_list, name='orders'),
+    path('add_order', add_order, name='add_order'),
+    path('defective_order', defective_order, name='defective_order'),
+    path('repeted_order', repeted_order, name='repeted_order'),
     path('invoices', invoice_list, name='invoices'),
     path('invoice_add', invoice_add, name='invoices'),
 ]

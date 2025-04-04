@@ -51,3 +51,12 @@ class RawStones(models.Model):
 
     def __str__(self):
         return f"{self.stone_type.type_name} for {self.model.model_no}"
+    
+class StoneCount(models.Model):
+    id = models.AutoField(primary_key=True)
+    count = models.IntegerField()
+    stone_type_details = models.ForeignKey(StoneTypeDetail, on_delete=models.CASCADE, related_name='stone_counts')
+    model = models.ForeignKey('Model', on_delete=models.CASCADE, related_name='stone_counts')
+ 
+    def __str__(self):
+        return f"{self.model.model_no} - {self.stone_type_details.stone_type.type_name} ({self.count})"
