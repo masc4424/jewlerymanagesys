@@ -164,6 +164,23 @@ label.form-label {
                                 <div class="tab-pane fade show active" id="stones-section" role="tabpanel">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h5 class="mb-0">Stone Used</h5>
+                                        <div id="stoneTotalContainer" class="">
+                                            <div class="">
+                                                
+                                                <div class="card-body">
+                                                    <div class="d-flex gap-5">
+                                                        <div class="d-flex gap-3 justify-content-between">
+                                                            <strong>Total Rate:</strong>
+                                                            <span id="totalStoneRate" class="bg-label-warning px-2"><i class="bx bx-rupee fs-big"></i>0.00</span>
+                                                        </div>
+                                                        <div class="d-flex gap-2 justify-content-between">
+                                                            <strong>Total Weight:</strong>
+                                                            <span id="totalStoneWeight" class="bg-label-warning px-2">0.00 gm</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <button type="button" class="btn btn-primary" id="addStoneButton">Add Stone Used</button>
                                     </div>
                                     <div id="stonesContainer">
@@ -180,7 +197,7 @@ label.form-label {
                                                     <th>Weight (gm)</th>
                                                     <th>Dimensions (LxB)(cm)</th>
                                                     <!-- <th>Breadth</th> -->
-                                                    <th class="p-2">Rate (<i class="bx bx-rupee fs-big"></i>)</th>
+                                                    <th class="px-2">Rate (<i class="bx bx-rupee fs-big"></i>)</th>
                                                     <th>Count</th>
                                                     <th>Action</th>
                                                 </tr>
@@ -190,35 +207,33 @@ label.form-label {
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div id="stoneTotalContainer" class="mt-3">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h6 class="mb-0">Total Stone Details</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="row">
-                                                    <div class="col-md-6">
-                                                        <div class="d-flex justify-content-between">
-                                                            <strong>Total Rate:</strong>
-                                                            <span id="totalStoneRate">0.00</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <div class="d-flex justify-content-between">
-                                                            <strong>Total Weight:</strong>
-                                                            <span id="totalStoneWeight">0.00</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    
                                 </div>
 
                                 <!-- Raw Material Section -->
                                 <div class="tab-pane fade" id="raw-material-section" role="tabpanel">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <h5 class="mb-0">Raw Material</h5>
+                                        <div id="rawMaterialTotalContainer" class="">
+                                            <div class="">
+                                               
+                                                    <div class="d-flex gap-5">
+                                                        <div class="">
+                                                            <div class="d-flex justify-content-between gap-2">
+                                                                <strong>Total Material Weight:</strong>
+                                                                <span id="totalRawMaterialWeight" class="bg-label-warning px-1">0.00 gm</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="">
+                                                            <div class="d-flex justify-content-between gap-2">
+                                                                <strong>Total Material Value:</strong>
+                                                                <span id="totalRawMaterialValue" class="bg-label-warning px-1"><i class="bx bx-rupee fs-big"></i>0.00</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                
+                                            </div>
+                                        </div>
                                         <button type="button" class="btn btn-primary " id="addRawMaterialButton">Add Raw Material</button>
                                     </div>
                                     <div id="rawMaterialsContainer">
@@ -241,29 +256,7 @@ label.form-label {
                                             </tbody>
                                         </table>
                                     </div>
-                                    <div id="rawMaterialTotalContainer" class="mt-3">
-                                        <div class="card">
-                                            <div class="card-header">
-                                                <h6 class="mb-0">Total Raw Material Details</h6>
-                                            </div>
-                                            <div class="card-body">
-                                                <div class="row">
-                                                    <div class="col-md-6">
-                                                        <div class="d-flex justify-content-between">
-                                                            <strong>Total Material Weight:</strong>
-                                                            <span id="totalRawMaterialWeight">0.00</span>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <div class="d-flex justify-content-between">
-                                                            <strong>Total Material Value:</strong>
-                                                            <span id="totalRawMaterialValue">0.00</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                   
                                 </div>
                             </div>
                         </div>
