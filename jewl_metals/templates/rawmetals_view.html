@@ -1,0 +1,207 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Metals{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/rawmetal_view.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="content-wrapper">
+    <div class="container-xxl flex-grow-1 container-p-y p-0">
+        <div class="text-end pe-3 pt-3 mb-3">
+            <button class="btn btn-primary" id="addMetal">
+                <i class="bx bx-plus"></i> Add Metal
+            </button>
+
+        </div>
+        <div class="card">
+            <h5 class="card-header">Metals</h5>
+            <div class="table-responsive text-nowrap p-3">
+                <table id="metalTable" class="table">
+                    <thead>
+                        <tr>
+                            <th>Sr No.</th>
+                            <th>Metal Name</th>
+                            <th>In Stock </th>
+                            <th>Todays Rate</th>
+                            <th>Warning Weight</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Add Metal Modal -->
+<div class="modal fade" id="addMetalModal" tabindex="-1" aria-labelledby="addMetalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addMetalModalLabel">Add New Metal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addMetalForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="metalName" class="form-label">Metal Name</label>
+                        <input type="text" class="form-control" id="metalName" name="name" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="totalAvailableWeight" class="form-label">Total Available Weight</label>
+                            <input type="number" step="0.01" class="form-control" id="totalAvailableWeight"
+                                name="total_available_weight" value="0.00" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="unit" class="form-label">Unit</label>
+                            <select class="form-select" id="unit" name="unit">
+                                <option value="gram">Gram</option>
+                                <option value="kg" selected>Kilogram</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="thresholdLimit" class="form-label">Threshold Limit</label>
+                            <input type="number" step="0.01" class="form-control" id="thresholdLimit"
+                                name="threshold_limit" value="0.00" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="thresholdUnit" class="form-label">Threshold Unit</label>
+                            <select class="form-select" id="thresholdUnit" name="threshold_unit">
+                                <option value="gram">Gram</option>
+                                <option value="kg" selected>Kilogram</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveMetalBtn">Save Metal</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Rate Modal -->
+<div class="modal fade" id="addRateModal" tabindex="-1" aria-labelledby="addRateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addRateModalLabel">Add Rate for <span id="rateMetalName"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addRateForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="rateMetalId" name="metal_id">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="rateWeight" class="form-label">Weight</label>
+                            <input type="number" step="0.01" class="form-control" id="rateWeight" name="weight"
+                                required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="rateUnit" class="form-label">Unit</label>
+                            <select class="form-select" id="rateUnit" name="unit">
+                                <option value="gram">Gram</option>
+                                <option value="kg" selected>Kilogram</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="rateCurrency" class="form-label">Currency</label>
+                            <select class="form-select" id="rateCurrency" name="currency">
+                                <option value="INR" selected>Indian Rupee (₹)</option>
+                                <option value="USD">US Dollar ($)</option>
+                                <option value="EUR">Euro (€)</option>
+                                <option value="GBP">British Pound (£)</option>
+                                <option value="AUD">Australian Dollar (A$)</option>
+                                <option value="CAD">Canadian Dollar (C$)</option>
+                                <option value="JPY">Japanese Yen (¥)</option>
+                                <option value="CNY">Chinese Yuan (¥)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="rate" class="form-label">Rate</label>
+                            <input type="number" step="0.01" class="form-control" id="rate" name="rate" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="saveRateBtn">Save Rate</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Metal Modal -->
+<div class="modal fade" id="editMetalModal" tabindex="-1" aria-labelledby="editMetalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editMetalModalLabel">Edit Metal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editMetalForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="editMetalId" name="id">
+                    <div class="mb-3">
+                        <label for="editMetalUniqueId" class="form-label">Metal ID</label>
+                        <input type="text" class="form-control" id="editMetalUniqueId" name="metal_unique_id" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMetalName" class="form-label">Metal Name</label>
+                        <input type="text" class="form-control" id="editMetalName" name="name" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="editTotalAvailableWeight" class="form-label">Total Available Weight</label>
+                            <input type="number" step="0.01" class="form-control" id="editTotalAvailableWeight"
+                                name="total_available_weight" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editUnit" class="form-label">Unit</label>
+                            <select class="form-select" id="editUnit" name="unit">
+                                <option value="gram">Gram</option>
+                                <option value="kg">Kilogram</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="editThresholdLimit" class="form-label">Threshold Limit</label>
+                            <input type="number" step="0.01" class="form-control" id="editThresholdLimit"
+                                name="threshold_limit" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editThresholdUnit" class="form-label">Threshold Unit</label>
+                            <select class="form-select" id="editThresholdUnit" name="threshold_unit">
+                                <option value="gram">Gram</option>
+                                <option value="kg">Kilogram</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="updateMetalBtn">Update Metal</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/rawmetal_view.js' %}"></script>
+{% endblock %}

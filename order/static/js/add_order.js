@@ -194,4 +194,46 @@ $(document).ready(function() {
         event.preventDefault(); // Prevent the default form submission
         submitOrder(); // Call the function to submit the order
     });
+
+    $('#itemType').change(function() {
+        const selectedTypeId = $(this).val();
+        const modelNoSelect = $('#model_no');
+        
+        // Clear the current options in the model dropdown
+        modelNoSelect.empty().append('<option value="">Select Model</option>');
+        
+        // If a valid type is selected, fetch the models
+        if (selectedTypeId) {
+            // Show loading indication (optional)
+            modelNoSelect.prop('disabled', true);
+            
+            // Fetch models for the selected jewelry type using your existing endpoint
+            $.ajax({
+                url: `/get-models-by-type/${selectedTypeId}/`,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    // Populate the models dropdown
+                    $.each(data.models, function(index, model) {
+                        const option = $('<option></option>')
+                            .val(model.id)
+                            .text(model.model_no)
+                            .data('length', model.length)
+                            .data('breadth', model.breadth)
+                            .data('weight', model.weight)
+                            .data('imageUrl', model.model_img);
+                        
+                        modelNoSelect.append(option);
+                    });
+                    
+                    // Enable the select
+                    modelNoSelect.prop('disabled', false);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching models:', error);
+                    modelNoSelect.prop('disabled', false);
+                }
+            });
+        }
+    });
 });

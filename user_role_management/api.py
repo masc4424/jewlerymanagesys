@@ -222,3 +222,26 @@ def get_users(request):
 def get_roles(request):
     roles = Role.objects.all().values("id", "role_name", "role_unique_id")
     return JsonResponse({"roles": list(roles)})
+
+@csrf_exempt
+def update_role(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        role_unique_id = data.get('role_unique_id')
+        new_role_name = data.get('role_name')
+
+        try:
+            # Check if role exists
+            role = get_object_or_404(Role, role_unique_id=role_unique_id)
+            
+            # Check if new role name already exists (excluding current role)
+            if Role.objects.filter(role_name=new_role_name).exclude(role_unique_id=role_unique_id).exists():
+                return JsonResponse({'error': 'Role name already exists'}, status=400)
+            
+            # Update role
+            role.role_name = new_role_name
+            role.save()
+            
+            return JsonResponse({'message': 'Role updated successfully'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
