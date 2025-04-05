@@ -360,15 +360,18 @@ $(document).ready(function() {
             
             // Add to the array of stones
             addedStones.push(stoneData);
+            const formatNumber = (num) => {
+                return parseFloat(num) % 1 === 0 ? parseInt(num) : num;
+            };
             
             // Add to the displayed table
             const newRow = `
                 <tr data-index="${addedStones.length - 1}">
                     <td>${stoneName}</td>
                     <td>${stoneType}</td>
-                    <td>${weight}</td>
-                    <td>${length}</td>
-                    <td>${breadth}</td>
+                    <td>${formatNumber(weight)}</td>
+                    <td>${formatNumber(length)} x ${formatNumber(breadth)}</td>
+                    <td>${formatNumber(rate)}</td>
                     <td>${count}</td>
                     <td>
                         <button type="button" class="btn bg-label-danger btn-sm remove-stone">Remove</button>
