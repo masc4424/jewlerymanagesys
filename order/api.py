@@ -49,30 +49,52 @@ def order_add(request):
 
             # Extract necessary fields
             client_name = data['client_name']
+            contact_no = data['contact_no']
+            address = data['address']
             date_of_order = parse_date(data['date_of_order'])
-            order_item_order = data.get('order_item_order')  # Fetch orderItemOrder from the request
+            est_delivery_date = parse_date(data['est_delivery_date'])
+            order_number = data['order_number']
+            items = data['items']
+            item_order = data.get('item_order')
 
-            # Create the order first
-            order = Order.objects.create(
-                client_name=client_name,
-                model_id=data['model'],
-                no_of_pieces=data['no_of_pieces'],
-                date_of_order=date_of_order,
-                est_delivery_date=parse_date(data['est_delivery_date']),
-                contact_no=data['contact_no'],
-                mrp=data['mrp'],
-                discount=data.get('discount', 0.00),
-                color_id=data['color']
-            )
+            # Create orders for each item
+            created_orders = []
+            
+            for item in items:
+                # Create the order
+                order = Order.objects.create(
+                    client_name=client_name,
+                    model_id=item['model'],
+                    no_of_pieces=item['no_of_pieces'],
+                    date_of_order=date_of_order,
+                    est_delivery_date=est_delivery_date,
+                    contact_no=contact_no,
+                    address=address,
+                    mrp=item['mrp'],
+                    discount=item.get('discount', 0.00),
+                    color_id=item['color']
+                )
 
-            # Use orderItemOrder instead of order.id for unique_id generation
-            unique_id = generate_unique_id(client_name, order_item_order, date_of_order)
+                # Generate unique ID for each order
+                unique_id = generate_unique_id(client_name, item_order, date_of_order)
+                
+                # Update the order with the unique_id
+                order.order_unique_id = unique_id
+                order.save()
+                
+                created_orders.append({
+                    'order_id': order.id,
+                    'order_unique_id': unique_id
+                })
 
-            # Update the order with the unique_id
-            order.order_unique_id = unique_id
-            order.save()
-
-            return JsonResponse({'message': 'Order created', 'order_id': order.id, 'order_unique_id': unique_id}, status=201)
+            return JsonResponse({
+                'message': 'Orders created successfully', 
+                'orders': created_orders,
+                'count': len(created_orders)
+            }, status=201)
+            
+        except KeyError as e:
+            return JsonResponse({'error': str(e)}, status=400)
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
@@ -94,9 +116,11 @@ def generate_unique_id(customer_name, order_id, date_of_order):
     return unique_id
 
 def get_model_color(request, model_id):
-    model = get_object_or_404(Model, id=model_id)  # Fetch by primary key (id)
-    colors = model.model_colors.values_list('color', flat=True)
-    return JsonResponse({'model_id': model.id, 'colors': list(colors)})
+    model = get_object_or_404(Model, id=model_id)
+    colors = model.model_colors.all().values('id', 'color')
+    formatted_colors = [{'id': c['id'], 'name': c['color']} for c in colors]
+    return JsonResponse({'model_id': model.id, 'colors': formatted_colors})
+
 
 def get_models_by_type(request, jewelry_type_id):
     jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)  # Fetch by primary key (id)

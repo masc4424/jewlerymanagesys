@@ -180,12 +180,18 @@ $(document).ready(function() {
             contentType: 'application/json',
             data: JSON.stringify(customerDetails),
             success: function(response) {
-                alert('Order created successfully! Order ID: ' + response.order_id);
-                // Optionally, you can redirect or reset the form here
+                // Update for multiple orders
+                if (response.orders && response.orders.length > 0) {
+                    let message = 'Order(s) created successfully!\n';
+                    response.orders.forEach(function(order) {
+                        message += `Order ID: ${order.order_id}, Unique ID: ${order.order_unique_id}\n`;
+                    });
+                    alert(message);
+                    // Optionally, you can redirect or reset the form here
+                } else {
+                    alert('Order created but no order details returned.');
+                }
             },
-            error: function(xhr) {
-                alert('Error creating order: ' + xhr.responseJSON.error);
-            }
         });
     }
     
@@ -232,6 +238,44 @@ $(document).ready(function() {
                 error: function(xhr, status, error) {
                     console.error('Error fetching models:', error);
                     modelNoSelect.prop('disabled', false);
+                }
+            });
+        }
+    });
+
+    $('#model_no').change(function() {
+        const selectedModelId = $(this).val();
+        const colorSelect = $('#model_color');
+        
+        // Clear the current options in the color dropdown
+        colorSelect.empty().append('<option value="">Select Color</option>');
+        
+        // If a valid model is selected, fetch the colors
+        if (selectedModelId) {
+            // Show loading indication (optional)
+            colorSelect.prop('disabled', true);
+            
+            // Fetch colors for the selected model
+            $.ajax({
+                url: `/get-model-color/${selectedModelId}/`,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    // Populate the colors dropdown
+                    $.each(data.colors, function(index, color) {
+                        const option = $('<option></option>')
+                            .val(color.id)
+                            .text(color.name);
+                        
+                        colorSelect.append(option);
+                    });
+                    
+                    // Enable the select
+                    colorSelect.prop('disabled', false);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error fetching colors:', error);
+                    colorSelect.prop('disabled', false);
                 }
             });
         }

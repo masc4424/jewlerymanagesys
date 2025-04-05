@@ -68,8 +68,8 @@
         <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
           <div class="app-brand demo">
             <a href="index.html" class="app-brand-link">
-              <!-- <span class="app-brand-logo demo">
-                <svg
+              <span class="app-brand-logo demo">
+                <!-- <svg
                   width="25"
                   viewBox="0 0 25 42"
                   version="1.1"
@@ -136,127 +136,76 @@
 
           <ul class="menu-inner py-1">
             <!-- Dashboard -->
-            <li class="menu-item">
+            <li class="menu-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
               <a href="{% url 'dashboard' %}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-home-circle"></i>
                 <div data-i18n="Analytics">Dashboard</div>
               </a>
             </li>
-
-            <!-- <li class="menu-item">
-              <a href="{% url 'orders' %}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-home-circle"></i>
-                <div data-i18n="Analytics">Orders</div>
-              </a>
-            </li>
-
-            <li class="menu-item">
-              <a href="{% url 'defective_order' %}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-home-circle"></i>
-                <div data-i18n="Analytics">Defected Orders</div>
-              </a>
-            </li>
-
-            <li class="menu-item">
-              <a href="{% url 'repeted_order' %}" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-home-circle"></i>
-                <div data-i18n="Analytics">Repeated Orders</div>
-              </a>
-            </li> -->
-
-            <li class="menu-item">
+            
+            <li class="menu-item {% if request.resolver_match.url_name == 'orders' or request.resolver_match.url_name == 'defective_order' or request.resolver_match.url_name == 'repeted_order' or request.resolver_match.url_name == 'add_order' %}active open{% endif %}">              
               <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-cart"></i>
                 <div data-i18n="Layouts">Orders</div>
               </a>
-
+            
               <ul class="menu-sub">
-                <li class="menu-item">
+                <li class="menu-item {% if request.resolver_match.url_name == 'orders' or request.resolver_match.url_name == 'add_order' %}active{% endif %}">
                   <a href="{% url 'orders' %}" class="menu-link">
                     <div data-i18n="Analytics">Order List</div>
                   </a>
                 </li>
-
-                
-                <li class="menu-item">
+                <li class="menu-item {% if request.resolver_match.url_name == 'defective_order' %}active{% endif %}">
                   <a href="{% url 'defective_order' %}" class="menu-link">
                     <div data-i18n="Analytics">Defected Orders</div>
                   </a>
                 </li>
-
-                <li class="menu-item">
+                <li class="menu-item {% if request.resolver_match.url_name == 'repeted_order' %}active{% endif %}">
                   <a href="{% url 'repeted_order' %}" class="menu-link">
                     <div data-i18n="Analytics">Repeated Orders</div>
                   </a>
                 </li>
-                <!-- <li class="menu-item">
-                  <a href="" class="menu-link">
-                    <div data-i18n="Fluid">Products</div>
-                  </a>
-                </li> -->
-                <!-- <li class="menu-item">
-                  <a href="" class="menu-link">
-                    <div data-i18n="Blank">Stock Alerts</div>
-                  </a>
-                </li> -->
               </ul>
             </li>
-
-            <!-- <li class="menu-item">
-              <a href="" class="menu-link">
-                <i class="menu-icon tf-icons bx bx-home-circle"></i>
-                <div data-i18n="Analytics">Customers</div>
-              </a>
-            </li> -->
-
-            <li class="menu-item">
+            
+            <li class="menu-item {% if request.resolver_match.url_name == 'product_type' or request.resolver_match.url_name == 'product_list' or request.resolver_match.url_name == 'create_new_model' or request.resolver_match.url_name == 'product' %}active{% endif %}">
               <a href="{% url 'product_type' %}" class="menu-link">
                 <i class="menu-icon tf-icons bx bx-basket"></i>
                 <div data-i18n="Analytics">Inventory</div>
               </a>
             </li>
-
-            <li class="menu-item">
+            
+            <li class="menu-item {% if request.resolver_match.url_name == 'stone_list' or request.resolver_match.url_name == 'stone_types' or request.resolver_match.url_name == 'stone_type_details' or request.resolver_match.url_name == 'metal_list' or request.resolver_match.url_name == 'role_list' %}active open{% endif %}">              
               <a href="javascript:void(0);" class="menu-link menu-toggle">
                 <i class="menu-icon tf-icons bx bx-layout"></i>
                 <div data-i18n="Layouts">Data Master</div>
               </a>
-
               <ul class="menu-sub">
-                <li class="menu-item">
-                  <a href="" class="menu-link">
+                <li class="menu-item {% if request.resolver_match.url_name == 'role_list'%}active{% endif %}">
+                  <a href="{% url 'role_list' %}" class="menu-link">
                     <div data-i18n="Without menu">User Roles</div>
                   </a>
                 </li>
-                <li class="menu-item">
+                <li class="menu-item {% if request.resolver_match.url_name == 'stone_list' or request.resolver_match.url_name == 'stone_types' or request.resolver_match.url_name == 'stone_type_details' %}active{% endif %}">
                   <a href="{% url 'stone_list' %}" class="menu-link">
                     <div data-i18n="Without navbar">Stones</div>
                   </a>
                 </li>
-                <li class="menu-item">
-                  <a href="" class="menu-link">
+                <li class="menu-item {% if request.resolver_match.url_name == 'metal_list'%}active{% endif %}">
+                  <a href="{% url 'metal_list' %}" class="menu-link">
                     <div data-i18n="Container">Raw Materials</div>
                   </a>
                 </li>
-                <!-- <li class="menu-item">
-                  <a href="" class="menu-link">
-                    <div data-i18n="Fluid">Products</div>
-                  </a>
-                </li> -->
-                <!-- <li class="menu-item">
-                  <a href="" class="menu-link">
-                    <div data-i18n="Blank">Stock Alerts</div>
-                  </a>
-                </li> -->
               </ul>
             </li>
-
-            <li class="menu-item">
+            
+            <li class="menu-item {% if request.resolver_match.url_name == 'user_table' %}active{% endif %}">
               <a href="{% url 'user_table' %}" class="menu-link">
                 <i class="menu-icon tf-icons bx bxs-user"></i>
                 <div data-i18n="Analytics">Users</div>
               </a>
             </li>
+            
 
           </ul>
         </aside>
@@ -293,7 +242,7 @@
 
               <ul class="navbar-nav flex-row align-items-center ms-auto">
                 <!-- Place this tag where you want the button to render. -->
-                <li class="nav-item lh-1 me-3">
+                <!-- <li class="nav-item lh-1 me-3">
                   <a
                     class="github-button"
                     href="https://github.com/themeselection/sneat-html-admin-template-free"
@@ -303,7 +252,7 @@
                     aria-label="Star themeselection/sneat-html-admin-template-free on GitHub"
                     >Star</a
                   >
-                </li>
+                </li> -->
 
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -341,7 +290,7 @@
                           </div>
                           <div class="flex-grow-1">
                             <span class="fw-semibold d-block">{{ request.user.userprofile.full_name }}</span>
-                            <small class="text-muted">{{ request.user.get_user_type_display }}</small>
+                            <small class="text-muted">{{ request.user.role.role_name }}</small>
                         </div>
                         </div>
                       </a>
@@ -352,15 +301,15 @@
                     <li>
                       <a class="dropdown-item" href="#">
                         <i class="bx bx-user me-2"></i>
-                        <span class="align-middle">My Profile</span>
+                        <span class="align-middle">Change Password</span>
                       </a>
                     </li>
-                    <li>
+                    <!-- <li>
                       <a class="dropdown-item" href="#">
                         <i class="bx bx-cog me-2"></i>
                         <span class="align-middle">Settings</span>
                       </a>
-                    </li>
+                    </li> -->
                     <!-- <li>
                       <a class="dropdown-item" href="#">
                         <span class="d-flex align-items-center align-middle">
@@ -430,6 +379,7 @@
 
     <!-- Page JS -->
     <script src="{% static 'assets/js/dashboards-analytics.js' %}"></script>
+    <script src="{% static 'assets/js/dashboards.js' %}"></script>
 
     <!-- Place this tag in your head or just before your close body tag. -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>
