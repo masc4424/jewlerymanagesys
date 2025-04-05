@@ -34,12 +34,17 @@ $(document).ready(function() {
     $('#addRawMaterialButton').on('click', function() {
         addRawMaterialForm();
     });
-    
+    function formatNumber(num) {
+        if (num === null || num === undefined) return 'N/A';
+        const parsed = parseFloat(num);
+        // Check if the number has no decimal part or ends with .00
+        return parsed % 1 === 0 ? parsed.toFixed(0) : parsed.toFixed(2).replace(/\.00$/, '');
+    }
     // Function to calculate total stone details
     function calculateTotalStoneDetails() {
         let totalRate = 0;
         let totalWeight = 0;
-    
+
         addedStones.forEach(stone => {
             $.ajax({
                 url: `/get_stone_type_details/${stone.stone_type_id}/`,
@@ -70,9 +75,12 @@ $(document).ready(function() {
                 }
             });
         });
-    
-        $('#totalStoneRate').text(totalRate.toFixed(2));
-        $('#totalStoneWeight').text(totalWeight.toFixed(2));
+
+        // Update total rate with rupee icon
+        $('#totalStoneRate').html('<i class="bx bx-rupee fs-big"></i> ' +  formatNumber(totalRate));
+        
+        // Update total weight with "gm" suffix
+        $('#totalStoneWeight').text(formatNumber(totalWeight) + ' gm');
     }
     
     // Function to add stone form
@@ -622,9 +630,9 @@ $(document).ready(function() {
         const newRow = `
             <tr data-index="${addedRawMaterials.length - 1}">
                 <td>${materialName}</td>
-                <td>${weight}</td>
-                <td>${rate || 'N/A'}</td>
-                <td>${totalValue || 'N/A'}</td>
+                <td>${formatNumber(weight)}</td>
+                <td>${rate ? formatNumber(rate) : 'N/A'}</td>
+                <td>${totalValue ? formatNumber(totalValue) : 'N/A'}</td>
                 <td>
                     <button type="button" class="btn bg-label-danger btn-sm remove-raw-material">Remove</button>
                 </td>
@@ -678,8 +686,8 @@ $(document).ready(function() {
             totalValue += parseFloat(material.total_value || 0);
         });
 
-        $('#totalRawMaterialWeight').text(totalWeight.toFixed(2));
-        $('#totalRawMaterialValue').text(totalValue.toFixed(2));
+        $('#totalRawMaterialValue').text(formatNumber(totalValue) + ' gm');
+        $('#totalRawMaterialWeight').html('<i class="bx bx-rupee fs-big"></i> ' +  formatNumber(totalWeight));
     }
 
     // Handle form submission
