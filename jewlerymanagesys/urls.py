@@ -22,6 +22,7 @@ urlpatterns = [
     path('', lambda request: redirect('login_auth')),
     path('admin/', admin.site.urls),
     path('', include('loginauth.urls')),
+    path('', include('layout_template.urls')),
     path('', include('dashboard.urls')),
     path('user/', include('user_role_management.urls')),
     path('', include('jewl_metals.urls')),

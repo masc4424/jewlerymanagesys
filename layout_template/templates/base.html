@@ -253,6 +253,7 @@
                     >Star</a
                   >
                 </li> -->
+                <li class="nav-item lh-1 me-3">{{ request.user.userprofile.full_name }}</li>
 
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -290,7 +291,7 @@
                           </div>
                           <div class="flex-grow-1">
                             <span class="fw-semibold d-block">{{ request.user.userprofile.full_name }}</span>
-                            <small class="text-muted">{{ request.user.role.role_name }}</small>
+                            <small class="text-muted">{{ role_name }}</small>
                         </div>
                         </div>
                       </a>
@@ -299,7 +300,7 @@
                       <div class="dropdown-divider"></div>
                     </li>
                     <li>
-                      <a class="dropdown-item" href="#">
+                      <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
                         <i class="bx bx-user me-2"></i>
                         <span class="align-middle">Change Password</span>
                       </a>
@@ -359,6 +360,36 @@
     </div>
     <!-- / Layout wrapper -->
 
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <form id="changePasswordForm">
+          {% csrf_token %}
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Change Password</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="mb-3">
+                <label for="new_password" class="form-label">New Password</label>
+                <input type="password" class="form-control" id="new_password" name="new_password" required>
+              </div>
+              <div class="mb-3">
+                <label for="confirm_password" class="form-label">Confirm Password</label>
+                <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+              </div>
+              <div class="alert alert-danger d-none" id="passwordError"></div>
+              <div class="alert alert-success d-none" id="passwordSuccess"></div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">Change Password</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Core JS -->
     <!-- build:js assets/vendor/js/core.js -->
     <script src="{% static 'assets/vendor/libs/jquery/jquery.js' %}"></script>
@@ -380,6 +411,7 @@
     <!-- Page JS -->
     <script src="{% static 'assets/js/dashboards-analytics.js' %}"></script>
     <script src="{% static 'assets/js/dashboards.js' %}"></script>
+    <script src="{% static 'js/changpassword.js' %}"></script>
 
     <!-- Place this tag in your head or just before your close body tag. -->
     <script async defer src="https://buttons.github.io/buttons.js"></script>

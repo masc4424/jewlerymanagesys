@@ -5,8 +5,7 @@
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Welcome to Dashboard, {{ user.email }}</h1>
-        <a href="{% url 'logout_api' %}" class="btn btn-outline-danger">Logout</a>
+        <h2>Hey <b>{{ userprofile.full_name }}</b>, hope your business is touching the sky right now!</h2>
     </div>
 
     <div class="row">
