@@ -55,8 +55,8 @@ function processProductData(data) {
 
 function renderStoneCard(stone) {
     let stoneCard = `
-        <div class="col-lg-6 col-12 mb-3">
-            <div class="card shadow-sm">
+        <div class="stone-card">
+            <div class="card shadow-sm h-100">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">${stone.stone_name}</h5>
                     <div>
@@ -65,7 +65,7 @@ function renderStoneCard(stone) {
                         <span class="badge bg-label-secondary">${stone.total_weight}gm</span>
                     </div>
                 </div>
-                <div class="card-body custom-scrollbar" style="max-height: 148px; overflow-y: auto;">
+                <div class="card-body custom-scrollbar" style="max-height: 150px; overflow-y: auto;">
                     <div class="stone-types">`;
     
     // Add stone types
@@ -119,21 +119,22 @@ function renderStoneCard(stone) {
 
 function renderMaterialCard(material) {
     let materialCard = `
-        <div class="col-12 col-md-4 mb-3">
-            <div class="card shadow-sm">
+        <div class="col-12 col-md-6 mb-3">
+            <div class="card shadow-sm material-card">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">${material.metal_name}</h5>
                     <div>
-                        <span class="badge bg-primary">${material.percentage_in_model}%</span>
-                        <span class="badge bg-secondary">${material.total_weight}gm</span>
+                        <span class="badge bg-label-primary">${material.percentage_in_model}%</span>
+                        <span class="badge bg-label-secondary">${material.total_weight}gm</span>
                     </div>
-                </div>`;
+                </div>
+                <div class="card-body">`;
     
     // Add rate information if available
     if (material.latest_rate) {
         materialCard += `
-                    <p><strong>Latest Rate:</strong> ${material.latest_rate} ${material.rate_currency}/${material.rate_unit}</p>
-                    <p><strong>Rate Date:</strong> ${material.rate_date}</p>`;
+                    <p class="mb-1"><strong>Latest Rate:</strong> ${material.latest_rate} ${material.rate_currency}/${material.rate_unit}</p>
+                    <p class="mb-0"><strong>Rate Date:</strong> ${material.rate_date}</p>`;
     }
     
     materialCard += `

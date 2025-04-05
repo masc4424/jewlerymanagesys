@@ -26,7 +26,14 @@ $(document).ready(function() {
                     return `${formattedLength} × ${formattedBreadth}`; // Dimensions column
                 }
             },
-            { data: 'weight' },
+            { 
+                data: 'weight',
+                render: function(data) {
+                    const weight = parseFloat(data);
+                    return weight % 1 === 0 ? weight.toFixed(0) : weight.toFixed(2);
+                }
+            },
+          
             // {
             //     data: 'model_no',
             //     render: function(model_no, type, row) {
@@ -50,7 +57,7 @@ $(document).ready(function() {
                         <a href="javascript:void(0);" onclick="showImage('${imageSrc}', '${model_no}')" 
                            data-id="${row.id}" data-model_no="${model_no}" class="d-flex gap-2">
                             <img src="${imageSrc}" alt="Model Image" class="img-thumbnail" 
-                                 style="width: 25px; height: 25px; object-fit: cover;" />  &gt;
+                                 style="width: 40px; height: 40px; object-fit: cover;" /> 
                         </a>
                     `;
                 }

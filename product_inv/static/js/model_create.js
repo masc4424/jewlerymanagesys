@@ -1,8 +1,25 @@
 $(document).ready(function() {
+    $('.select22').select2();
+    $('.stone-name-select').select2({
+        placeholder: "Select a stone",
+        allowClear: true
+    });
+    
+    $('.stone-type-select').select2({
+        placeholder: "Select stone type",
+        allowClear: true
+    });
+    
+    $('.raw-material-select').select2({
+        placeholder: "Select raw material",
+        allowClear: true
+    });
     let addedStones = [];
     let stoneFormCounter = 0;
     let addedRawMaterials = [];
     let rawMaterialFormCounter = 0;
+    let usedStoneIds = new Set(); // Track used stone IDs
+    let usedMaterialIds = new Set(); // Track used material IDs
     
     // Load stone names and materials when page loads
     loadStoneNames();
@@ -22,7 +39,7 @@ $(document).ready(function() {
     function calculateTotalStoneDetails() {
         let totalRate = 0;
         let totalWeight = 0;
-
+    
         addedStones.forEach(stone => {
             $.ajax({
                 url: `/get_stone_type_details/${stone.stone_type_id}/`,
@@ -30,10 +47,21 @@ $(document).ready(function() {
                 dataType: 'json',
                 async: false,
                 success: function(data) {
-                    if (data) {
-                        const stoneRate = parseFloat(data.rate || 0);
-                        const stoneWeight = parseFloat(stone.weight || 0);
-                        totalRate += stoneRate;
+                    if (data && data.length > 0) {
+                        // Find the matching detail if there's a detail_id in the stone object
+                        let stoneDetail;
+                        if (stone.detail_id) {
+                            stoneDetail = data.find(detail => detail.id === stone.detail_id);
+                        }
+                        
+                        // If no specific detail is found, use the first one
+                        if (!stoneDetail) {
+                            stoneDetail = data[0];
+                        }
+                        
+                        const stoneRate = parseFloat(stoneDetail.rate || 0);
+                        const stoneWeight = parseFloat(stone.weight || 0) * parseInt(stone.count || 1);
+                        totalRate += stoneRate * parseInt(stone.count || 1);
                         totalWeight += stoneWeight;
                     }
                 },
@@ -42,7 +70,7 @@ $(document).ready(function() {
                 }
             });
         });
-
+    
         $('#totalStoneRate').text(totalRate.toFixed(2));
         $('#totalStoneWeight').text(totalWeight.toFixed(2));
     }
@@ -62,6 +90,15 @@ $(document).ready(function() {
         
         populateStoneDropdown(stoneSelect);
         
+        stoneSelect.select2({
+            placeholder: "Select a stone",
+            allowClear: true
+        });
+        
+        formContainer.find('.stone-type-select').select2({
+            placeholder: "Select stone type",
+            allowClear: true
+        });
         stoneSelect.on('change', function() {
             loadStoneTypes($(this));
         });
@@ -106,10 +143,13 @@ $(document).ready(function() {
         
         if (window.stoneData && window.stoneData.length > 0) {
             $.each(window.stoneData, function(i, stone) {
-                select.append($('<option>', {
-                    value: stone.id,
-                    text: stone.name
-                }));
+                // Only add stones that haven't been used yet
+                if (!usedStoneIds.has(stone.id.toString())) {
+                    select.append($('<option>', {
+                        value: stone.id,
+                        text: stone.name
+                    }));
+                }
             });
         } else {
             $.ajax({
@@ -119,10 +159,13 @@ $(document).ready(function() {
                 success: function(data) {
                     console.log("Stones loaded for dropdown:", data);
                     $.each(data, function(i, stone) {
-                        select.append($('<option>', {
-                            value: stone.id,
-                            text: stone.name
-                        }));
+                        // Only add stones that haven't been used yet
+                        if (!usedStoneIds.has(stone.id.toString())) {
+                            select.append($('<option>', {
+                                value: stone.id,
+                                text: stone.name
+                            }));
+                        }
                     });
                 },
                 error: function(xhr, status, error) {
@@ -163,7 +206,7 @@ $(document).ready(function() {
         });
     }
     
-  // Function to load stone details based on selected stone type
+    // Function to load stone details based on selected stone type
     function loadStoneDetails(typeSelect) {
         const typeId = typeSelect.val();
         const stoneForm = typeSelect.closest('.stone-form-container');
@@ -171,7 +214,7 @@ $(document).ready(function() {
         if (!typeId) return;
         
         // Clear any existing detail rows first
-        stoneForm.find('.stone-detail-row').remove();
+        stoneForm.find('.stone-details-container').remove();
         
         $.ajax({
             url: `/get_stone_type_details/${typeId}/`,
@@ -188,36 +231,43 @@ $(document).ready(function() {
                     // Add a header for the details section
                     detailsContainer.append('<h6 class="mb-2">Available Stone Details:</h6>');
                     
-                    // Add each detail as a row of input fields
+                    // Add each detail as a row of input fields with checkbox and count
                     $.each(data, function(i, detail) {
                         const detailRow = $(`
                             <div class="row stone-detail-row mb-2">
-                                <div class="col-md-4">
+                                <div class="col-md-1">
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input stone-detail-checkbox" type="checkbox" value="${detail.id}" 
+                                            data-weight="${detail.weight}" 
+                                            data-length="${detail.length}" 
+                                            data-breadth="${detail.breadth}"
+                                            data-rate="${detail.rate}"
+                                            data-detail-id="${detail.id}">
+                                    </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="input-group">
+                                        <span class="input-group-text">Count</span>
+                                        <input type="number" min="1" value="1" class="form-control stone-count-input ps-2 p-0">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
                                     <div class="input-group">
                                         <span class="input-group-text">Weight</span>
                                         <input type="text" class="form-control" value="${detail.weight}" disabled>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="input-group">
                                         <span class="input-group-text">Length</span>
                                         <input type="text" class="form-control" value="${detail.length}" disabled>
                                     </div>
                                 </div>
-                                <div class="col-md-4">
+                                <div class="col-md-3">
                                     <div class="input-group">
                                         <span class="input-group-text">Breadth</span>
                                         <input type="text" class="form-control" value="${detail.breadth}" disabled>
                                     </div>
-                                </div>
-                                <div class="col-12 text-end mt-1">
-                                    <button type="button" class="btn btn-outline-primary btn-sm select-detail-btn" 
-                                            data-weight="${detail.weight}" 
-                                            data-length="${detail.length}" 
-                                            data-breadth="${detail.breadth}"
-                                            data-rate="${detail.rate}">
-                                        Use This Detail
-                                    </button>
                                 </div>
                             </div>
                         `);
@@ -228,28 +278,16 @@ $(document).ready(function() {
                     // Add the details container after the last row
                     lastRow.after(detailsContainer);
                     
-                    // Add event listeners to the "Use This Detail" buttons
-                    stoneForm.find('.select-detail-btn').on('click', function() {
-                        const weight = $(this).data('weight');
-                        const length = $(this).data('length');
-                        const breadth = $(this).data('breadth');
-                        const rate = $(this).data('rate');
-                        
-                        // Set the values in the main form fields
-                        stoneForm.find('.stone-weight').val(weight);
-                        stoneForm.find('.stone-length').val(length);
-                        stoneForm.find('.stone-breadth').val(breadth);
-                        
-                        // Store rate in a hidden field
-                        if (!stoneForm.find('.stone-rate-hidden').length) {
-                            stoneForm.append(`<input type="hidden" class="stone-rate-hidden" value="${rate}">`);
+                    // Enable input for count fields
+                    stoneForm.find('.stone-count-input').prop('disabled', false);
+                    
+                    // Highlight row when checkbox is checked/unchecked
+                    stoneForm.find('.stone-detail-checkbox').on('change', function() {
+                        if (this.checked) {
+                            $(this).closest('.stone-detail-row').addClass('bg-light');
                         } else {
-                            stoneForm.find('.stone-rate-hidden').val(rate);
+                            $(this).closest('.stone-detail-row').removeClass('bg-light');
                         }
-                        
-                        // Highlight the selected row
-                        stoneForm.find('.stone-detail-row').removeClass('bg-light');
-                        $(this).closest('.stone-detail-row').addClass('bg-light');
                     });
                 }
             },
@@ -258,21 +296,29 @@ $(document).ready(function() {
             }
         });
     }
-    
+        
     // Function to save stone data
     function saveStoneData(formContainer) {
         const stoneNameSelect = formContainer.find('.stone-name-select');
         const stoneTypeSelect = formContainer.find('.stone-type-select');
-        const weight = formContainer.find('.stone-weight').val();
-        const length = formContainer.find('.stone-length').val();
-        const breadth = formContainer.find('.stone-breadth').val();
-        const shape = formContainer.find('.stone-shape-hidden').val();
+        const checkedDetails = formContainer.find('.stone-detail-checkbox:checked');
         
         // Validate form
-        if (!stoneNameSelect.val() || !stoneTypeSelect.val() || !weight) {
+        if (!stoneNameSelect.val() || !stoneTypeSelect.val()) {
             Swal.fire({
                 title: 'Validation Error',
-                text: 'Please fill all required fields for the stone',
+                text: 'Please select a stone and type',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+        
+        // Check if at least one detail is selected
+        if (checkedDetails.length === 0) {
+            Swal.fire({
+                title: 'Validation Error',
+                text: 'Please select at least one stone detail',
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
@@ -283,37 +329,58 @@ $(document).ready(function() {
         const stoneName = stoneNameSelect.find('option:selected').text();
         const stoneType = stoneTypeSelect.find('option:selected').text();
         
-        // Create stone data object
-        const stoneData = {
-            stone_id: stoneNameSelect.val(),
-            stone_name: stoneName,
-            stone_type_id: stoneTypeSelect.val(),
-            stone_type_name: stoneType,
-            weight: weight,
-            length: length,
-            breadth: breadth,
-            shape: shape 
-        };
+        // Process each selected detail
+        checkedDetails.each(function() {
+            const detailCheckbox = $(this);
+            const detailRow = detailCheckbox.closest('.stone-detail-row');
+            
+            // Get detail data
+            const weight = detailCheckbox.data('weight');
+            const length = detailCheckbox.data('length');
+            const breadth = detailCheckbox.data('breadth');
+            const rate = detailCheckbox.data('rate');
+            const detailId = detailCheckbox.data('detail-id');
+            
+            // Get count from the same row
+            const count = detailRow.find('.stone-count-input').val();
+            
+            // Initialize stone data object
+            const stoneData = {
+                stone_id: stoneNameSelect.val(),
+                stone_name: stoneName,
+                stone_type_id: stoneTypeSelect.val(),
+                stone_type_name: stoneType,
+                weight: weight,
+                length: length,
+                breadth: breadth,
+                rate: rate,
+                count: count,
+                stone_type_detail_id: detailId
+            };
+            
+            // Add to the array of stones
+            addedStones.push(stoneData);
+            
+            // Add to the displayed table
+            const newRow = `
+                <tr data-index="${addedStones.length - 1}">
+                    <td>${stoneName}</td>
+                    <td>${stoneType}</td>
+                    <td>${weight}</td>
+                    <td>${length}</td>
+                    <td>${breadth}</td>
+                    <td>${count}</td>
+                    <td>
+                        <button type="button" class="btn bg-label-danger btn-sm remove-stone">Remove</button>
+                    </td>
+                </tr>
+            `;
+            
+            $('#savedStonesTable tbody').append(newRow);
+        });
         
-        // Add to the array of stones
-        addedStones.push(stoneData);
-        
-        // Add to the displayed table
-        const newRow = `
-            <tr data-index="${addedStones.length - 1}">
-                <td>${stoneName}</td>
-                <td>${stoneType}</td>
-                <td>${shape}</td>
-                <td>${weight}</td>
-                <td>${length}</td>
-                <td>${breadth}</td>
-                <td>
-                    <button type="button" class="btn bg-label-danger btn-sm remove-stone">Remove</button>
-                </td>
-            </tr>
-        `;
-        
-        $('#savedStonesTable tbody').append(newRow);
+        // Add the stone ID to the set of used stone IDs
+        usedStoneIds.add(stoneNameSelect.val().toString());
         
         // Calculate and update total stone details
         calculateTotalStoneDetails();
@@ -321,10 +388,20 @@ $(document).ready(function() {
         // Remove the form
         formContainer.remove();
         
-        // Bind remove event
-        $('.remove-stone').last().on('click', function() {
+        // Bind remove event to all rows
+        $('#savedStonesTable tbody').on('click', '.remove-stone', function() {
             const row = $(this).closest('tr');
             const index = row.data('index');
+            
+            // Get the stone ID to remove from used stones
+            const removedStone = addedStones[index];
+            if (removedStone && removedStone.stone_id) {
+                // Only remove from usedStoneIds if this was the last instance of this stone
+                const remainingOfThisStone = addedStones.filter(s => s.stone_id === removedStone.stone_id);
+                if (remainingOfThisStone.length <= 1) {
+                    usedStoneIds.delete(removedStone.stone_id.toString());
+                }
+            }
             
             // Remove from array and table
             addedStones.splice(index, 1);
@@ -367,10 +444,34 @@ $(document).ready(function() {
         
         if (window.materialData && window.materialData.length > 0) {
             $.each(window.materialData, function(i, material) {
-                select.append($('<option>', {
-                    value: material.id,
-                    text: material.name
-                }));
+                // Only add materials that haven't been used yet
+                if (!usedMaterialIds.has(material.id.toString())) {
+                    select.append($('<option>', {
+                        value: material.id,
+                        text: material.name
+                    }));
+                }
+            });
+        } else {
+            $.ajax({
+                url: '/get_materials/',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    console.log("Materials loaded for dropdown:", data);
+                    $.each(data, function(i, material) {
+                        // Only add materials that haven't been used yet
+                        if (!usedMaterialIds.has(material.id.toString())) {
+                            select.append($('<option>', {
+                                value: material.id,
+                                text: material.name
+                            }));
+                        }
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error loading materials for dropdown:', error);
+                }
             });
         }
     }
@@ -390,46 +491,73 @@ $(document).ready(function() {
         const materialSelect = formContainer.find('.raw-material-select');
         populateMaterialDropdown(materialSelect);
 
-        // Rate checkbox functionality
+        materialSelect.select2({
+            placeholder: "Select a raw material",
+            allowClear: true
+        });
+        // Replace checkbox with a button for getting rate
         const weightInput = formContainer.find('.raw-material-weight');
-        const rateCheckbox = formContainer.find('.get-rate-checkbox');
+        const getRateButton = formContainer.find('.get-rate-button');
         const rateContainer = formContainer.find('#rateContainer');
         const rateInput = formContainer.find('.raw-material-rate');
         const totalValueInput = formContainer.find('.raw-material-total-value');
 
-        rateCheckbox.on('change', function() {
-            if (this.checked) {
-                // Get material and weight
-                const materialId = materialSelect.val();
-                const weight = weightInput.val();
+        // Initially hide the rate container
+        rateContainer.hide();
 
-                if (materialId && weight) {
-                    // Get current rate for the material
-                    $.ajax({
-                        url: `/get_material_rate/${materialId}/`,
-                        type: 'GET',
-                        data: { weight: weight },
-                        dataType: 'json',
-                        success: function(data) {
-                            if (data.rate) {
-                                rateInput.val(data.rate);
-                                const totalValue = (weight * data.rate).toFixed(2);
-                                totalValueInput.val(totalValue);
-                                rateContainer.show();
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('Error getting material rate:', error);
-                            Swal.fire({
-                                title: 'Error',
-                                text: 'Could not fetch material rate',
-                                icon: 'error'
-                            });
+        // Get rate button click handler
+        getRateButton.on('click', function() {
+            // Get material and weight
+            const materialId = materialSelect.val();
+            const weight = weightInput.val();
+
+            if (materialId && weight) {
+                // Show loading state on button
+                const originalButtonText = getRateButton.html();
+                getRateButton.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Loading...');
+                getRateButton.prop('disabled', true);
+                
+                // Get current rate for the material
+                $.ajax({
+                    url: `/get_material_rate/${materialId}/`,
+                    type: 'GET',
+                    data: { weight: weight },
+                    dataType: 'json',
+                    success: function(data) {
+                        if (data.rate) {
+                            rateInput.val(data.rate);
+                            const totalValue = (weight * data.rate).toFixed(2);
+                            totalValueInput.val(totalValue);
+                            rateContainer.show();
                         }
-                    });
-                }
+                        
+                        // Restore button state
+                        getRateButton.html(originalButtonText);
+                        getRateButton.prop('disabled', false);
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error getting material rate:', error);
+                        
+                        // Show error message
+                        Swal.fire({
+                            title: 'Error',
+                            text: 'Could not fetch material rate',
+                            icon: 'error'
+                        });
+                        
+                        // Restore button state
+                        getRateButton.html(originalButtonText);
+                        getRateButton.prop('disabled', false);
+                    }
+                });
             } else {
-                rateContainer.hide();
+                // Show validation error
+                Swal.fire({
+                    title: 'Validation Error',
+                    text: 'Please select a material and enter weight first',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
             }
         });
 
@@ -448,9 +576,12 @@ $(document).ready(function() {
     function saveRawMaterialData(formContainer) {
         const materialSelect = formContainer.find('.raw-material-select');
         const weightInput = formContainer.find('.raw-material-weight');
-        const rateCheckbox = formContainer.find('.get-rate-checkbox');
         const rateInput = formContainer.find('.raw-material-rate');
         const totalValueInput = formContainer.find('.raw-material-total-value');
+        const rateContainer = formContainer.find('#rateContainer');
+        
+        // Check if rate container is visible (rate was fetched)
+        const hasRate = rateContainer.is(':visible');
 
         // Validate form
         if (!materialSelect.val() || !weightInput.val()) {
@@ -466,8 +597,8 @@ $(document).ready(function() {
         // Get text values for display
         const materialName = materialSelect.find('option:selected').text();
         const weight = weightInput.val();
-        const rate = rateCheckbox.is(':checked') ? rateInput.val() : null;
-        const totalValue = rateCheckbox.is(':checked') ? totalValueInput.val() : null;
+        const rate = hasRate ? rateInput.val() : null;
+        const totalValue = hasRate ? totalValueInput.val() : null;
 
         // Create raw material data object
         const rawMaterialData = {
@@ -480,6 +611,9 @@ $(document).ready(function() {
 
         // Add to the array of raw materials
         addedRawMaterials.push(rawMaterialData);
+        
+        // Add the material ID to the set of used material IDs
+        usedMaterialIds.add(materialSelect.val().toString());
 
         // Add to the displayed table
         const newRow = `
@@ -503,9 +637,19 @@ $(document).ready(function() {
         formContainer.remove();
         
         // Bind remove event
-        $('.remove-raw-material').last().on('click', function() {
+        $('#savedRawMaterialsTable tbody').on('click', '.remove-raw-material', function() {
             const row = $(this).closest('tr');
             const index = row.data('index');
+            
+            // Get the material ID to remove from used materials
+            const removedMaterial = addedRawMaterials[index];
+            if (removedMaterial && removedMaterial.material_id) {
+                // Only remove from usedMaterialIds if this was the last instance of this material
+                const remainingOfThisMaterial = addedRawMaterials.filter(m => m.material_id === removedMaterial.material_id);
+                if (remainingOfThisMaterial.length <= 1) {
+                    usedMaterialIds.delete(removedMaterial.material_id.toString());
+                }
+            }
             
             // Remove from array and table
             addedRawMaterials.splice(index, 1);

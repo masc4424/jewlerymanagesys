@@ -34,8 +34,20 @@ $(document).ready(function() {
                     return `${formattedLength} × ${formattedBreadth}`; // Dimensions column
                 }
             },
-            { data: 'weight' },
-            { data: 'rate' },
+            { 
+                data: 'weight',
+                render: function(data) {
+                    const weight = parseFloat(data);
+                    return weight % 1 === 0 ? weight.toFixed(0) : weight.toFixed(2);
+                }
+            },
+            { 
+                data: 'rate',
+                render: function(data) {
+                    const rate = parseFloat(data);
+                    return rate % 1 === 0 ? rate.toFixed(0) : rate.toFixed(2);
+                }
+            },
             {
                 data: null,
                 render: function(data, type, row) {

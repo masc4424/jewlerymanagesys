@@ -7,6 +7,15 @@
 {% endblock %}
 
 {% block content %}
+<style>
+    th {
+        text-transform: none !important;
+        font-size: 13px;
+    }
+    label.form-label {
+        text-transform: none !important;
+    }
+</style>
 <div class="content-wrapper">
     <div class="container-xxl flex-grow-1 container-p-y p-0">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -33,7 +42,7 @@
                             <!-- <th>Length</th>
                             <th>Breadth</th> -->
                             <th>Weight (gm)</th>
-                            <th>Rate (<i class="bx bx-rupee"></i>)</th>
+                            <th>Rate (<i class="bx bx-rupee fs-big"></i>)</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -67,7 +76,7 @@
                             <input type="number" step="0.01" class="form-control" id="weight" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="rate" class="form-label">Rate(<i class="bx bx-rupee"></i>)</label>
+                            <label for="rate" class="form-label">Rate(<i class="bx bx-rupee fs-big"></i>)</label>
                             <input type="number" step="0.01" class="form-control" id="rate" required>
                         </div>
                     </div>
@@ -94,19 +103,19 @@
                     <input type="hidden" id="editDetailId">
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label for="editLength" class="form-label">Length</label>
+                            <label for="editLength" class="form-label">Length (mm)</label>
                             <input type="text" class="form-control" id="editLength" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="editBreadth" class="form-label">Breadth</label>
+                            <label for="editBreadth" class="form-label">Breadth (mm)</label>
                             <input type="text" class="form-control" id="editBreadth" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="editWeight" class="form-label">Weight</label>
+                            <label for="editWeight" class="form-label">Weight (gm)</label>
                             <input type="number" step="0.01" class="form-control" id="editWeight" required>
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label for="editRate" class="form-label">Rate</label>
+                            <label for="editRate" class="form-label">Rate (<i class="bx bx-rupee fs-big"></i>)</label>
                             <input type="number" step="0.01" class="form-control" id="editRate" required>
                         </div>
                     </div>

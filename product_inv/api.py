@@ -275,13 +275,11 @@ def create_model(request):
             jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)
             model_img = request.FILES.get('model_img')
             selected_colors = request.POST.getlist('colors[]')
-            # selected_colors = request.POST.getlist('colors')
-
             
             # Get stones data
             stones_json = request.POST.get('stones', '[]')
             stones_data = json.loads(stones_json)
-
+            
             # Validate required fields
             if not all([model_no, length, breadth, weight, jewelry_type_id, model_img, selected_colors]):
                 return JsonResponse({'error': 'All fields are required'}, status=400)
@@ -289,9 +287,6 @@ def create_model(request):
             # Check if model number already exists
             if Model.objects.filter(model_no=model_no).exists():
                 return JsonResponse({'error': 'Model number already exists'}, status=400)
-
-            # Get the jewelry type
-            jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)
 
             # Define the target directory
             target_directory = os.path.join(settings.BASE_DIR, 'product_inv/static/model_img/')
@@ -326,18 +321,32 @@ def create_model(request):
             for color in selected_colors:
                 ModelColor.objects.create(model=model, color=color)
             
-            # Create RawStones entries
+            # Process stones data
             for stone_data in stones_data:
+                # Create RawStones entries
                 stone_type = get_object_or_404(StoneType, id=stone_data['stone_type_id'])
                 RawStones.objects.create(
                     model=model,
                     stone_type=stone_type
                 )
-
+                
+                # Create StoneCount entries if detail_id exists
+                if 'stone_type_detail_id' in stone_data and stone_data['stone_type_detail_id'] not in [None, '', 'undefined']:
+                    try:
+                        detail_id = int(stone_data['stone_type_detail_id'])  # Convert to int explicitly
+                        stone_type_detail = StoneTypeDetail.objects.get(id=detail_id)
+                        StoneCount.objects.create(
+                            model=model,
+                            stone_type_details=stone_type_detail,
+                            count=stone_data['count']
+                        )
+                    except (ValueError, StoneTypeDetail.DoesNotExist) as e:
+                        print(f"Error creating StoneCount: {e}")
+            
+            # Process raw materials data
             raw_materials_json = request.POST.get('raw_materials', '[]')
             raw_materials_data = json.loads(raw_materials_json)
             
-            # Create RawMaterial entries
             for material_data in raw_materials_data:
                 metal = get_object_or_404(Metal, id=material_data['material_id'])
                 RawMaterial.objects.create(
@@ -346,7 +355,7 @@ def create_model(request):
                     weight=material_data['weight'],
                     unit='g'  # Default to grams
                 )
-            
+                    
             return JsonResponse({
                 'success': True, 
                 'message': 'Model created successfully',
@@ -363,10 +372,11 @@ def create_model(request):
             })
             
         except Exception as e:
+            import traceback
+            print(traceback.format_exc())
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
 # New endpoint to get all stones
 def get_stones(request):
     stones = Stone.objects.all()
