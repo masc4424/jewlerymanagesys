@@ -552,7 +552,7 @@ $(document).ready(function() {
                         // Show error message
                         Swal.fire({
                             title: 'Error',
-                            text: 'Could not fetch material rate',
+                            text: 'No data present for current date',
                             icon: 'error'
                         });
                         
