@@ -15,6 +15,7 @@ class Order(models.Model):
     discount = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
     color = models.ForeignKey(ModelColor, on_delete=models.CASCADE, related_name='orders')
     address = models.TextField(blank=True, null=True)
+    is_delivered = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Order {self.id} - {self.client} ({self.model.model_no})"

@@ -15,7 +15,7 @@ urlpatterns = [
 #crud api
 
 urlpatterns += [
-    path('orders_view/', order_view, name='order_list'),         # List all orders
+    path('orders_view/', orders_view, name='order_list'),         # List all orders
     path('orders/add/', order_add, name='order_add'),       # Add new order
     path('orders/edit/<int:order_id>/', order_edit, name='order_edit'),  # Edit order
     path('orders/delete/<int:order_id>/', order_delete, name='order_delete'),  # Delete order

@@ -82,7 +82,7 @@ $(document).ready(function() {
                             </button>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item edit-model-btn" 
-                                    href="/edit_model/${jewelry_type_name}/"
+                                    href="/edit_model/${jewelry_type_name}/?model_id=${data.id}"
                                     data-model-id="${data.id}">
                                     <i class="bx bx-edit-alt me-1"></i> Edit
                                 </a>

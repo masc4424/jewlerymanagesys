@@ -31,7 +31,8 @@ urlpatterns += [
     path('create_jewelry_type/', create_jewelry_type, name='create_jewelry_type'),
     path('edit_jewelry_type/<int:id>/', edit_jewelry_type, name='create_jewelry_type'),
     path('delete_jewelry_type/<int:id>/', delete_jewelry_type, name='create_jewelry_type'),
-    path('edit_model/<int:model_id>/', edit_model, name='edit_model'),
+    path('model_edit/<int:model_id>/', edit_model, name='edit_model'),
+    path('get_model_details/<int:model_id>/', get_model_details, name='get_model_details'),
 
 
 ]

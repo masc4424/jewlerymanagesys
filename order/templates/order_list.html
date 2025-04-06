@@ -5,6 +5,9 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/select/1.3.4/css/select.bootstrap5.min.css">
 {% endblock %}
 
 {% block content %}
@@ -12,28 +15,31 @@
         <div class="d-flex justify-content-between">
             <h4 class="mt-4">Orders List</h4>
             <div class="d-flex justify-content-end m-3">
-                <a class="btn btn-secondary me-1 text-white" id="" data-bs-toggle="" data-bs-target="">Add To Repeat Orders<i class='bx bx-right-arrow-alt'></i></a>
-                <a class="btn btn-success text-white" id="new_order" data-bs-toggle="" data-bs-target=""><i class='bx bx-plus'></i>New Order</a>
+                <button class="btn btn-secondary me-1 text-white" id="add_to_repeat_orders">
+                    Add To Repeat Orders <i class='bx bx-right-arrow-alt'></i>
+                </button>
+                <a class="btn btn-success text-white" id="new_order">
+                    <i class='bx bx-plus'></i> New Order
+                </a>
             </div>
         </div>
         <div class="card">
             <div class="card-body">
-                <div class="table-responsive text-nowrap">
+                <div class="table-responsive">
                     <table class="table" id="usersTable">
                         <thead>
                             <tr>
-                                <th>Sl No.</th>
+                                <th></th>
+                                <th>Sr. No.</th>
                                 <th>Name</th>
                                 <th>Item Type</th>
-                                <th>Model No.</th>
-                                <th>No. of Pieces</th>
-                                <th>Date of Order</th>
+                                <th>Status</th>
+                                <th>Models</th>
+                                <th>No. of pieces</th>
+                                <th>Price Details</th>
+                                <th>Date of order</th>
                                 <th>Est. Delivery Date</th>
-                                <th>Contact No.</th>
-                                <th>MRP</th>
-                                <th>Selling Price</th>
-                                <th>Discount</th>
-                                <th>Color</th>
+                                <th>Contact no.</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -43,8 +49,20 @@
             </div>
         </div>
     </div>
+    
+    {% csrf_token %}
 {% endblock %}
 
 {% block extra_js %}
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+    <script src="https://cdn.datatables.net/select/1.3.4/js/dataTables.select.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
     <script src="{% static 'js/order_list.js' %}"></script>
 {% endblock %}

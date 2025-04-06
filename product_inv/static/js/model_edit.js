@@ -45,6 +45,27 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(data) {
                 console.log("Model data loaded:", data);
+                if (data.model) {
+                    $('#model_no').val(data.model.name); // Assuming there's an input field with ID model_name
+    
+                    // Set colors if it's a dropdown or multi-select
+                    if (Array.isArray(data.model.colors)) {
+                        $('#colors').val(data.model.colors).trigger('change'); // Assuming Select2 or multiselect
+                    }
+                    $('#length').val(data.model.length);
+                    $('#breadth').val(data.model.breadth);
+                    $('#weight').val(data.model.weight);
+
+                    // Show existing image preview from server
+                    if (data.model.model_image) {
+                        const imageUrl = '/static/' + data.model.model_image.replace(/^\/?static\//, '');
+                        $('#imagePreview').attr('src', imageUrl);
+                        $('#previewContainer').removeClass('d-none');
+                    } else {
+                        $('#imagePreview').attr('src', '#');
+                        $('#previewContainer').addClass('d-none');
+                    }
+                }
                 
                 // Load stone data
                 if (data.stones && data.stones.length > 0) {
@@ -109,6 +130,22 @@ $(document).ready(function() {
             }
         });
     }
+
+    // Show preview on file selection
+    $('#model_img').on('change', function (event) {
+        const file = event.target.files[0];
+        if (file && file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                $('#imagePreview').attr('src', e.target.result);
+                $('#previewContainer').removeClass('d-none');
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#imagePreview').attr('src', '#');
+            $('#previewContainer').addClass('d-none');
+        }
+    });
     
     // Function to add a stone to the display table
     function addStoneToTable(index) {
@@ -293,7 +330,7 @@ $(document).ready(function() {
         formData.append('raw_materials', JSON.stringify(addedRawMaterials));
 
         $.ajax({
-            url: `/edit_model/${modelId}/`,  // Your Django endpoint
+            url: `/model_edit/${modelId}/`,  // Your Django endpoint
             type: 'POST',
             data: formData,
             processData: false,

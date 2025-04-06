@@ -16,6 +16,7 @@ import datetime
 from django.db.models.functions import Abs
 from django.db.models import F
 import uuid
+from django.db.models import OuterRef, Subquery
 
 def get_model_distribution(model_no):
     try:
@@ -524,110 +525,6 @@ import os
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 @csrf_exempt
-def edit_model(request):
-    if request.method == 'POST':
-        try:
-            logging.info("Received POST request to edit model.")
-
-            model_id = request.POST.get('model_id')
-            model_no = request.POST.get('model_no')
-            length = request.POST.get('length')
-            breadth = request.POST.get('breadth')
-            weight = request.POST.get('weight')
-            model_img = request.FILES.get('model_img')
-            colors = request.POST.getlist('colors[]')
-
-            logging.info(f"Received data: model_id={model_id}, model_no={model_no}, length={length}, breadth={breadth}, weight={weight}")
-            logging.info(f"Received colors: {colors}") 
-            if not all([model_id, model_no, length, breadth, weight, colors]):
-                logging.warning("Validation failed: Missing required fields.")
-                return JsonResponse({'error': 'All fields are required'}, status=400)
-
-            model = get_object_or_404(Model, id=model_id)
-            logging.info(f"Fetched model from database: {model}")
-
-            # Check if model number is being changed and already exists
-            if model.model_no != model_no and Model.objects.filter(model_no=model_no).exists():
-                logging.warning(f"Model number conflict: {model_no} already exists.")
-                return JsonResponse({'error': 'Model number already exists'}, status=400)
-
-            # Updating model fields
-            model.model_no = model_no
-            model.length = length
-            model.breadth = breadth
-            model.weight = weight
-            model.colors = ','.join(colors)
-
-            # Handling image update
-            if model_img:
-                target_directory = os.path.join(settings.BASE_DIR, 'product_inv/static/model_img/')
-                os.makedirs(target_directory, exist_ok=True)  # Ensure the directory exists
-
-                file_extension = os.path.splitext(model_img.name)[1]
-                new_img_name = f"{model_no}{file_extension}"
-                file_path = os.path.join(target_directory, new_img_name)
-
-                logging.info(f"New image received. Renaming to: {new_img_name}")
-
-                # Check if the model already had an image and remove the old image
-                if model.model_img:
-                    old_image_path = os.path.join(target_directory, os.path.basename(model.model_img.name))
-                    logging.info(f"Old image path: {old_image_path}")
-
-                    if os.path.exists(old_image_path):
-                        os.remove(old_image_path)
-                        logging.info("Old image successfully removed.")
-                    else:
-                        logging.warning("Old image file not found, skipping deletion.")
-
-                # Save new image manually
-                with open(file_path, 'wb+') as destination:
-                    for chunk in model_img.chunks():
-                        destination.write(chunk)
-
-                # Save relative path in the database
-                model.model_img = f"model_img/{new_img_name}"
-                logging.info("New image assigned to model.")
-
-            # MOVED OUTSIDE OF IF BLOCK - Process colors regardless of image upload
-            existing_colors = list(ModelColor.objects.filter(model=model).values_list('color', flat=True))
-            logging.info(f"Existing colors before update: {existing_colors}")
-            # Clear existing colors
-            ModelColor.objects.filter(model=model).delete()
-            logging.info("Deleted existing model colors")
-
-            # Add new colors
-            for color in colors:
-                ModelColor.objects.create(model=model, color=color)
-                logging.info(f"Created new color: {color}")
-
-            # Save model
-            model.save()
-            final_colors = list(ModelColor.objects.filter(model=model).values_list('color', flat=True))
-            logging.info(f"Final colors after update: {final_colors}")
-            logging.info("Model updated successfully.")
-
-            return JsonResponse({
-                'success': True, 
-                'message': 'Model updated successfully',
-                'model': {
-                    'id': model.id,
-                    'model_no': model.model_no,
-                    'length': float(model.length),
-                    'breadth': float(model.breadth),
-                    'weight': float(model.weight),
-                    'image_updated': model_img is not None,
-                    'colors': final_colors
-                }
-            })
-
-        except Exception as e:
-            logging.error(f"Error occurred: {str(e)}", exc_info=True)
-            return JsonResponse({'error': str(e)}, status=500)
-
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
-
-@csrf_exempt
 def delete_model(request, model_id):
     if request.method == 'DELETE':
         try:
@@ -806,3 +703,67 @@ def edit_model(request, model_id):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+def get_model_details(request, model_id):
+    model = get_object_or_404(Model, id=model_id)
+
+    model_data = {
+        "id": model.id,
+        "name": model.model_no,
+        "length":model.length,
+        "breadth":model.breadth,
+        "weight":model.weight,
+        "model_image": f"static/model_img/{model.model_img.name.split('/')[-1]}",
+        "colors": [color.color for color in model.model_colors.all()]
+    }
+
+    # --- Stones ---
+    stones = []
+    stone_counts = StoneCount.objects.filter(model=model).select_related('stone_type_details__stone_type', 'stone_type_details__stone')
+
+    for sc in stone_counts:
+        std = sc.stone_type_details
+        stone_data = {
+            "id": sc.id,
+            "count": sc.count,
+            "stone_type_detail_id": std.id,
+            "stone_id": std.stone.id,
+            "stone_name": std.stone.name,
+            "stone_type_id": std.stone_type.id,
+            "stone_type_name": std.stone_type.type_name,
+            "weight": float(std.weight),
+            "length": std.length,
+            "breadth": std.breadth,
+            "rate": float(std.rate)
+        }
+        stones.append(stone_data)
+
+    # --- Metal Rates Subquery ---
+    latest_rates = MetalRate.objects.filter(
+        metal=OuterRef('metal')
+    ).order_by('-date')  # Gets latest rate per metal
+
+    # --- Raw Materials ---
+    raw_materials = []
+    raw_mats = RawMaterial.objects.filter(model=model).select_related('metal').annotate(
+        latest_rate=Subquery(latest_rates.values('rate')[:1])
+    )
+
+    for rm in raw_mats:
+        rate = rm.latest_rate or 0
+        material_data = {
+            "id": rm.id,
+            "material_id": rm.metal.id,
+            "material_name": rm.metal.name,
+            "weight": float(rm.weight),
+            "rate": float(rate),
+            "total_value": float(rm.weight) * float(rate)
+        }
+        raw_materials.append(material_data)
+
+    return JsonResponse({
+        "stones": stones,
+        "raw_materials": raw_materials,
+        "model":model_data,
+    })
+

@@ -5,8 +5,9 @@ from django.utils.dateparse import parse_date
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.db.models import F
+from django.db.models import F, Count, Sum
 import json
+from django.db import transaction
 
 import uuid
 from .models import Order
@@ -14,11 +15,16 @@ from django.utils.dateparse import parse_date
 
 from django.templatetags.static import static
 
-def order_view(request):
-    orders = Order.objects.select_related("model").annotate( model_no=F("model__model_no")).values(
+def orders_view(request):
+    """
+    Fetch all orders with calculation of selling price
+    """
+    orders = Order.objects.select_related("model", "color").annotate(
+        model_no=F("model__model_no")
+    ).values(
         "id", "client_name", "model_id", "model_no", "model__model_img", 
         "no_of_pieces", "date_of_order", "est_delivery_date", "contact_no", 
-        "mrp", "discount", "color_id"
+        "mrp", "discount", "color_id", "order_unique_id"
     )
 
     orders_list = []
@@ -38,6 +44,32 @@ def order_view(request):
         orders_list.append(order)
 
     return JsonResponse(orders_list, safe=False)
+
+@csrf_exempt
+def mark_order_delivered(request):
+    """
+    Mark an order as delivered based on order_unique_id
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'Only POST method is allowed'})
+
+    order_unique_id = request.POST.get('order_unique_id')
+    
+    if not order_unique_id:
+        return JsonResponse({'success': False, 'error': 'Order ID is required'})
+    
+    try:
+        with transaction.atomic():
+            # Get all orders with this unique ID
+            orders = Order.objects.filter(order_unique_id=order_unique_id)
+            
+            if not orders.exists():
+                return JsonResponse({'success': False, 'error': 'Order not found'})
+            
+            return JsonResponse({'success': True})
+    
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
 
 # Add Order
 @csrf_exempt

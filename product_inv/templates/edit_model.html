@@ -21,9 +21,9 @@
         <div class="card">
             <h5 class="card-header"></h5>
             <div class="card-body">
-                <form id="id="updateModelForm" method="POST" enctype="multipart/form-data">
+                <form id="updateModelForm" method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <input type="hidden" id="model_id" name="model_id" value="{{ model.id }}">
+                    <input type="hidden" id="model_id" name="model_id" value="{{ model_id }}">
                     <input type="hidden" id="jewelry_type" name="jewelry_type" value="{{ jewelry_type_id }}">
                     <div class="row">
                         <div class="col-md-6">
@@ -326,6 +326,6 @@
 
 {% block extra_js %}
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{% static 'js/model_create.js' %}"></script>
+    <script src="{% static 'js/model_edit.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 {% endblock %}
