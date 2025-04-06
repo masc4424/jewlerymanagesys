@@ -36,10 +36,10 @@ $(document).ready(function() {
                                     <i class="bx bx-show me-1"></i> View Models
                                 </a>
                             </div>
-                            <button class="btn btn-sm edit-btn p-0" data-id="${data.id}" data-name="${data.name}">
+                            <button class="btn btn-sm btn-outline-primary edit-btn me-2" data-id="${data.id}" data-name="${data.name}">
                             <i class="bx bx-edit"></i>
                             </button>
-                            <button class="btn btn-sm delete-btn p-1" data-id="${data.id}">
+                            <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${data.id}">
                                 <i class="bx bx-trash"></i>
                             </button>
                         </div>

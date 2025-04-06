@@ -59,11 +59,11 @@ $(document).ready(function() {
                     
                     return `
                         <div class="d-flex gap-3">
-                           <a class="edit-detail" href="javascript:void(0);" data-detail-id="${id}">
-                                <i class="bx bx-edit-alt me-1 text-secondary"></i>
+                           <a class="edit-detail btn btn-sm btn-outline-primary" href="javascript:void(0);" data-detail-id="${id}">
+                                <i class="bx bx-edit-alt me-1"></i>
                             </a>
-                            <a class="delete-detail" href="javascript:void(0);" data-detail-id="${id}">
-                                <i class="bx bx-trash me-1 text-secondary"></i>
+                            <a class="delete-detail btn btn-sm btn-outline-danger" href="javascript:void(0);" data-detail-id="${id}">
+                                <i class="bx bx-trash me-1"></i>
                             </a>
                         </div>
                        
