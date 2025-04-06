@@ -707,3 +707,102 @@ def delete_jewelry_type(request, id):
             return JsonResponse({'success': False, 'error': 'Jewelry Type not found'})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def edit_model(request, model_id):
+    if request.method == 'POST':
+        try:
+            model = get_object_or_404(Model, id=model_id)
+
+            # Get form data
+            model_no = request.POST.get('model_no')
+            length = request.POST.get('length')
+            breadth = request.POST.get('breadth')
+            weight = request.POST.get('weight')
+            jewelry_type_id = request.POST.get('jewelry_type')
+            jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)
+            model_img = request.FILES.get('model_img')
+            selected_colors = request.POST.getlist('colors[]')
+
+            stones_json = request.POST.get('stones', '[]')
+            stones_data = json.loads(stones_json)
+
+            raw_materials_json = request.POST.get('raw_materials', '[]')
+            raw_materials_data = json.loads(raw_materials_json)
+
+            if not all([model_no, length, breadth, weight, jewelry_type_id, selected_colors]):
+                return JsonResponse({'error': 'All fields are required'}, status=400)
+
+            # Update image if new one is uploaded
+            if model_img:
+                target_directory = os.path.join(settings.BASE_DIR, 'product_inv/static/model_img/')
+                os.makedirs(target_directory, exist_ok=True)
+                file_extension = os.path.splitext(model_img.name)[1]
+                new_filename = f"{model_no}{file_extension}"
+                file_path = os.path.join(target_directory, new_filename)
+
+                with open(file_path, 'wb+') as destination:
+                    for chunk in model_img.chunks():
+                        destination.write(chunk)
+
+                model.model_img = f"model_image/{new_filename}"
+
+            # Update basic fields
+            model.model_no = model_no
+            model.length = length
+            model.breadth = breadth
+            model.weight = weight
+            model.jewelry_type = jewelry_type
+            model.save()
+
+            # Clear and re-create model colors
+            ModelColor.objects.filter(model=model).delete()
+            for color in selected_colors:
+                ModelColor.objects.create(model=model, color=color)
+
+            # Clear and recreate RawStones and StoneCount
+            RawStones.objects.filter(model=model).delete()
+            StoneCount.objects.filter(model=model).delete()
+            for stone_data in stones_data:
+                stone_type = get_object_or_404(StoneType, id=stone_data['stone_type_id'])
+                RawStones.objects.create(model=model, stone_type=stone_type)
+
+                if 'stone_type_detail_id' in stone_data and stone_data['stone_type_detail_id'] not in [None, '', 'undefined']:
+                    try:
+                        detail_id = int(stone_data['stone_type_detail_id'])
+                        stone_type_detail = StoneTypeDetail.objects.get(id=detail_id)
+                        StoneCount.objects.create(
+                            model=model,
+                            stone_type_details=stone_type_detail,
+                            count=stone_data['count']
+                        )
+                    except (ValueError, StoneTypeDetail.DoesNotExist):
+                        pass
+
+            # Clear and recreate RawMaterials
+            RawMaterial.objects.filter(model=model).delete()
+            for material_data in raw_materials_data:
+                metal = get_object_or_404(Metal, id=material_data['material_id'])
+                RawMaterial.objects.create(
+                    model=model,
+                    metal=metal,
+                    weight=material_data['weight'],
+                    unit='g'
+                )
+
+            return JsonResponse({
+                'success': True,
+                'message': 'Model updated successfully',
+                'model': {
+                    'id': model.id,
+                    'model_no': model.model_no,
+                    'jewelry_type_name': jewelry_type.name
+                }
+            })
+
+        except Exception as e:
+            import traceback
+            print(traceback.format_exc())
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)

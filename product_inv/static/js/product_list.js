@@ -82,12 +82,11 @@ $(document).ready(function() {
                             </button>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item edit-model-btn" 
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#editModelModal" 
+                                    href="/edit_model/${jewelry_type_name}/"
                                     data-model-id="${data.id}">
                                     <i class="bx bx-edit-alt me-1"></i> Edit
                                 </a>
-    
+            
                                 <a class="dropdown-item delete-model-btn" href="javascript:void(0);" data-model-id="${data.id}">
                                     <i class="bx bx-trash me-1"></i> Delete
                                 </a>
@@ -96,6 +95,7 @@ $(document).ready(function() {
                     `;
                 }
             }
+            
         ]
     });
     

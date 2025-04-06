@@ -7,27 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 {% block content %}
-<style>
-    /* Add this to your CSS */
-.nav-tabs .nav-link.active {
-    background-color: #fff !important;
-    color: #696cff !important;
-    border-color: #d9dee3 #d9dee3 #fff !important;
-    border-bottom: 2px solid #696cff !important;
-}
 
-.tab-pane.active {
-    display: block !important;
-}
-
-th {
-    text-transform: none !important;
-    font-size: 13px;
-}
-label.form-label {
-    text-transform: none !important;
-}
-</style>
 <div class="content-wrapper">
     <div class="container-xxl flex-grow-1 container-p-y p-0">
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -35,95 +15,96 @@ label.form-label {
                 <a href="{% url 'product_list' jewelry_type_name %}" class="text-dark text-decoration-none">
                     <i class="bx bx-arrow-back me-2"></i>
                 </a>
-                Create New Model
+                Edit Model
             </h4>
         </div>
         <div class="card">
             <h5 class="card-header"></h5>
             <div class="card-body">
-                <form id="createModelForm" method="POST" enctype="multipart/form-data">
+                <form id="id="updateModelForm" method="POST" enctype="multipart/form-data">
                     {% csrf_token %}
+                    <input type="hidden" id="model_id" name="model_id" value="{{ model.id }}">
                     <input type="hidden" id="jewelry_type" name="jewelry_type" value="{{ jewelry_type_id }}">
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="model_no" class="form-label">Model No</label>
-                                <input type="text" class="form-control" id="model_no" name="model_no" required>
+                                <input type="text" class="form-control" id="model_no" name="model_no" value="{{ model.model_no }}" required>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="colors" class="form-label">Model Colors</label>
                                 <select class="form-select select22" id="colors" name="colors" multiple required>
-                                    <option value="Black">Black</option>
-                                    <option value="White">White</option>
-                                    <option value="Gray">Gray</option>
-                                    <option value="Silver">Silver</option>
-                                    <option value="Gold">Gold</option>
-                                    <option value="Rose Gold">Rose Gold</option>
-                                    <option value="Platinum">Platinum</option>
-                                    <option value="Bronze">Bronze</option>
-                                    <option value="Copper">Copper</option>
-                                    <option value="Red">Red</option>
-                                    <option value="Crimson">Crimson</option>
-                                    <option value="Maroon">Maroon</option>
-                                    <option value="Burgundy">Burgundy</option>
-                                    <option value="Pink">Pink</option>
-                                    <option value="Hot Pink">Hot Pink</option>
-                                    <option value="Magenta">Magenta</option>
-                                    <option value="Salmon">Salmon</option>
-                                    <option value="Peach">Peach</option>
-                                    <option value="Orange">Orange</option>
-                                    <option value="Amber">Amber</option>
-                                    <option value="Coral">Coral</option>
-                                    <option value="Yellow">Yellow</option>
-                                    <option value="Mustard">Mustard</option>
-                                    <option value="Beige">Beige</option>
-                                    <option value="Ivory">Ivory</option>
-                                    <option value="Lime">Lime</option>
-                                    <option value="Olive">Olive</option>
-                                    <option value="Green">Green</option>
-                                    <option value="Emerald">Emerald</option>
-                                    <option value="Jade">Jade</option>
-                                    <option value="Mint">Mint</option>
-                                    <option value="Teal">Teal</option>
-                                    <option value="Turquoise">Turquoise</option>
-                                    <option value="Blue">Blue</option>
-                                    <option value="Sky Blue">Sky Blue</option>
-                                    <option value="Azure">Azure</option>
-                                    <option value="Cyan">Cyan</option>
-                                    <option value="Navy Blue">Navy Blue</option>
-                                    <option value="Royal Blue">Royal Blue</option>
-                                    <option value="Indigo">Indigo</option>
-                                    <option value="Purple">Purple</option>
-                                    <option value="Violet">Violet</option>
-                                    <option value="Lavender">Lavender</option>
-                                    <option value="Lilac">Lilac</option>
-                                    <option value="Brown">Brown</option>
-                                    <option value="Chocolate">Chocolate</option>
-                                    <option value="Tan">Tan</option>
-                                    <option value="Mahogany">Mahogany</option>
-                                    <option value="Bistre">Bistre</option>
-                                    <option value="Charcoal">Charcoal</option>
+                                    <option value="Black" {% if 'Black' in model.colors %}selected{% endif %}>Black</option>
+                                    <option value="White" {% if 'White' in model.colors %}selected{% endif %}>White</option>
+                                    <option value="Gray" {% if 'Gray' in model.colors %}selected{% endif %}>Gray</option>
+                                    <option value="Silver" {% if 'Silver' in model.colors %}selected{% endif %}>Silver</option>
+                                    <option value="Gold" {% if 'Gold' in model.colors %}selected{% endif %}>Gold</option>
+                                    <option value="Rose Gold" {% if 'Rose Gold' in model.colors %}selected{% endif %}>Rose Gold</option>
+                                    <option value="Platinum" {% if 'Platinum' in model.colors %}selected{% endif %}>Platinum</option>
+                                    <option value="Bronze" {% if 'Bronze' in model.colors %}selected{% endif %}>Bronze</option>
+                                    <option value="Copper" {% if 'Copper' in model.colors %}selected{% endif %}>Copper</option>
+                                    <option value="Red" {% if 'Red' in model.colors %}selected{% endif %}>Red</option>
+                                    <option value="Crimson" {% if 'Crimson' in model.colors %}selected{% endif %}>Crimson</option>
+                                    <option value="Maroon" {% if 'Maroon' in model.colors %}selected{% endif %}>Maroon</option>
+                                    <option value="Burgundy" {% if 'Burgundy' in model.colors %}selected{% endif %}>Burgundy</option>
+                                    <option value="Pink" {% if 'Pink' in model.colors %}selected{% endif %}>Pink</option>
+                                    <option value="Hot Pink" {% if 'Hot Pink' in model.colors %}selected{% endif %}>Hot Pink</option>
+                                    <option value="Magenta" {% if 'Magenta' in model.colors %}selected{% endif %}>Magenta</option>
+                                    <option value="Salmon" {% if 'Salmon' in model.colors %}selected{% endif %}>Salmon</option>
+                                    <option value="Peach" {% if 'Peach' in model.colors %}selected{% endif %}>Peach</option>
+                                    <option value="Orange" {% if 'Orange' in model.colors %}selected{% endif %}>Orange</option>
+                                    <option value="Amber" {% if 'Amber' in model.colors %}selected{% endif %}>Amber</option>
+                                    <option value="Coral" {% if 'Coral' in model.colors %}selected{% endif %}>Coral</option>
+                                    <option value="Yellow" {% if 'Yellow' in model.colors %}selected{% endif %}>Yellow</option>
+                                    <option value="Mustard" {% if 'Mustard' in model.colors %}selected{% endif %}>Mustard</option>
+                                    <option value="Beige" {% if 'Beige' in model.colors %}selected{% endif %}>Beige</option>
+                                    <option value="Ivory" {% if 'Ivory' in model.colors %}selected{% endif %}>Ivory</option>
+                                    <option value="Lime" {% if 'Lime' in model.colors %}selected{% endif %}>Lime</option>
+                                    <option value="Olive" {% if 'Olive' in model.colors %}selected{% endif %}>Olive</option>
+                                    <option value="Green" {% if 'Green' in model.colors %}selected{% endif %}>Green</option>
+                                    <option value="Emerald" {% if 'Emerald' in model.colors %}selected{% endif %}>Emerald</option>
+                                    <option value="Jade" {% if 'Jade' in model.colors %}selected{% endif %}>Jade</option>
+                                    <option value="Mint" {% if 'Mint' in model.colors %}selected{% endif %}>Mint</option>
+                                    <option value="Teal" {% if 'Teal' in model.colors %}selected{% endif %}>Teal</option>
+                                    <option value="Turquoise" {% if 'Turquoise' in model.colors %}selected{% endif %}>Turquoise</option>
+                                    <option value="Blue" {% if 'Blue' in model.colors %}selected{% endif %}>Blue</option>
+                                    <option value="Sky Blue" {% if 'Sky Blue' in model.colors %}selected{% endif %}>Sky Blue</option>
+                                    <option value="Azure" {% if 'Azure' in model.colors %}selected{% endif %}>Azure</option>
+                                    <option value="Cyan" {% if 'Cyan' in model.colors %}selected{% endif %}>Cyan</option>
+                                    <option value="Navy Blue" {% if 'Navy Blue' in model.colors %}selected{% endif %}>Navy Blue</option>
+                                    <option value="Royal Blue" {% if 'Royal Blue' in model.colors %}selected{% endif %}>Royal Blue</option>
+                                    <option value="Indigo" {% if 'Indigo' in model.colors %}selected{% endif %}>Indigo</option>
+                                    <option value="Purple" {% if 'Purple' in model.colors %}selected{% endif %}>Purple</option>
+                                    <option value="Violet" {% if 'Violet' in model.colors %}selected{% endif %}>Violet</option>
+                                    <option value="Lavender" {% if 'Lavender' in model.colors %}selected{% endif %}>Lavender</option>
+                                    <option value="Lilac" {% if 'Lilac' in model.colors %}selected{% endif %}>Lilac</option>
+                                    <option value="Brown" {% if 'Brown' in model.colors %}selected{% endif %}>Brown</option>
+                                    <option value="Chocolate" {% if 'Chocolate' in model.colors %}selected{% endif %}>Chocolate</option>
+                                    <option value="Tan" {% if 'Tan' in model.colors %}selected{% endif %}>Tan</option>
+                                    <option value="Mahogany" {% if 'Mahogany' in model.colors %}selected{% endif %}>Mahogany</option>
+                                    <option value="Bistre" {% if 'Bistre' in model.colors %}selected{% endif %}>Bistre</option>
+                                    <option value="Charcoal" {% if 'Charcoal' in model.colors %}selected{% endif %}>Charcoal</option>
                                 </select>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="length" class="form-label">Length (cm)</label>
-                                <input type="number" step="0.01" class="form-control" id="length" name="length" required>
+                                <input type="number" step="0.01" class="form-control" id="length" name="length" value="{{ model.length }}" required>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="breadth" class="form-label">Breadth (cm)</label>
-                                <input type="number" step="0.01" class="form-control" id="breadth" name="breadth" required>
+                                <input type="number" step="0.01" class="form-control" id="breadth" name="breadth" value="{{ model.breadth }}" required>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="weight" class="form-label">Weight (gm)</label>
-                                <input type="number" step="0.01" class="form-control" id="weight" name="weight" required>
+                                <input type="number" step="0.01" class="form-control" id="weight" name="weight" value="{{ model.weight }}" required>
                             </div>
                         </div>
                     </div>
@@ -132,13 +113,14 @@ label.form-label {
                         <div class="mb-3 col-lg-auto">
                             <label for="model_img" class="form-label">Model Image</label>
                             <div class="d-flex align-items-center">
-                                <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/png" required>
-                                <div id="previewContainer" class="border p-1 d-flex justify-content-center align-items-center d-none"
+                                <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/png">
+                                <div id="previewContainer" class="border p-1 d-flex justify-content-center align-items-center {% if not model.image_url %}d-none{% endif %}"
                                      style="height: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
-                                    <img id="imagePreview" src="#" alt="Image Preview" class="img-fluid"
+                                    <img id="imagePreview" src="{{ model.image_url|default:'#' }}" alt="Image Preview" class="img-fluid"
                                          style="max-width: 100%; max-height: 100%;">
                                 </div>
                             </div>
+                            <small class="text-muted">Leave empty to keep current image</small>
                         </div>
                     </div>
                     
@@ -166,7 +148,6 @@ label.form-label {
                                         <h5 class="mb-0">Stone Used</h5>
                                         <div id="stoneTotalContainer" class="">
                                             <div class="">
-                                                
                                                 <div class="card-body">
                                                     <div class="d-flex gap-5">
                                                         <div class="d-flex gap-3 justify-content-between">
@@ -193,10 +174,8 @@ label.form-label {
                                                 <tr>
                                                     <th>Stone Name</th>
                                                     <th>Type Name</th>
-                                                    <!-- <th>Shape</th> -->
                                                     <th>Weight (gm)</th>
                                                     <th>Dimensions (LxB)(cm)</th>
-                                                    <!-- <th>Breadth</th> -->
                                                     <th class="px-2">Rate (<i class="bx bx-rupee fs-big"></i>)</th>
                                                     <th>Count</th>
                                                     <th>Action</th>
@@ -207,7 +186,6 @@ label.form-label {
                                             </tbody>
                                         </table>
                                     </div>
-                                    
                                 </div>
 
                                 <!-- Raw Material Section -->
@@ -216,25 +194,23 @@ label.form-label {
                                         <h5 class="mb-0">Raw Material</h5>
                                         <div id="rawMaterialTotalContainer" class="">
                                             <div class="">
-                                               
-                                                    <div class="d-flex gap-5">
-                                                        <div class="">
-                                                            <div class="d-flex justify-content-between gap-2">
-                                                                <strong>Total Material Weight:</strong>
-                                                                <span id="totalRawMaterialWeight" class="bg-label-warning px-1">0.00 gm</span>
-                                                            </div>
-                                                        </div>
-                                                        <div class="">
-                                                            <div class="d-flex justify-content-between gap-2">
-                                                                <strong>Total Material Value:</strong>
-                                                                <span id="totalRawMaterialValue" class="bg-label-warning px-1"><i class="bx bx-rupee fs-big"></i>0.00</span>
-                                                            </div>
+                                                <div class="d-flex gap-5">
+                                                    <div class="">
+                                                        <div class="d-flex justify-content-between gap-2">
+                                                            <strong>Total Material Weight:</strong>
+                                                            <span id="totalRawMaterialWeight" class="bg-label-warning px-1">0.00 gm</span>
                                                         </div>
                                                     </div>
-                                                
+                                                    <div class="">
+                                                        <div class="d-flex justify-content-between gap-2">
+                                                            <strong>Total Material Value:</strong>
+                                                            <span id="totalRawMaterialValue" class="bg-label-warning px-1"><i class="bx bx-rupee fs-big"></i>0.00</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <button type="button" class="btn btn-primary " id="addRawMaterialButton">Add Raw Material</button>
+                                        <button type="button" class="btn btn-primary" id="addRawMaterialButton">Add Raw Material</button>
                                     </div>
                                     <div id="rawMaterialsContainer">
                                         <!-- Raw material forms will be added here dynamically -->
@@ -256,7 +232,6 @@ label.form-label {
                                             </tbody>
                                         </table>
                                     </div>
-                                   
                                 </div>
                             </div>
                         </div>
@@ -264,7 +239,7 @@ label.form-label {
 
                     <div class="text-end">
                         <a href="{% url 'product_list' jewelry_type_name %}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary">Create Model</button>
+                        <button type="submit" class="btn btn-primary">Update Model</button>
                     </div>
                 </form>
             </div>
@@ -295,7 +270,7 @@ label.form-label {
                 </div>
             </div>
         </div>
-                <div class="text-end">
+        <div class="text-end">
             <button type="button" class="btn bg-label-danger cancel-stone-btn me-2">Cancel</button>
             <button type="button" class="btn btn-primary save-stone-btn">Save</button>
         </div>
@@ -320,14 +295,9 @@ label.form-label {
                     <label class="form-label">Weight (gm)</label>
                     <div class="input-group">
                         <input type="number" step="0.01" class="form-control raw-material-weight" required>
-                        <!-- <div class="input-group-text">
-                            <input class="form-check-input mt-0 get-rate-checkbox" type="checkbox" value="">
-                            <small class="ms-2">Get Rate</small>
-                        </div> -->
                         <div class="input-group-text">
                             <button type="button" class="btn btn-sm btn-primary get-rate-button">Get Rate</button>
                         </div>
-                        
                     </div>
                 </div>
             </div>

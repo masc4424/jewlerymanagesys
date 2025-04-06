@@ -28,3 +28,11 @@ def create_new_model(request, jewelry_type_name):
         'jewelry_type_id': jewelry_type_id, 
         'jewelry_type_name': jewelry_type_name  # Pass jewelry_type_name to template
     })
+
+def edit_model_view(request, jewelry_type_name):
+    jewelry_type = get_object_or_404(JewelryType, name=jewelry_type_name)
+    jewelry_type_id = jewelry_type.id
+    return render(request, 'edit_model.html', {
+        'jewelry_type_id': jewelry_type_id, 
+        'jewelry_type_name': jewelry_type_name  # Pass jewelry_type_name to template
+    })

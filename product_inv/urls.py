@@ -8,6 +8,8 @@ urlpatterns = [
     path('product_type', product_type, name='product_type'),
     path('product_list/<str:jewelry_type_name>/', product_list, name='product_list'),   
     path('create_new_model/<str:jewelry_type_name>/', create_new_model, name='create_new_model'),
+    path('edit_model/<str:jewelry_type_name>/', edit_model_view, name='edit_model_view'),
+
 ]
 
 # api end point
@@ -17,7 +19,7 @@ urlpatterns += [
     path('get_model_data/<str:jewelry_type_name>/', get_models_by_jewelry_type, name='get_model_data'),  
     path('create_model/', create_model, name='create_model'),
     path('get_model/<int:model_id>/', get_model, name='get_model'),
-    path('edit_model/', edit_model, name='edit_model'),
+    # path('edit_model/', edit_model, name='edit_model'),
     path('delete_model/<int:model_id>/', delete_model, name='delete_model'),
 
     path('get_stones/', get_stones, name='get_stones'),
@@ -29,6 +31,8 @@ urlpatterns += [
     path('create_jewelry_type/', create_jewelry_type, name='create_jewelry_type'),
     path('edit_jewelry_type/<int:id>/', edit_jewelry_type, name='create_jewelry_type'),
     path('delete_jewelry_type/<int:id>/', delete_jewelry_type, name='create_jewelry_type'),
+    path('edit_model/<int:model_id>/', edit_model, name='edit_model'),
+
 
 ]
 
