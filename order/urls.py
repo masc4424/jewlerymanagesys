@@ -17,8 +17,21 @@ urlpatterns = [
 urlpatterns += [
     path('orders_view/', orders_view, name='order_list'),         # List all orders
     path('orders/add/', order_add, name='order_add'),       # Add new order
+    path('mark_order_delivered/', mark_order_delivered, name='mark_order_delivered'),
     path('orders/edit/<int:order_id>/', order_edit, name='order_edit'),  # Edit order
-    path('orders/delete/<int:order_id>/', order_delete, name='order_delete'),  # Delete order
+    path('delete_order/', order_delete, name='order_delete'),
+    
+    # New URLs for repeated orders
+    path('add_to_repeat_orders/', add_to_repeat_orders, name='add_to_repeat_orders'),
+    path('add_multiple_to_repeat_orders/', add_multiple_to_repeat_orders, name='add_multiple_to_repeat_orders'),
+    path('get_repeated_orders/', get_repeated_orders, name='get_repeated_orders'),
+    path('delete_repeated_order/', delete_repeated_order, name='delete_repeated_order'),
+    
+    # New URLs for defective orders
+    path('get_defective_orders/', get_defective_orders, name='get_defective_orders'),
+    path('add_defective_order/', add_defective_order, name='add_defective_order'),
+    path('delete_defective_order/', delete_defective_order, name='delete_defective_order'),
+
 ]
 
 #get api

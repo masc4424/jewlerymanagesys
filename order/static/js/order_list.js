@@ -111,16 +111,20 @@ $(document).ready(function() {
                 { 
                     data: null,
                     render: function(data, type, row) {
+                        let deliveryAction = row.status === "Delivered" ? 
+                            `<li><a class="dropdown-item mark-delivered" href="#" data-unique-id="${row.order_unique_id}" data-status="delivered">Mark as Not Delivered</a></li>` : 
+                            `<li><a class="dropdown-item mark-delivered" href="#" data-unique-id="${row.order_unique_id}" data-status="not_delivered">Mark as Delivered</a></li>`;
+                
                         let actions = `
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-icon" type="button" id="actionDropdown${row.id}" data-bs-toggle="dropdown" aria-expanded="false">
+                                <button class="btn btn-sm btn-icon" type="button" id="actionDropdown${row.id}" data-bs-toggle="dropdown" data-bs-boundary="viewport" aria-expanded="false">
                                     <i class="bx bx-dots-vertical-rounded"></i>
                                 </button>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="actionDropdown${row.id}">
-                                    <li><a class="dropdown-item" href="/edit_order/${row.order_unique_id}">Edit</a></li>
-                                    <li><a class="dropdown-item" href="/view_order/${row.order_unique_id}">View Details</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li><a class="dropdown-item mark-delivered" href="#" data-unique-id="${row.order_unique_id}">Mark as delivered</a></li>
+                                    <li><a class="dropdown-item d-none" href="/edit_order/${row.order_unique_id}">Edit</a></li>
+                                    <li><a class="dropdown-item d-none" href="/view_order/${row.order_unique_id}">View Details</a></li>
+                                    <li><hr class="dropdown-divider d-none"></li>
+                                    ${deliveryAction}
                                     <li><a class="dropdown-item add-to-repeat" href="#" data-unique-id="${row.order_unique_id}">Add to Repeat orders</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger delete-order" href="#" data-unique-id="${row.order_unique_id}">Delete</a></li>
@@ -131,10 +135,6 @@ $(document).ready(function() {
                     }
                 }
             ],
-            scrollX: true,
-            fixedColumns: {
-                leftColumns: 2
-            },
             order: [[1, 'asc']],
             dom: 'Bfrtip',
             buttons: [
@@ -346,26 +346,35 @@ $(document).ready(function() {
     }
     
     function markAsDelivered(uniqueId) {
-        if (confirm(`Mark order ${uniqueId} as delivered?`)) {
-            // AJAX request to mark as delivered
+        // Find the current status from the DataTable
+        const table = $('#usersTable').DataTable();
+        const rowData = table.rows().data().toArray().find(row => row.order_unique_id === uniqueId);
+        const currentStatus = rowData.status;
+        const isCurrentlyDelivered = currentStatus === "Delivered";
+        
+        const actionText = isCurrentlyDelivered ? "not delivered" : "delivered";
+        
+        if (confirm(`Mark order ${uniqueId} as ${actionText}?`)) {
+            // AJAX request to toggle delivery status
             $.ajax({
                 url: "/mark_order_delivered/",
                 type: "POST",
                 data: {
                     order_unique_id: uniqueId,
+                    is_delivered: !isCurrentlyDelivered,  // Toggle the current status
                     csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
                 },
                 success: function(response) {
                     if (response.success) {
                         // Reload the table
                         $('#usersTable').DataTable().ajax.reload();
-                        alert("Order marked as delivered successfully!");
+                        alert(`Order marked as ${actionText} successfully!`);
                     } else {
                         alert("Error: " + response.error);
                     }
                 },
                 error: function() {
-                    alert("An error occurred while marking the order as delivered.");
+                    alert(`An error occurred while marking the order as ${actionText}.`);
                 }
             });
         }
@@ -399,7 +408,7 @@ $(document).ready(function() {
         if (confirm(`Are you sure you want to delete order ${uniqueId}? This action cannot be undone.`)) {
             // AJAX request to delete order
             $.ajax({
-                url: "/delete_order/",
+                url: "/delete_order/",  // Make sure this matches your urls.py
                 type: "POST",
                 data: {
                     order_unique_id: uniqueId,

@@ -1,45 +1,92 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Defected Orders{% endblock %}
+{% block title %}Defective Orders{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/order.css' %}">
+    <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between">
-        <h4 class="mt-4">Defected Orders</h4>
-        <div class="d-flex justify-content-end m-3">
-            <a class="btn btn-success text-white" id="" data-bs-toggle="" data-bs-target=""><i class='bx bx-plus'></i>Defect Order</a>
+    <div class="content-wrapper">
+        <div class="d-flex justify-content-between">
+            <h4 class="mt-4">Defective Orders List</h4>
+            <div class="d-flex justify-content-end m-3">
+                <button class="btn btn-success text-white" id="report_defective">
+                    <i class='bx bx-plus'></i> Report Defective Order
+                </button>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="defectiveOrdersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Order ID</th>
+                                <th>Client Name</th>
+                                <th>Model No.</th>
+                                <th>Defective Pieces</th>
+                                <th>Issue</th>
+                                <th>Reported Date</th>
+                                <th>Contact No.</th>
+                                <th>Image</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="table-responsive text-nowrap">
-        <table class="table" id="usersTable">
-            <thead>
-                <tr>
-                    <th>Sl No.</th>
-                    <th>Name</th>
-                    <th>Item Type</th>
-                    <th>Model No.</th>
-                    <th>Reason</th>
-                    <th>Date of Order</th>
-                    <th>Est. Delivery Date</th>
-                    <th>Contact No.</th>
-                    <th>MRP</th>
-                    <th>Selling Price</th>
-                    <th>Discount</th>
-                    <th>Color</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    
+    <!-- Modal for reporting defective order -->
+    <div class="modal fade" id="defectiveOrderModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Report Defective Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="defectiveOrderForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="order_unique_id" class="form-label">Order ID</label>
+                            <input type="text" class="form-control" id="order_unique_id" name="order_unique_id" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="defective_pieces" class="form-label">Number of Defective Pieces</label>
+                            <input type="number" class="form-control" id="defective_pieces" name="defective_pieces" min="1" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="issue_description" class="form-label">Issue Description</label>
+                            <textarea class="form-control" id="issue_description" name="issue_description" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="defect_image" class="form-label">Defect Image (Optional)</label>
+                            <input type="file" class="form-control" id="defect_image" name="defect_image">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
-</div>
+    
+    {% csrf_token %}
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/order.js' %}"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+    <script src="{% static 'js/defective_orders.js' %}"></script>
 {% endblock %}

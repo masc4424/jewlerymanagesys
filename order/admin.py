@@ -15,11 +15,11 @@ class OrderAdmin(admin.ModelAdmin):
 @admin.register(RepeatedOrder)
 class RepeatedOrderAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'order_unique_id', 'original_order', 'new_order',
+        'id', 'order_unique_id', 'original_order',
         'date_of_reorder', 'est_delivery_date'
     )
     list_filter = ('date_of_reorder',)
-    search_fields = ('order_unique_id', 'original_order__id', 'new_order__id')
+    search_fields = ('order_unique_id', 'original_order__id')
 
 
 @admin.register(DefectiveOrder)

@@ -24,7 +24,7 @@ class Order(models.Model):
 class RepeatedOrder(models.Model):
     order_unique_id = models.CharField(max_length=50, null=True, blank=True, default="")
     original_order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='repeated_orders')
-    new_order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='repeated_order_entry')
+    # new_order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='repeated_order_entry')
     date_of_reorder = models.DateField(default=date.today)
     est_delivery_date = models.DateField()  # Added estimated delivery date
 

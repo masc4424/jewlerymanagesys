@@ -15,6 +15,10 @@ from django.utils.dateparse import parse_date
 
 from django.templatetags.static import static
 
+from django.utils import timezone
+
+from datetime import date, timedelta
+
 def orders_view(request):
     """
     Fetch all orders with calculation of selling price
@@ -48,12 +52,19 @@ def orders_view(request):
 @csrf_exempt
 def mark_order_delivered(request):
     """
-    Mark an order as delivered based on order_unique_id
+    Toggle an order's delivery status based on order_unique_id
     """
     if request.method != 'POST':
         return JsonResponse({'success': False, 'error': 'Only POST method is allowed'})
 
     order_unique_id = request.POST.get('order_unique_id')
+    is_delivered = request.POST.get('is_delivered')
+    
+    # Convert string to boolean
+    if is_delivered == 'true':
+        is_delivered = True
+    else:
+        is_delivered = False
     
     if not order_unique_id:
         return JsonResponse({'success': False, 'error': 'Order ID is required'})
@@ -66,11 +77,14 @@ def mark_order_delivered(request):
             if not orders.exists():
                 return JsonResponse({'success': False, 'error': 'Order not found'})
             
+            # Update the delivery status for all orders with this unique ID
+            orders.update(is_delivered=is_delivered)
+            
             return JsonResponse({'success': True})
     
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
-
+    
 # Add Order
 @csrf_exempt
 def order_add(request):
@@ -185,11 +199,208 @@ def order_edit(request, order_id):
 
 # Delete Order
 @csrf_exempt
-def order_delete(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
-    if request.method == 'DELETE':
-        order.delete()
-        return JsonResponse({'message': 'Order deleted'})
+def order_delete(request):
+    if request.method == 'POST':
+        order_unique_id = request.POST.get('order_unique_id')
+        try:
+            order = get_object_or_404(Order, order_unique_id=order_unique_id)
+            order.delete()
+            return JsonResponse({'success': True, 'message': 'Order deleted'})
+        except:
+            return JsonResponse({'success': False, 'error': 'Order not found'}, status=404)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 
-    return JsonResponse({'error': 'Invalid request method'}, status=405)
+@csrf_exempt
+def add_to_repeat_orders(request):
+    if request.method == 'POST':
+        order_unique_id = request.POST.get('order_unique_id')
+        try:
+            original_orders = Order.objects.filter(order_unique_id=order_unique_id)
+            
+            if not original_orders.exists():
+                return JsonResponse({'success': False, 'error': 'Order not found'})
+            
+            new_unique_id = f"REP-{order_unique_id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"
+
+            for original_order in original_orders:
+                RepeatedOrder.objects.create(
+                    order_unique_id=new_unique_id,
+                    original_order=original_order,
+                    est_delivery_date=date.today() + timedelta(days=30)
+                )
+
+            return JsonResponse({'success': True, 'message': 'Order added to repeat orders successfully'})
+
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+def add_multiple_to_repeat_orders(request):
+    if request.method == 'POST':
+        order_unique_ids = request.POST.getlist('order_unique_ids[]')
+        
+        if not order_unique_ids:
+            return JsonResponse({'success': False, 'error': 'No orders selected'})
+        
+        success_count = 0
+        errors = []
+        
+        for unique_id in order_unique_ids:
+            try:
+                # Get all orders with this unique ID
+                original_orders = Order.objects.filter(order_unique_id=unique_id)
+                
+                if not original_orders.exists():
+                    errors.append(f"Order {unique_id} not found")
+                    continue
+                
+                # Create new orders as copies of the originals
+                new_orders = []
+                new_unique_id = f"REP-{unique_id}-{timezone.now().strftime('%Y%m%d%H%M%S')}"
+                
+                for original_order in original_orders:
+                    
+                    # Create RepeatedOrder entry linking old and new order
+                    RepeatedOrder.objects.create(
+                        order_unique_id=new_unique_id,
+                        original_order=original_order,
+                        est_delivery_date=date.today() + timedelta(days=30)
+                    )
+                
+                success_count += 1
+                    
+            except Exception as e:
+                errors.append(f"Error processing order {unique_id}: {str(e)}")
+        
+        result = {
+            'success': success_count > 0,
+            'message': f"{success_count} orders successfully added to repeat orders"
+        }
+        
+        if errors:
+            result['errors'] = errors
+            
+        return JsonResponse(result)
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+def get_repeated_orders(request):
+    repeated_orders = RepeatedOrder.objects.all().select_related('original_order')
+
+    data = []
+    for repeated_order in repeated_orders:
+        # Get all original orders using the original order_unique_id
+        original_orders = Order.objects.filter(order_unique_id=repeated_order.original_order.order_unique_id)
+
+        # Get all repeated orders using the RepeatedOrder's own order_unique_id
+        repeated_order_entries = Order.objects.filter(order_unique_id=repeated_order.order_unique_id)
+
+        # Totals for original order group
+        original_total_pieces = sum(order.no_of_pieces for order in original_orders)
+        original_total_mrp = sum(float(order.mrp) * order.no_of_pieces for order in original_orders)
+
+        # Totals for repeated order group
+        repeated_total_pieces = sum(order.no_of_pieces for order in repeated_order_entries)
+        repeated_total_mrp = sum(float(order.mrp) * order.no_of_pieces for order in repeated_order_entries)
+
+        data.append({
+            'id': repeated_order.id,
+            'original_order_id': repeated_order.original_order.order_unique_id,
+            'client_name': repeated_order.original_order.client_name,
+            'date_of_reorder': repeated_order.date_of_reorder.strftime('%Y-%m-%d'),
+            'est_delivery_date': repeated_order.est_delivery_date.strftime('%Y-%m-%d'),
+            'original_pieces': original_total_pieces,
+            'new_pieces': repeated_total_pieces,
+            'original_mrp': original_total_mrp,
+            'new_mrp': repeated_total_mrp,
+            'contact_no': repeated_order.original_order.contact_no
+        })
+
+    return JsonResponse(data, safe=False)
+
+@csrf_exempt
+def add_defective_order(request):
+    if request.method == 'POST':
+        order_unique_id = request.POST.get('order_unique_id')
+        defective_pieces = request.POST.get('defective_pieces')
+        issue_description = request.POST.get('issue_description')
+        
+        try:
+            # Get the first order with this unique ID (they all share the same info)
+            order = Order.objects.filter(order_unique_id=order_unique_id).first()
+            
+            if not order:
+                return JsonResponse({'success': False, 'error': 'Order not found'})
+            
+            defective_order = DefectiveOrder.objects.create(
+                order_unique_id=order_unique_id,
+                order=order,
+                defective_pieces=defective_pieces,
+                issue_description=issue_description,
+                reported_date=date.today()
+            )
+            
+            # Handle image upload if provided
+            if 'defect_image' in request.FILES:
+                defective_order.defect_image = request.FILES['defect_image']
+                defective_order.save()
+            
+            return JsonResponse({'success': True, 'message': 'Defective order reported successfully'})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+def get_defective_orders(request):
+    defective_orders = DefectiveOrder.objects.all().select_related('order')
+    
+    data = []
+    for defective_order in defective_orders:
+        data.append({
+            'id': defective_order.id,
+            'order_unique_id': defective_order.order_unique_id,
+            'client_name': defective_order.order.client_name,
+            'model_no': defective_order.order.model.model_no,
+            'defective_pieces': defective_order.defective_pieces,
+            'issue_description': defective_order.issue_description,
+            'reported_date': defective_order.reported_date.strftime('%Y-%m-%d'),
+            'image_url': defective_order.defect_image.url if defective_order.defect_image else None,
+            'contact_no': defective_order.order.contact_no
+        })
+    
+    return JsonResponse(data, safe=False)
+
+@csrf_exempt
+def delete_repeated_order(request):
+    if request.method == 'POST':
+        repeated_order_id = request.POST.get('repeated_order_id')
+        try:
+            repeated_order = RepeatedOrder.objects.get(id=repeated_order_id)
+            repeated_order.delete()
+            return JsonResponse({'success': True, 'message': 'Repeated order entry deleted successfully'})
+        except RepeatedOrder.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Repeated order entry not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
+
+@csrf_exempt
+def delete_defective_order(request):
+    if request.method == 'POST':
+        defective_order_id = request.POST.get('defective_order_id')
+        try:
+            defective_order = DefectiveOrder.objects.get(id=defective_order_id)
+            defective_order.delete()
+            return JsonResponse({'success': True, 'message': 'Defective order report deleted successfully'})
+        except DefectiveOrder.DoesNotExist:
+            return JsonResponse({'success': False, 'error': 'Defective order report not found'}, status=404)
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'}, status=405)
 

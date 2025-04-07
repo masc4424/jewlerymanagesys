@@ -4,42 +4,47 @@
 {% block title %}Repeated Orders{% endblock %}
 
 {% block extra_css %}
-    <link rel="stylesheet" href="{% static 'css/order.css' %}">
+    <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
 {% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="d-flex justify-content-between">
-        <h4 class="mt-4">Repeated Orders</h4>
-        <div class="d-flex justify-content-end m-3">
-            <a class="btn btn-success text-white" id="" data-bs-toggle="" data-bs-target=""><i class='bx bx-plus'></i>New</a>
+    <div class="content-wrapper">
+        <div class="d-flex justify-content-between">
+            <h4 class="mt-4">Repeated Orders List</h4>
+        </div>
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="repeatedOrdersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Client Name</th>
+                                <th>No. of Pieces</th>
+                                <th>Date of Reorder</th>
+                                <th>Est. Delivery Date</th>
+                                <th>Contact No.</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="table-responsive text-nowrap">
-        <table class="table" id="usersTable">
-            <thead>
-                <tr>
-                    <th>Sl No.</th>
-                    <th>Name</th>
-                    <th>Item Type</th>
-                    <th>Model No.</th>
-                    <th>No. of Pieces</th>
-                    <th>Date of Order</th>
-                    <th>Est. Delivery Date</th>
-                    <th>Contact No.</th>
-                    <th>MRP</th>
-                    <th>Selling Price</th>
-                    <th>Discount</th>
-                    <th>Color</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </div>
-</div>
+    
+    {% csrf_token %}
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/order.js' %}"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+    <script src="{% static 'js/repeted_orders.js' %}"></script>
 {% endblock %}
