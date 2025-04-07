@@ -115,7 +115,7 @@ function createUser() {
     const fullName = $("#createFullName").val();
     const email = $("#createEmail").val();
     const phoneNumber = $("#createPhoneNumber").val();
-    const roleUniqueId = $("#createUserRole").val();
+    const roleUniqueId = $("#createUserRole option:selected").attr("role_id");
     const password = $("#createPassword").val();
     
     // Add each field to the FormData object
