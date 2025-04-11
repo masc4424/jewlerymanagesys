@@ -90,6 +90,10 @@ $(document).ready(function () {
                 $(this).find(".image-upload-overlay").css("opacity", "0");
             }
         );
+
+        $('#createUserModal').on('shown.bs.modal', function () {
+            generateRandomUsername();
+        });
 });
 
 function fetchRoles() {
@@ -104,6 +108,13 @@ function fetchRoles() {
             });
         });
     }
+}
+
+function generateRandomUsername() {
+    const prefix = "user";
+    const randomNum = Math.floor(100000 + Math.random() * 900000); // 6-digit random number
+    const username = `${prefix}${randomNum}`;
+    $("#createUsername").val(username);
 }
 
 function createUser() {
