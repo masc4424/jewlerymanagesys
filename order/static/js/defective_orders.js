@@ -1,4 +1,22 @@
 $(document).ready(function() {
+    // Create modal dynamically and append to body
+    const imageModalHTML = `
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+          <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">Defective Order Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body text-center">
+                <img src="" id="modalImage" class="img-fluid rounded shadow" alt="Defective Image">
+              </div>
+            </div>
+          </div>
+        </div>
+    `;
+    $('body').append(imageModalHTML);
+
     $.ajax({
         url: "/get_defective_orders/",
         type: "GET",
@@ -31,7 +49,13 @@ $(document).ready(function() {
                     data: "image_url",
                     render: function(data) {
                         if (data) {
-                            return `<a href="${data}" target="_blank" class="btn btn-sm btn-outline-primary">View Image</a>`;
+                            return `
+                                <img src="${data}" alt="Defect" class="img-thumbnail view-defect-img" 
+                                     style="max-width: 60px; cursor: pointer;" 
+                                     data-bs-toggle="modal" 
+                                     data-bs-target="#imageModal" 
+                                     data-image="${data}" />
+                            `;
                         } else {
                             return 'No image';
                         }
@@ -58,37 +82,41 @@ $(document).ready(function() {
             ],
             order: [[0, 'desc']],
             dom: 'Bfrtip',
-            buttons: [
-                'copy', 'csv', 'excel', 'pdf', 'print'
-            ]
+            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
         });
-        
-        // Event listener for viewing orders
+
+        // Handle image thumbnail click
+        $('#defectiveOrdersTable').on('click', '.view-defect-img', function() {
+            const imageUrl = $(this).data('image');
+            $('#modalImage').attr('src', imageUrl);
+        });
+
+        // View order
         $('#defectiveOrdersTable').on('click', '.view-order', function(e) {
             e.preventDefault();
             const uniqueId = $(this).data('unique-id');
             window.location.href = `/view_order/${uniqueId}`;
         });
-        
-        // Event listener for deleting defective orders
+
+        // Delete order
         $('#defectiveOrdersTable').on('click', '.delete-defective', function(e) {
             e.preventDefault();
             const id = $(this).data('id');
             deleteDefectiveOrder(id);
         });
     }
-    
-    // Report Defective Order button
+
+    // Show report modal
     $("#report_defective").on("click", function() {
         $('#defectiveOrderModal').modal('show');
     });
-    
-    // Form submission for reporting defective order
+
+    // Form submission
     $("#defectiveOrderForm").on("submit", function(e) {
         e.preventDefault();
-        
+
         const formData = new FormData(this);
-        
+
         $.ajax({
             url: "/add_defective_order/",
             type: "POST",
@@ -98,7 +126,6 @@ $(document).ready(function() {
             success: function(response) {
                 if (response.success) {
                     $('#defectiveOrderModal').modal('hide');
-                    // Reload the table
                     location.reload();
                     alert("Defective order reported successfully!");
                 } else {
@@ -110,10 +137,9 @@ $(document).ready(function() {
             }
         });
     });
-    
+
     function deleteDefectiveOrder(id) {
         if (confirm(`Are you sure you want to delete this defective order report?`)) {
-            // AJAX request to delete defective order entry
             $.ajax({
                 url: "/delete_defective_order/",
                 type: "POST",
@@ -123,7 +149,6 @@ $(document).ready(function() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Reload the table
                         $('#defectiveOrdersTable').DataTable().ajax.reload();
                         alert("Defective order report deleted successfully!");
                     } else {
