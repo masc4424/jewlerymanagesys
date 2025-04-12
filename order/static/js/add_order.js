@@ -187,7 +187,7 @@ $(document).ready(function() {
                         message += `Order ID: ${order.order_id}, Unique ID: ${order.order_unique_id}\n`;
                     });
                     alert(message);
-                    // Optionally, you can redirect or reset the form here
+                    window.location.href = '/order_list';
                 } else {
                     alert('Order created but no order details returned.');
                 }

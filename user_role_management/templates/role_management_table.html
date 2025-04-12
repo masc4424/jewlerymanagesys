@@ -8,24 +8,26 @@
 {% endblock %}
 
 {% block content %}
+<div class="d-flex justify-content-between align-items-center card-header">
+    <h5 class="mb-0">Roles</h5>
+    <button class="btn btn-primary" id="createrole" data-bs-toggle="modal" data-bs-target="#createRolemodal">
+        Create Role
+    </button>
+</div>
 <div class="card">
-    <div class="d-flex">
-        <h5 class="card-header">Roles</h5>
-        <div class="d-flex justify-content-end m-3">
-            <button class="btn btn-success" id="createrole" data-bs-toggle="modal" data-bs-target="#createRolemodal">Create Role</button>
+    <div class="card-body">
+        <div class="table-responsive text-nowrap">
+            <table class="table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>Sl No</th>
+                        <th>Role Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
         </div>
-    </div>
-    <div class="table-responsive text-nowrap">
-        <table class="table" id="usersTable">
-            <thead>
-                <tr>
-                    <th>Sl No</th>
-                    <th>Role Name</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
     </div>
 </div>
 {% endblock %}
