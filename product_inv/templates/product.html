@@ -42,7 +42,7 @@
             justify-content: center;
             background-color: #f8f9fa;
             border-radius: 0.25rem;
-            margin-right: 2rem;
+            margin-bottom: 2rem;
         }
 
         .product-image-container img {
@@ -51,11 +51,28 @@
             object-fit: contain;
         }
 
+        /* Charts section styling */
+        .charts-row {
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        /* Chart container styling */
+        .chart-container {
+            width: 230px;
+            height: 230px;
+            flex: 1;
+        }
+
         /* Stone card styling */
         .stone-card {
             min-width: 280px;
-            max-width: 320px;
+            width: 100%;
+            max-width: 350px;
             flex: 0 0 auto;
+            margin-bottom: 1rem;
         }
 
         /* Material card styling */
@@ -64,23 +81,52 @@
         }
 
         /* Main content layout */
-        .main-container {
-            display: flex;
-            flex-direction: row;
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
             gap: 2rem;
         }
-        #product-content {
-            width: 600px;
+        
+        .charts-section {
+            grid-column: 1;
         }
+        
+        .details-section {
+            grid-column: 2;
+        }
+        
+        /* Stone container - horizontal scroll */
+        #stones-container {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            gap: 1rem;
+            padding-bottom: 1rem;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+        }
+        
         @media (max-width: 992px) {
-            .main-container {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .charts-section, .details-section {
+                grid-column: 1;
+            }
+            
+            .charts-row {
                 flex-direction: column;
             }
             
-            .product-image-container {
-                margin-right: 0;
-                margin-bottom: 2rem;
+            .chart-container {
                 width: 100%;
+            }
+            
+            .stone-card {
+                min-width: 260px;
+                max-width: 100%;
             }
         }
     </style>
@@ -100,41 +146,71 @@
         </div>
     </div>
     
-    <div class="main-container">
-        <!-- Product Image Container - Fixed size -->
-        <div class="product-image-container">
-            <img id="product-image" src="{% static 'model_img/' %}{{ product.model_no }}.png" alt="Product">
-        </div>
-        
-        <!-- Main Content Container -->
-        <div id="product-content" class="d-none flex-grow-1">
-            <!-- Stones Section -->
-            <div class="mb-4">
-                <div>
-                    <h3 class="mb-3">Stones <span id="stones-count" class="badge bg-secondary">0</span></h3>
-                    <div id="stones-container" class="d-flex flex-row overflow-auto gap-3 custom-scrollbar pb-2">
-                        <!-- Stone cards will be inserted here by JavaScript -->
-                    </div>
+    <div class="main-layout">
+        <!-- Left side: Image and Charts -->
+        <div class="charts-section">
+            <!-- Product Image Container -->
+            <div class="product-image-container">
+                <img id="product-image" src="{% static 'model_img/' %}{{ product.model_no }}.png" alt="Product">
+            </div>
+            
+            <!-- Charts Row - Charts side by side -->
+            <div class="charts-row">
+                <!-- Stone Chart Container -->
+                <div class="chart-container">
+                    <h5 class="text-center mb-2">Stone Distribution</h5>
+                    <canvas id="stoneChart"></canvas>
+                </div>
+                
+                <!-- Raw Materials Chart Container -->
+                <div class="chart-container">
+                    <h5 class="text-center mb-2">Materials Distribution</h5>
+                    <canvas id="materialChart"></canvas>
                 </div>
             </div>
-    
-            <!-- Raw Materials Section -->
-            <div>
+        </div>
+        
+        <!-- Right side: Content Details -->
+        <div class="details-section">
+            <!-- Main Content Container -->
+            <div id="product-content" class="d-none">
+                <!-- Stones Section -->
+                <div class="mb-4">
+                    <div>
+                        <h3 class="mb-3">Stones <span id="stones-count" class="badge bg-secondary">0</span></h3>
+                        <div id="stones-container" class="custom-scrollbar">
+                            <!-- Stone cards will be inserted here by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+        
+                <!-- Raw Materials Section -->
                 <div>
-                    <h3 class="mb-3">Raw Materials</h3>
-                    <div id="materials-container" class="row g-3">
-                        <!-- Material cards will be inserted here by JavaScript -->
+                    <div>
+                        <h3 class="mb-3">Raw Materials</h3>
+                        <div id="materials-container" class="row g-3">
+                            <!-- Material cards will be inserted here by JavaScript -->
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Loading spinner -->
+<div id="loading-spinner" class="text-center my-5">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading product data...</p>
+</div>
 {% endblock %}
 
 {% block extra_js %}
-    <script src="{% static 'js/product.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         var modelNo = "{{ product.model_no|escapejs }}";
     </script>
+    <script src="{% static 'js/product.js' %}"></script>
 {% endblock %}
