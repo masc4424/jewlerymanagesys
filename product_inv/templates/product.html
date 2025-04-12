@@ -5,173 +5,6 @@
 
 {% block extra_css %}
     <link rel="stylesheet" href="{% static 'css/product.css' %}">
-    <style>
-        /* Scrollbar styling */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f1f1; 
-            border-radius: 10px;
-        }
-        
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #adb5bd; 
-            border-radius: 10px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #6c757d; 
-        }
-
-        /* For Firefox */
-        .custom-scrollbar {
-            scrollbar-width: thin;
-            scrollbar-color: #adb5bd #f1f1f1;
-        }
-
-        /* Fixed image container */
-        .product-image-container {
-            width: 300px;
-            height: 300px;
-            overflow: hidden;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f8f9fa;
-            border-radius: 0.25rem;
-            margin-bottom: 2rem;
-        }
-
-        .product-image-container img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        /* Charts section styling */
-        .charts-row {
-            display: flex;
-            flex-direction: row;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-        
-        /* Chart container styling */
-        .chart-container {
-            width: 230px;
-            height: 230px;
-            flex: 1;
-        }
-
-        /* Stone card styling */
-        /* .stone-card {
-            min-width: 280px;
-            width: 280px;
-            flex: 0 0 auto;
-            margin-bottom: 1rem;
-        } */
-
-        /* Material card styling */
-        .material-card {
-            height: 100%;
-        }
-
-        /* Main content layout */
-        .main-layout {
-            display: grid;
-            grid-template-columns: 1fr 2fr;
-            gap: 2rem;
-        }
-        
-        .charts-section {
-            grid-column: 1;
-        }
-        
-        .details-section {
-            grid-column: 2;
-        }
-        
-        /* Stone container - ONLY THIS CONTAINER IS HORIZONTALLY SCROLLABLE */
-        #stones-container {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            gap: 1rem;
-            padding: 0.5rem 0;
-            margin-bottom: 1rem;
-            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
-            scroll-behavior: smooth;
-        }
-        .details-section {
-            overflow: auto;
-        }
-        /* Add these styles to fix horizontal scrolling */
-        body {
-            overflow-x: hidden; /* Prevent body horizontal scroll */
-        }
-
-        .container {
-            max-width: 100%; /* Ensure container doesn't exceed viewport */
-        }
-
-        .main-layout {
-            width: 100%;
-            overflow: hidden; /* Contain overflow in the layout */
-        }
-
-        .chart-container {
-            max-width: 100%; /* Ensure charts don't cause overflow */
-        }
-
-        /* Ensure your stones container is the only scrollable element */
-        #stones-container {
-            display: flex;
-            flex-wrap: nowrap;
-            overflow-x: auto;
-            overflow-y: hidden; /* Add this to ensure vertical overflow is hidden */
-            gap: 1rem;
-            padding: 0.5rem 0;
-            margin-bottom: 1rem;
-            width: 100%;
-            -webkit-overflow-scrolling: touch;
-            scroll-behavior: smooth;
-            /* Add this to make it more obvious that it's scrollable */
-            white-space: nowrap;
-        }
-        .stone-card {
-            min-width: 280px;
-            width: 280px;
-            flex: 0 0 auto;
-            margin-bottom: 1rem;
-            /* Make sure display is properly set */
-            display: block;
-        }
-        @media (max-width: 992px) {
-            .main-layout {
-                grid-template-columns: 1fr;
-            }
-            
-            .charts-section, .details-section {
-                grid-column: 1;
-            }
-            
-            .charts-row {
-                flex-direction: column;
-            }
-            
-            .chart-container {
-                width: 100%;
-            }
-            
-            .stone-card {
-                min-width: 260px;
-                width: 260px;
-            }
-        }
-    </style>
 {% endblock %}
 
 {% block content %}
@@ -199,14 +32,14 @@
             <!-- Charts Row - Charts side by side -->
             <div class="charts-row">
                 <!-- Stone Chart Container -->
-                <div class="chart-container">
+                <div class="chart-container mb-4">
                     <h5 class="text-center mb-2">Stone Distribution</h5>
                     <canvas id="stoneChart"></canvas>
                 </div>
                 
                 <!-- Raw Materials Chart Container -->
                 <div class="chart-container">
-                    <h5 class="text-center mb-2">Materials Distribution</h5>
+                    <h5 class="text-center mb-2">Raw Materials</h5>
                     <canvas id="materialChart"></canvas>
                 </div>
             </div>

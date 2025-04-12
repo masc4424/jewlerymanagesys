@@ -1,11 +1,12 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Hey <b>{{ userprofile.full_name }}</b>, hope your business is touching the sky right now!</h2>
+        <h3>Hey <b>{{ userprofile.full_name }}</b>, hope your business is touching the sky right now!</h3>
     </div>
 
     <div class="row">
@@ -13,22 +14,13 @@
         <div class="col-md-4 mb-4">
             <div class="card">
                 <div class="card-body">
-                  <div class="card-title d-flex align-items-start justify-content-between">
-                    <div class="avatar flex-shrink-0">
-                    </div>
-                    <div class="dropdown">
-                      <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="bx bx-dots-vertical-rounded"></i>
-                      </button>
-                      <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                        <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                      </div>
+                  <div class="card-title float-end">
+                    <div class="">
+                      <img src="{% static 'dash_img/Revenue.svg' %}" alt="Revenue Icon" class="h-8 w-8">
                     </div>
                   </div>
-                  <span class="fw-semibold d-block mb-1">Profit</span>
-                  <h3 class="card-title mb-2">$12,628</h3>
-                  <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +72.80%</small>
+                  <span class="fw-semibold d-block mb-1">Total Revenue</span>
+                  <h2 class="card-title mb-2">₹56L</h2>
                 </div>
               </div>
         </div>
@@ -37,23 +29,13 @@
         <div class="col-md-4 mb-4">
             <div class="card">
                 <div class="card-body">
-                  <div class="card-title d-flex align-items-start justify-content-between">
-                    <div class="avatar flex-shrink-0">
-                      
-                    </div>
-                    <div class="dropdown">
-                      <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="bx bx-dots-vertical-rounded"></i>
-                      </button>
-                      <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                        <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                      </div>
+                  <div class="card-title float-end">
+                    <div class="">
+                      <img src="{% static 'dash_img/Models.svg' %}" alt="Models Icon" class="h-8 w-8">
                     </div>
                   </div>
-                  <span class="fw-semibold d-block mb-1">Profit</span>
-                  <h3 class="card-title mb-2">$12,628</h3>
-                  <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +72.80%</small>
+                  <span class="fw-semibold d-block mb-1">Total Models</span>
+                  <h2 class="card-title mb-2">1829</h2>
                 </div>
               </div>
         </div>
@@ -62,23 +44,13 @@
         <div class="col-md-4 mb-4">
             <div class="card">
                 <div class="card-body">
-                  <div class="card-title d-flex align-items-start justify-content-between">
-                    <div class="avatar flex-shrink-0">
-                      
-                    </div>
-                    <div class="dropdown">
-                      <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="bx bx-dots-vertical-rounded"></i>
-                      </button>
-                      <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                        <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                      </div>
+                  <div class="card-title float-end">
+                    <div class="">
+                      <img src="{% static 'dash_img/Repeat_orders.svg' %}" alt="Repeat orders Icon" class="h-8 w-8">
                     </div>
                   </div>
-                  <span class="fw-semibold d-block mb-1">Profit</span>
-                  <h3 class="card-title mb-2">$12,628</h3>
-                  <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +72.80%</small>
+                  <span class="fw-semibold d-block mb-1">Repeat Orders</span>
+                  <h2 class="card-title mb-2">324</h2>
                 </div>
               </div>
         </div>
@@ -87,23 +59,13 @@
         <div class="col-md-4 mb-4">
             <div class="card">
                 <div class="card-body">
-                  <div class="card-title d-flex align-items-start justify-content-between">
-                    <div class="avatar flex-shrink-0">
-                      
-                    </div>
-                    <div class="dropdown">
-                      <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="bx bx-dots-vertical-rounded"></i>
-                      </button>
-                      <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                        <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                      </div>
+                  <div class="card-title float-end">
+                    <div class="">
+                      <img src="{% static 'dash_img/Defected_orders.svg' %}" alt="Defected orders Icon" class="h-8 w-8">
                     </div>
                   </div>
-                  <span class="fw-semibold d-block mb-1">Profit</span>
-                  <h3 class="card-title mb-2">$12,628</h3>
-                  <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +72.80%</small>
+                  <span class="fw-semibold d-block mb-1">Defected Orders</span>
+                  <h2 class="card-title mb-2">12</h2>
                 </div>
               </div>
         </div>
@@ -112,23 +74,13 @@
         <div class="col-md-4 mb-4">
             <div class="card">
                 <div class="card-body">
-                  <div class="card-title d-flex align-items-start justify-content-between">
-                    <div class="avatar flex-shrink-0">
-                      
-                    </div>
-                    <div class="dropdown">
-                      <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="bx bx-dots-vertical-rounded"></i>
-                      </button>
-                      <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                        <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                      </div>
+                  <div class="card-title float-end">
+                    <div class="">
+                      <img src="{% static 'dash_img/Total_weight.svg' %}" alt="Total weight Icon" class="h-8 w-8">
                     </div>
                   </div>
-                  <span class="fw-semibold d-block mb-1">Profit</span>
-                  <h3 class="card-title mb-2">$12,628</h3>
-                  <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +72.80%</small>
+                  <span class="fw-semibold d-block mb-1">Total Weight</span>
+                  <h2 class="card-title mb-2">8.3kg</h2>
                 </div>
               </div>
         </div>
@@ -137,23 +89,13 @@
         <div class="col-md-4 mb-4">
             <div class="card">
                 <div class="card-body">
-                  <div class="card-title d-flex align-items-start justify-content-between">
-                    <div class="avatar flex-shrink-0">
-                      
-                    </div>
-                    <div class="dropdown">
-                      <button class="btn p-0" type="button" id="cardOpt3" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <i class="bx bx-dots-vertical-rounded"></i>
-                      </button>
-                      <div class="dropdown-menu dropdown-menu-end" aria-labelledby="cardOpt3">
-                        <a class="dropdown-item" href="javascript:void(0);">View More</a>
-                        <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                      </div>
+                  <div class="card-title float-end">
+                    <div class="">
+                      <img src="{% static 'dash_img/Colors.svg' %}" alt="Colors Icon" class="h-8 w-8">
                     </div>
                   </div>
-                  <span class="fw-semibold d-block mb-1">Profit</span>
-                  <h3 class="card-title mb-2">$12,628</h3>
-                  <small class="text-success fw-semibold"><i class="bx bx-up-arrow-alt"></i> +72.80%</small>
+                  <span class="fw-semibold d-block mb-1">Colours Available</span>
+                  <h2 class="card-title mb-2">24</h2>
                 </div>
               </div>
         </div>

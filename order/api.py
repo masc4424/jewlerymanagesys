@@ -18,6 +18,8 @@ from django.templatetags.static import static
 from django.utils import timezone
 
 from datetime import date, timedelta
+import os
+import time
 
 def orders_view(request):
     """
@@ -28,7 +30,7 @@ def orders_view(request):
     ).values(
         "id", "client_name", "model_id", "model_no", "model__model_img", 
         "no_of_pieces", "date_of_order", "est_delivery_date", "contact_no", 
-        "mrp", "discount", "color_id", "order_unique_id"
+        "mrp", "discount", "color_id", "order_unique_id", "is_delivered"
     )
 
     orders_list = []
@@ -329,7 +331,6 @@ def add_defective_order(request):
         issue_description = request.POST.get('issue_description')
         
         try:
-            # Get the first order with this unique ID (they all share the same info)
             order = Order.objects.filter(order_unique_id=order_unique_id).first()
             
             if not order:
@@ -343,13 +344,31 @@ def add_defective_order(request):
                 reported_date=date.today()
             )
             
-            # Handle image upload if provided
             if 'defect_image' in request.FILES:
-                defective_order.defect_image = request.FILES['defect_image']
+                image_file = request.FILES['defect_image']
+
+                # Construct the path relative to the app's directory
+                from django.conf import settings
+                app_static_dir = os.path.join(settings.BASE_DIR, 'order', 'static', 'defective_orders')
+                
+                if not os.path.exists(app_static_dir):
+                    os.makedirs(app_static_dir)
+                
+                # Create a unique filename
+                filename = f"defect_{order_unique_id}_{int(time.time())}{os.path.splitext(image_file.name)[1]}"
+                file_path = os.path.join(app_static_dir, filename)
+                
+                # Save the file
+                with open(file_path, 'wb+') as destination:
+                    for chunk in image_file.chunks():
+                        destination.write(chunk)
+                
+                # Save the relative path in the model
+                defective_order.defect_image = f"defective_orders/{filename}"
                 defective_order.save()
             
             return JsonResponse({'success': True, 'message': 'Defective order reported successfully'})
-            
+        
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     
@@ -360,6 +379,10 @@ def get_defective_orders(request):
     
     data = []
     for defective_order in defective_orders:
+        image_url = None
+        if defective_order.defect_image:
+            image_url = static(defective_order.defect_image)  # Use the static helper
+        
         data.append({
             'id': defective_order.id,
             'order_unique_id': defective_order.order_unique_id,
@@ -368,7 +391,7 @@ def get_defective_orders(request):
             'defective_pieces': defective_order.defective_pieces,
             'issue_description': defective_order.issue_description,
             'reported_date': defective_order.reported_date.strftime('%Y-%m-%d'),
-            'image_url': defective_order.defect_image.url if defective_order.defect_image else None,
+            'image_url': image_url,
             'contact_no': defective_order.order.contact_no
         })
     

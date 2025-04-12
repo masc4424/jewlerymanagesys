@@ -25,8 +25,10 @@ $(document).ready(function() {
                 groupedOrders[order.order_unique_id].totalMRP += parseFloat(order.mrp) * order.no_of_pieces;
                 groupedOrders[order.order_unique_id].totalSellingPrice += order.selling_price * order.no_of_pieces;
                 
-                // For now assume all are not delivered (you'll need to add this field to your model)
-                groupedOrders[order.order_unique_id].delivered = false;
+                // If any order in the group is not delivered, mark the whole group as not delivered
+                if (!order.is_delivered) {
+                    groupedOrders[order.order_unique_id].delivered = false;
+                }
                 
                 // Store the first order for display purposes
                 if (!groupedOrders[order.order_unique_id].firstOrder) {
@@ -126,6 +128,7 @@ $(document).ready(function() {
                                     <li><hr class="dropdown-divider d-none"></li>
                                     ${deliveryAction}
                                     <li><a class="dropdown-item add-to-repeat" href="#" data-unique-id="${row.order_unique_id}">Add to Repeat orders</a></li>
+                                    <li><a class="dropdown-item report-defective" href="#" data-unique-id="${row.order_unique_id}">Report Defective</a></li>
                                     <li><hr class="dropdown-divider"></li>
                                     <li><a class="dropdown-item text-danger delete-order" href="#" data-unique-id="${row.order_unique_id}">Delete</a></li>
                                 </ul>
@@ -178,6 +181,128 @@ $(document).ready(function() {
             const uniqueId = $(this).data('unique-id');
             deleteOrder(uniqueId);
         });
+
+        $('#usersTable').on('click', '.report-defective', function(e) {
+            e.preventDefault();
+            const uniqueId = $(this).data('unique-id');
+            showDefectiveOrderModal(uniqueId);
+        });
+    }
+
+    // Define the modal function for reporting defective orders
+    function showDefectiveOrderModal(uniqueId) {
+        // Find order details for display
+        const table = $('#usersTable').DataTable();
+        let orderData = null;
+        
+        table.rows().every(function() {
+            if (this.data().order_unique_id === uniqueId) {
+                orderData = this.data();
+                return false; // Break the loop
+            }
+        });
+        
+        if (!orderData) return;
+        
+        // Create and show modal
+        const modalHtml = `
+            <div class="modal fade" id="defectiveOrderModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Report Defective Order - ${uniqueId}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="defectiveOrderForm" enctype="multipart/form-data">
+                                <input type="hidden" name="order_unique_id" value="${uniqueId}">
+                                <input type="hidden" name="csrfmiddlewaretoken" value="${$('input[name=csrfmiddlewaretoken]').val()}">
+                                
+                                <div class="mb-3">
+                                    <label for="defective_pieces" class="form-label">Number of Defective Pieces</label>
+                                    <input type="number" class="form-control" id="defective_pieces" name="defective_pieces" 
+                                        min="1" max="${orderData.pieces}" required>
+                                    <div class="form-text">Total order pieces: ${orderData.pieces}</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="issue_description" class="form-label">Issue Description</label>
+                                    <textarea class="form-control" id="issue_description" name="issue_description" 
+                                        rows="3" required></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="defect_image" class="form-label">Upload Image (Optional)</label>
+                                    <input type="file" class="form-control" id="defect_image" name="defect_image" 
+                                        accept="image/*">
+                                </div>
+                                
+                                <div class="preview-container mt-3 d-none">
+                                    <p>Image Preview:</p>
+                                    <img id="imagePreview" class="img-fluid" style="max-height: 200px;" />
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" id="submitDefectiveOrder">Submit Report</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if any
+        $('#defectiveOrderModal').remove();
+        $('body').append(modalHtml);
+        
+        // Set up image preview
+        $('#defect_image').on('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    $('#imagePreview').attr('src', e.target.result);
+                    $('.preview-container').removeClass('d-none');
+                }
+                reader.readAsDataURL(file);
+            } else {
+                $('.preview-container').addClass('d-none');
+            }
+        });
+        
+        // Handle form submission
+        $('#submitDefectiveOrder').on('click', function() {
+            const form = $('#defectiveOrderForm')[0];
+            const formData = new FormData(form);
+            
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            
+            $.ajax({
+                url: "/add_defective_order/",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('defectiveOrderModal')).hide();
+                        alert("Defective order reported successfully!");
+                    } else {
+                        alert("Error: " + response.error);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert("An error occurred while reporting the defective order: " + error);
+                }
+            });
+        });
+        
+        const defectiveModal = new bootstrap.Modal(document.getElementById('defectiveOrderModal'));
+        defectiveModal.show();
     }
     
     // Define modal display functions
@@ -348,11 +473,24 @@ $(document).ready(function() {
     function markAsDelivered(uniqueId) {
         // Find the current status from the DataTable
         const table = $('#usersTable').DataTable();
-        const rowData = table.rows().data().toArray().find(row => row.order_unique_id === uniqueId);
+        let rowIndex = null;
+        
+        // Find the row index with the matching order_unique_id
+        table.rows().every(function(idx) {
+            if (this.data().order_unique_id === uniqueId) {
+                rowIndex = idx;
+                return false; // Break the loop
+            }
+        });
+        
+        if (rowIndex === null) return;
+        
+        const rowData = table.row(rowIndex).data();
         const currentStatus = rowData.status;
         const isCurrentlyDelivered = currentStatus === "Delivered";
         
         const actionText = isCurrentlyDelivered ? "not delivered" : "delivered";
+        const newStatus = isCurrentlyDelivered ? "Not delivered" : "Delivered";
         
         if (confirm(`Mark order ${uniqueId} as ${actionText}?`)) {
             // AJAX request to toggle delivery status
@@ -366,8 +504,29 @@ $(document).ready(function() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Reload the table
-                        $('#usersTable').DataTable().ajax.reload();
+                        // Update the row data's status
+                        rowData.status = newStatus;
+                        
+                        // Update the status cell with proper badge
+                        const statusHTML = newStatus === "Delivered" ? 
+                            '<span class="badge bg-success">Delivered</span>' : 
+                            '<span class="badge bg-warning">Not delivered</span>';
+                        
+                        // Update the dropdown menu action
+                        const deliveryAction = newStatus === "Delivered" ? 
+                            `<li><a class="dropdown-item mark-delivered" href="#" data-unique-id="${uniqueId}" data-status="delivered">Mark as Not Delivered</a></li>` : 
+                            `<li><a class="dropdown-item mark-delivered" href="#" data-unique-id="${uniqueId}" data-status="not_delivered">Mark as Delivered</a></li>`;
+                        
+                        // Update the DataTable row data
+                        table.row(rowIndex).data(rowData).draw(false);
+                        
+                        // Now manually update the cell HTML since DataTables won't fully re-render
+                        $(table.row(rowIndex).node()).find('td:eq(4)').html(statusHTML);
+                        
+                        // Find and replace the delivery action menu item
+                        const dropdownMenu = $(table.row(rowIndex).node()).find('.dropdown-menu');
+                        dropdownMenu.find('.mark-delivered').parent().replaceWith(deliveryAction);
+                        
                         alert(`Order marked as ${actionText} successfully!`);
                     } else {
                         alert("Error: " + response.error);

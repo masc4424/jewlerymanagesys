@@ -11,10 +11,15 @@ $(document).ready(function() {
     });
     
     function initializeDataTable(data) {
+        // Add a sequential index to each row
+        data.forEach((item, index) => {
+            item.seq_number = index + 1;
+        });
+        
         $('#repeatedOrdersTable').DataTable({
             data: data,
             columns: [
-                { data: "id" },
+                { data: "seq_number" }, // Use the sequential number instead of ID
                 { data: "client_name" },
                 { data: "original_pieces" },
                 { data: "date_of_reorder" },
@@ -40,7 +45,7 @@ $(document).ready(function() {
                     }
                 }
             ],
-            order: [[0, 'desc']],
+            order: [[0, 'asc']], // Order by the sequential number
             dom: 'Bfrtip',
             buttons: [
                 'copy', 'csv', 'excel', 'pdf', 'print'
@@ -74,9 +79,9 @@ $(document).ready(function() {
                 },
                 success: function(response) {
                     if (response.success) {
-                        // Reload the table
-                        $('#repeatedOrdersTable').DataTable().ajax.reload();
+                        // Instead of using ajax.reload(), reload the page
                         alert("Repeated order entry deleted successfully!");
+                        location.reload();
                     } else {
                         alert("Error: " + response.error);
                     }
