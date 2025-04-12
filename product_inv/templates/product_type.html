@@ -15,7 +15,7 @@
             Product Type
         </h4>
         <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createJewelryTypeModal">
-          <i class="bx bx-plus"></i> Create Jewelry Type
+          <i class="bx bx-plus"></i> Create Jewellery Type
         </button>
     </div>
       
@@ -25,7 +25,7 @@
             <thead>
                 <tr>
                     <th>Sr No.</th>
-                    <th>Jewelry Type</th>
+                    <th>Jewellery Type</th>
                     <th>Models</th>
                     <th>Actions</th>
                 </tr>
@@ -41,14 +41,14 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="createJewelryTypeModalLabel">Create Jewelry Type</h5>
+        <h5 class="modal-title" id="createJewelryTypeModalLabel">Create Jewellery Type</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <form id="createJewelryTypeForm">
           {% csrf_token %}
           <div class="mb-3">
-            <label for="jewelry_type_name" class="form-label">Jewelry Type Name</label>
+            <label for="jewelry_type_name" class="form-label">Jewellery Type Name</label>
             <input type="text" class="form-control" id="jewelry_type_name" name="name" required>
           </div>
           <div class="text-end">
@@ -65,7 +65,7 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" id="editJewelryTypeModalLabel">Edit Jewelry Type</h5>
+        <h5 class="modal-title" id="editJewelryTypeModalLabel">Edit Jewellery Type</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
@@ -73,7 +73,7 @@
           {% csrf_token %}
           <input type="hidden" id="editJewelryTypeId">
           <div class="mb-3">
-            <label for="editJewelryTypeName" class="form-label">Jewelry Type Name</label>
+            <label for="editJewelryTypeName" class="form-label">Jewellery Type Name</label>
             <input type="text" class="form-control" id="editJewelryTypeName" name="name" required>
           </div>
           <div class="text-end">

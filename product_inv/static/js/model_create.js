@@ -239,10 +239,13 @@ $(document).ready(function() {
                     // Add a header for the details section
                     detailsContainer.append('<h6 class="mb-2">Available Stone Details:</h6>');
                     
-                    // Add each detail as a row of input fields with checkbox and count
+                    // Add each detail as a row with simplified display
                     $.each(data, function(i, detail) {
+                        // Auto-select if only one detail is available
+                        const isAutoSelected = data.length === 1;
+                        
                         const detailRow = $(`
-                            <div class="row stone-detail-row mb-2">
+                            <div class="row stone-detail-row mb-2 ${isAutoSelected ? 'bg-light' : ''}">
                                 <div class="col-md-1">
                                     <div class="form-check mt-2">
                                         <input class="form-check-input stone-detail-checkbox" type="checkbox" value="${detail.id}" 
@@ -250,31 +253,20 @@ $(document).ready(function() {
                                             data-length="${detail.length}" 
                                             data-breadth="${detail.breadth}"
                                             data-rate="${detail.rate}"
-                                            data-detail-id="${detail.id}">
+                                            data-detail-id="${detail.id}"
+                                            ${isAutoSelected ? 'checked' : ''}>
                                     </div>
                                 </div>
-                                <div class="col-md-2">
+                                <div class="col-md-8">
+                                    <div class="d-flex align-items-center">
+                                        <span class="me-3">Weight: ${detail.weight} gm</span>
+                                        <span>Dimensions: ${detail.length}x${detail.breadth} cm</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
                                     <div class="input-group">
                                         <span class="input-group-text">Count</span>
                                         <input type="number" min="1" value="1" class="form-control stone-count-input ps-2 p-0">
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-group">
-                                        <span class="input-group-text">Weight</span>
-                                        <input type="text" class="form-control" value="${detail.weight}" disabled>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-group">
-                                        <span class="input-group-text">Length</span>
-                                        <input type="text" class="form-control" value="${detail.length}" disabled>
-                                    </div>
-                                </div>
-                                <div class="col-md-3">
-                                    <div class="input-group">
-                                        <span class="input-group-text">Breadth</span>
-                                        <input type="text" class="form-control" value="${detail.breadth}" disabled>
                                     </div>
                                 </div>
                             </div>

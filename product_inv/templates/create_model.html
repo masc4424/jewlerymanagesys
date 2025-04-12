@@ -15,6 +15,9 @@
     border-color: #d9dee3 #d9dee3 #fff !important;
     border-bottom: 2px solid #696cff !important;
 }
+.nav-tabs .nav-item .nav-link:not(.active) {
+    background-color: white !important;
+}
 
 .tab-pane.active {
     display: block !important;
@@ -128,7 +131,7 @@ label.form-label {
                         </div>
                     </div>
 
-                    <div class="col-md-12">
+                    <!-- <div class="col-md-12">
                         <div class="mb-3 col-lg-auto">
                             <label for="model_img" class="form-label">Model Image</label>
                             <div class="d-flex align-items-center">
@@ -137,6 +140,28 @@ label.form-label {
                                      style="height: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
                                     <img id="imagePreview" src="#" alt="Image Preview" class="img-fluid"
                                          style="max-width: 100%; max-height: 100%;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                     -->
+                     <div class="col-md-12">
+                        <div class="mb-3 col-lg-auto">
+                            <label for="model_img" class="form-label">Model Image</label>
+                            <div class="d-flex align-items-center">
+                                <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/png" required onchange="this.nextElementSibling.classList.remove('d-none')">
+                    
+                                <div id="previewContainer" class="position-relative border p-1 d-none"
+                                    style="height: 183px; width: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
+                                    
+                                    <!-- Close button -->
+                                    <button type="button" class="btn-close position-absolute bottom-100 end-0"
+                                        onclick="this.parentElement.classList.add('d-none'); this.parentElement.previousElementSibling.value = ''"
+                                        aria-label="Close"></button>
+                    
+                                    <!-- Static placeholder or preloaded image -->
+                                    <img id="imagePreview" src="https://via.placeholder.com/150" class="img-fluid"
+                                        style="max-width: 100%; max-height: 100%;" alt="Preview">
                                 </div>
                             </div>
                         </div>
