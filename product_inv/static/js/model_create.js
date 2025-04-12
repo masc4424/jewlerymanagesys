@@ -214,10 +214,14 @@ $(document).ready(function() {
         });
     }
     
-    // Function to load stone details based on selected stone type
+   // Function to load stone details based on selected stone type
     function loadStoneDetails(typeSelect) {
         const typeId = typeSelect.val();
         const stoneForm = typeSelect.closest('.stone-form-container');
+        
+        // Get the stone name and type name from the dropdowns for URL parameters
+        const stoneName = stoneForm.find('.stone-name-select option:selected').text();
+        const typeName = stoneForm.find('.stone-type-select option:selected').text();
         
         if (!typeId) return;
         
@@ -229,13 +233,25 @@ $(document).ready(function() {
             type: 'GET',
             dataType: 'json',
             success: function(data) {
-                if (data && data.length > 0) {
-                    // Get the reference point for inserting detail rows
-                    const lastRow = stoneForm.find('.row').last();
+                // Get the reference point for inserting detail rows
+                const lastRow = stoneForm.find('.row').last();
+                
+                // Create container for all detail rows
+                const detailsContainer = $('<div class="stone-details-container mt-3"></div>');
+                
+                if (!data || data.length === 0) {
+                    // No stone details available - show message and add button with URL parameters
+                    const redirectUrl = `/stone-type-details/?stone_name=${encodeURIComponent(stoneName)}&type_name=${encodeURIComponent(typeName)}`;
                     
-                    // Create container for all detail rows
-                    const detailsContainer = $('<div class="stone-details-container mt-3"></div>');
-                    
+                    detailsContainer.append(`
+                        <div class="alert alert-warning" role="alert">
+                            No Dimensions available please add
+                            <a href="${redirectUrl}" class="btn btn-primary btn-sm ms-2">
+                                <i class="bx bx-plus"></i> Add
+                            </a>
+                        </div>
+                    `);
+                } else {
                     // Add a header for the details section
                     detailsContainer.append('<h6 class="mb-2">Available Stone Details:</h6>');
                     
@@ -259,8 +275,8 @@ $(document).ready(function() {
                                 </div>
                                 <div class="col-md-8">
                                     <div class="d-flex align-items-center">
-                                        <span class="me-3">Weight: ${detail.weight} gm</span>
-                                        <span>Dimensions: ${detail.length}x${detail.breadth} cm</span>
+                                        <span class="card p-2 me-3">Weight: ${detail.weight} gm</span>
+                                        <span class="card p-2 px-3">Dimensions: ${detail.length}x${detail.breadth} cm</span>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
@@ -275,9 +291,6 @@ $(document).ready(function() {
                         detailsContainer.append(detailRow);
                     });
                     
-                    // Add the details container after the last row
-                    lastRow.after(detailsContainer);
-                    
                     // Enable input for count fields
                     stoneForm.find('.stone-count-input').prop('disabled', false);
                     
@@ -290,9 +303,31 @@ $(document).ready(function() {
                         }
                     });
                 }
+                
+                // Add the details container after the last row
+                lastRow.after(detailsContainer);
             },
             error: function(xhr, status, error) {
                 console.error('Error loading stone details:', error);
+                
+                // Get the stone name and type name for URL parameters
+                const stoneName = stoneForm.find('.stone-name-select option:selected').text();
+                const typeName = stoneForm.find('.stone-type-select option:selected').text();
+                const redirectUrl = `/stone-type-details/?stone_name=${encodeURIComponent(stoneName)}&type_name=${encodeURIComponent(typeName)}`;
+                
+                // Show error message with Add button including parameters
+                const lastRow = stoneForm.find('.row').last();
+                const errorContainer = $(`
+                    <div class="stone-details-container mt-3">
+                        <div class="alert alert-danger" role="alert">
+                            Error loading dimensions. Please try again or add new dimensions.
+                            <a href="${redirectUrl}" class="btn btn-primary btn-sm ms-2">
+                                <i class="bx bx-plus"></i> Add
+                            </a>
+                        </div>
+                    </div>
+                `);
+                lastRow.after(errorContainer);
             }
         });
     }
@@ -340,9 +375,9 @@ $(document).ready(function() {
             const breadth = detailCheckbox.data('breadth');
             const rate = detailCheckbox.data('rate');
             const detailId = detailCheckbox.data('detail-id');
-            
-            // Get count from the same row
+            // Get count and current rate from the same row
             const count = detailRow.find('.stone-count-input').val();
+            // const currentRate = detailRow.find('.stone-current-rate-input').val() || rate; // Default to original rate if not specified
             
             // Initialize stone data object
             const stoneData = {
@@ -354,6 +389,7 @@ $(document).ready(function() {
                 length: length,
                 breadth: breadth,
                 rate: rate,
+                // current_rate: currentRate,
                 count: count,
                 stone_type_detail_id: detailId
             };
@@ -374,7 +410,7 @@ $(document).ready(function() {
                     <td>${formatNumber(rate)}</td>
                     <td>${count}</td>
                     <td>
-                        <button type="button" class="btn bg-label-danger btn-sm remove-stone">Remove</button>
+                        <button type="button" class="btn bg-label-danger btn-sm remove-stone"><i class="bx bx-trash"></i></button>
                     </td>
                 </tr>
             `;
@@ -419,7 +455,6 @@ $(document).ready(function() {
             });
         });
     }
-    
     // Function to load materials from the database
     function loadMaterials() {
         $.ajax({
@@ -541,11 +576,17 @@ $(document).ready(function() {
                     error: function(xhr, status, error) {
                         console.error('Error getting material rate:', error);
                         
-                        // Show error message
+                       // Show error message
                         Swal.fire({
                             title: 'Error',
                             text: 'No data present for current date',
-                            icon: 'error'
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                // Redirect to metal_list URL when OK is clicked
+                                window.location.href = '/metal_list/';
+                            }
                         });
                         
                         // Restore button state
@@ -626,7 +667,7 @@ $(document).ready(function() {
                 <td>${rate ? formatNumber(rate) : 'N/A'}</td>
                 <td>${totalValue ? formatNumber(totalValue) : 'N/A'}</td>
                 <td>
-                    <button type="button" class="btn bg-label-danger btn-sm remove-raw-material">Remove</button>
+                    <button type="button" class="btn bg-label-danger btn-sm remove-raw-material"><i class="bx bx-trash"></i></button>
                 </td>
             </tr>
         `;
