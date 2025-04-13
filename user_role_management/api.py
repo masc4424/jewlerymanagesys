@@ -227,14 +227,43 @@ def edit_user(request, user_id):
 @csrf_exempt
 def delete_user(request):
     if request.method == 'DELETE':
-        data = json.loads(request.body)
-        username = data.get('username')
-        email = data.get('email')
-
-        user = get_object_or_404(User, username=username, email=email)
-        user.delete()
-
-        return JsonResponse({'message': 'User deleted successfully'})
+        try:
+            data = json.loads(request.body)
+            user_id = data.get('user_id')
+            
+            if not user_id:
+                return JsonResponse({'error': 'user_id is required'}, status=400)
+                
+            user = get_object_or_404(User, id=user_id)
+            
+            # Optional: Delete profile image if exists
+            try:
+                profile = UserProfile.objects.get(user=user)
+                if profile.profile_image and profile.profile_image.name != 'user_image/default.png':
+                    import os
+                    from django.conf import settings
+                    
+                    # Get the full path to the image
+                    image_path = os.path.join(settings.MEDIA_ROOT, str(profile.profile_image))
+                    
+                    # Check if file exists and is not a default image
+                    if os.path.isfile(image_path) and 'default' not in image_path:
+                        os.remove(image_path)
+            except Exception as e:
+                # Log the error but continue with user deletion
+                print(f"Error deleting profile image: {str(e)}")
+            
+            # Delete the user (this will cascade delete the profile due to on_delete=models.CASCADE)
+            user.delete()
+            
+            return JsonResponse({'message': 'User deleted successfully'})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+            
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 @csrf_exempt
