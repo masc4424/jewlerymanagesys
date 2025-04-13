@@ -11,13 +11,20 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--file', type=str, default='stone_details.xlsx',
                           help='Path to the Excel file')
+        parser.add_argument('--no-delete', action='store_true',
+                          help='Skip deleting existing data')
 
     def handle(self, *args, **options):
         file_path = options['file']
+        skip_delete = options['no_delete']
         
         if not os.path.exists(file_path):
             self.stdout.write(self.style.ERROR(f'File not found: {file_path}'))
             return
+        
+        # Delete existing data unless the --no-delete flag is used
+        if not skip_delete:
+            self.delete_existing_data()
         
         self.stdout.write(self.style.SUCCESS(f'Reading file: {file_path}'))
         
@@ -126,3 +133,24 @@ class Command(BaseCommand):
                     self.stdout.write(f"Created stone detail: {detail_info} for {current_stone_type_name}")
         
         self.stdout.write(self.style.SUCCESS('Import completed successfully'))
+    
+    def delete_existing_data(self):
+        """Delete all existing data from Stone, StoneType, and StoneTypeDetail tables"""
+        # Delete in the correct order to respect foreign key constraints
+        stone_detail_count = StoneTypeDetail.objects.count()
+        stone_type_count = StoneType.objects.count()
+        stone_count = Stone.objects.count()
+        
+        # Delete StoneTypeDetail records first (they reference StoneType and Stone)
+        StoneTypeDetail.objects.all().delete()
+        self.stdout.write(self.style.WARNING(f'Deleted {stone_detail_count} stone type details'))
+        
+        # Delete StoneType records next (they reference Stone)
+        StoneType.objects.all().delete()
+        self.stdout.write(self.style.WARNING(f'Deleted {stone_type_count} stone types'))
+        
+        # Delete Stone records last
+        Stone.objects.all().delete()
+        self.stdout.write(self.style.WARNING(f'Deleted {stone_count} stones'))
+        
+        self.stdout.write(self.style.SUCCESS('All existing stone data deleted'))
