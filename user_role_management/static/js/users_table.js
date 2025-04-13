@@ -173,22 +173,35 @@ function createUser() {
 // Fetch and Populate Users Table
 function fetchUsers() {
     $.ajax({
-        url: "/user/get_users/",
+        url: "/user/get_users/", // Adjust the URL to your API endpoint
         method: "GET",
         success: function (response) {
             let users = response.data;
             let tbody = $("#usersTable tbody");
-            tbody.empty();
+            tbody.empty(); // Clear existing table rows
 
             users.forEach((user, index) => {
+                let profileImage = user.profile_image ? user.profile_image : '/static/user_image/avatar-default.png';
+                
+                // Create profile image HTML
+                let profileImageHTML = `
+                    <img src="${profileImage}" alt="Profile Image" class="img-fluid rounded-circle" 
+                         data-bs-toggle="modal" data-bs-target="#profileImageModal" 
+                         data-image="${profileImage}" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;">
+                `;
+
                 let actionButtons = `
-                    <button class="btn btn-sm btn-primary edit-user-btn" data-id="${user.id}" onclick="fetchUserDetails(${user.id})"><i class="fa-solid fa-pencil"></i></button>
-                    <button class="btn btn-sm btn-danger delete-user-btn" data-id="${user.id}" data-name="${user.name}"><i class="fa-solid fa-trash"></i></button>
+                    <button class="btn btn-sm btn-outline-primary edit-user-btn" data-id="${user.id}" onclick="fetchUserDetails(${user.id})">
+                        <i class="bx bx-edit-alt"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger delete-user-btn" data-id="${user.id}" data-name="${user.name}">
+                        <i class="bx bx-trash"></i>
+                    </button>
                 `;
 
                 let row = `<tr>
                     <td>${index + 1}</td>
-                    <td>${user.name}</td>
+                    <td>${profileImageHTML} ${user.name}</td>
                     <td>${user.email}</td>
                     <td>${user.role}</td>
                     <td>${actionButtons}</td>
@@ -204,23 +217,52 @@ function fetchUsers() {
     });
 }
 
+// Dynamically generate the modal HTML for profile image display
+const modalHTML = `
+    <div class="modal fade" id="profileImageModal" tabindex="-1" aria-labelledby="profileImageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="profileImageModalLabel">Profile Image</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <img id="profileImageFullView" src="" alt="Profile Image" class="img-fluid w-100">
+                </div>
+            </div>
+        </div>
+    </div>
+`;
+// Append the modal to the body
+$("body").append(modalHTML);
+
+// Open modal when a profile image is clicked
+$("#usersTable").on("click", "img[data-bs-toggle='modal']", function () {
+    const imageSrc = $(this).data("image");
+    $("#profileImageFullView").attr("src", imageSrc);
+});
+
 // Fetch User Details and Open Edit Modal
 function fetchUserDetails(userId) {
     $.ajax({
         url: `/user/edit-user/${userId}/`,
         method: "GET",
         success: function (user) {
+            // Set hidden user ID
             $("#editUserId").val(user.id);
+            
+            // Set form fields
             $("#editFirstName").val(user.first_name);
             $("#editLastName").val(user.last_name);
             $("#editEmail").val(user.email);
             $("#editPhoneNumber").val(user.phone_number);
 
-            // Get static base URL from hidden input field
-            let staticUrl = $("#staticUrl").val(); 
-            let profileImage = user.profile_image || `${staticUrl}${user.id}.png`;
-
-            $("#editProfileImagePreview").attr("src", profileImage);
+            // Set profile image
+            if (user.profile_image) {
+                $("#editProfileImagePreview").attr("src", user.profile_image);
+            } else {
+                $("#editProfileImagePreview").attr("src", "{% static 'user_image/default.png' %}");
+            }
 
             // Populate role dropdown
             let roleDropdown = $("#editUserRole").empty();
@@ -239,8 +281,28 @@ function fetchUserDetails(userId) {
 
 // Update User
 function updateUser() {
-    let formData = new FormData($("#editUserForm")[0]);
+    // Create a new FormData object manually - don't rely on form
+    let formData = new FormData();
     let userId = $("#editUserId").val();
+
+    // Explicitly add each form field to ensure data is sent
+    formData.append("first_name", $("#editFirstName").val());
+    formData.append("last_name", $("#editLastName").val());
+    formData.append("email", $("#editEmail").val());
+    formData.append("phone_number", $("#editPhoneNumber").val());
+    formData.append("role", $("#editUserRole").val());
+    
+    // Add the profile image if it exists
+    const profileImageInput = $("#editProfileImage")[0];
+    if (profileImageInput.files.length > 0) {
+        formData.append("profile_image", profileImageInput.files[0]);
+    }
+    
+    // Debug: log form data to console
+    console.log("Form data being sent:");
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
 
     $.ajax({
         url: `/user/edit-user/${userId}/`,
@@ -248,14 +310,14 @@ function updateUser() {
         data: formData,
         contentType: false,
         processData: false,
-        success: function () {
+        success: function (response) {
             $("#editUserModal").modal("hide");
             fetchUsers(); // Refresh table
             alert("User updated successfully!");
         },
         error: function (xhr) {
             console.error("Error updating user:", xhr.responseText);
-            alert("Failed to update user.");
+            alert("Failed to update user: " + (xhr.responseJSON?.error || "Unknown error"));
         }
     });
 }

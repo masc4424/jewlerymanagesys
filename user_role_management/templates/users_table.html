@@ -8,24 +8,28 @@
 {% endblock %}
 
 {% block content %}
-<div class="card">
+<div class="d-flex justify-content-between align-items-center card-header">
     <h5 class="card-header">Users List</h5>
     <div class="d-flex justify-content-end m-3">
-        <button class="btn btn-success" id="createuser" data-bs-toggle="modal" data-bs-target="#createUserModal">Create User</button>
+        <button class="btn btn-primary" id="createuser" data-bs-toggle="modal" data-bs-target="#createUserModal">Create User</button>
     </div>
-    <div class="table-responsive text-nowrap">
-        <table class="table" id="usersTable">
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>Name</th>
-                    <th>Email</th>
-                    <th>Role</th>
-                    <th>Action</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+</div>
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive text-nowrap">
+            <table class="table" id="usersTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
     </div>
 </div>
 

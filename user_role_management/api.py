@@ -13,6 +13,7 @@ from django.conf import settings
 from user_role_management.models import *
 from django.shortcuts import redirect
 from django.contrib import messages
+from django.templatetags.static import static
 
 @csrf_exempt
 def create_user(request):
@@ -32,9 +33,26 @@ def create_user(request):
 
             role = get_object_or_404(Role, role_unique_id=role_unique_id)
 
-            # Create user and related models
-            user = User.objects.create_user(username=username, email=email, password=password, first_name=name)
-            user_profile = UserProfile.objects.create(user=user, full_name=name, phone_number=phone_number)
+            # Split the name into first_name and last_name
+            name_parts = name.split(maxsplit=1)
+            first_name = name_parts[0]
+            last_name = name_parts[1] if len(name_parts) > 1 else ""
+
+            # Create user with separate first_name and last_name
+            user = User.objects.create_user(
+                username=username, 
+                email=email, 
+                password=password, 
+                first_name=first_name,
+                last_name=last_name
+            )
+            
+            # Create UserProfile with full_name
+            user_profile = UserProfile.objects.create(
+                user=user, 
+                full_name=name,  # Store the complete name in full_name
+                phone_number=phone_number
+            )
 
             # Handle profile image if provided
             if profile_image:
@@ -48,71 +66,163 @@ def create_user(request):
             message = f"Hello {name},\n\nYour account has been created successfully.\n\nLogin Credentials:\nUsername: {username}\nEmail: {email}\nPassword: {password}\n\nPlease change your password after logging in.\n\nBest Regards,\nAdmin Team"
             send_mail(subject, message, settings.EMAIL_HOST_USER, [email], fail_silently=False)
 
-            return JsonResponse({'message': 'User created successfully, email sent!', 'user_id': user.id, 'username': user.username})
+            return JsonResponse({
+                'message': 'User created successfully, email sent!', 
+                'user_id': user.id, 
+                'username': user.username
+            })
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 @csrf_exempt
 def edit_user(request, user_id):
+    """
+    View function to handle GET and POST/PUT requests for editing a user
+    GET: Returns user data for the edit form
+    POST/PUT: Updates user data based on form submission
+    """
     if request.method == "GET":
-        user = User.objects.get(id=user_id)
-        profile = UserProfile.objects.get(user_id=user)
-        user_role = UserRole.objects.filter(user=user).first()
-        roles = Role.objects.values("id", "role_name")  # Fetch all roles in the same request
-
-        # Set the image URL to STATIC path instead of MEDIA path
-        profile_image = profile.profile_image
-        profile_image_url = f"{settings.STATIC_URL}{profile_image}"
-
-        return JsonResponse({
-            "id": user.id,
-            "first_name": user.first_name,
-            "last_name": user.last_name,
-            "email": user.email,
-            "phone_number": profile.phone_number,
-            "profile_image": profile_image_url,  # Now using STATIC_URL
-            "role_id": user_role.role.id if user_role else None,
-            "role_name": user_role.role.role_name if user_role else "",
-            "all_roles": list(roles)
-        })
-    if request.method in ['PUT', 'POST']:  # Support both PUT and POST
-        user = get_object_or_404(User, id=user_id)
-        profile = get_object_or_404(UserProfile, user=user)
-
-        data = {}  # Default empty data
-
-        # Handle JSON and Form Data
         try:
-            data = json.loads(request.body.decode('utf-8'))
-            print("✅ JSON data received")
-        except (json.JSONDecodeError, UnicodeDecodeError, AttributeError):
-            print("📌 Using form data")
-            data = request.POST  # Use form data if JSON parsing fails
+            user = User.objects.get(id=user_id)
+            profile = UserProfile.objects.get(user=user)
+            user_role = UserRole.objects.filter(user=user).first()
+            roles = Role.objects.values("id", "role_name")  # Fetch all roles in the same request
 
-        # Update User model
-        user.first_name = data.get('name', user.first_name)
-        user.email = data.get('email', user.email)
-        user.save()
+            # Use the correct URL for the profile image
+            # profile_image_url = profile.profile_image.url if profile.profile_image else None
+            profile_image_url = static(f'{profile.profile_image.name}')
 
-        # Update UserProfile model
-        profile.full_name = data.get('full_name', profile.full_name)
-        profile.phone_number = data.get('phone_number', profile.phone_number)
-        profile.address = data.get('address', profile.address)
+            return JsonResponse({
+                "id": user.id,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "full_name": profile.full_name,
+                "email": user.email,
+                "phone_number": profile.phone_number,
+                "profile_image": profile_image_url,
+                "role_id": user_role.role.id if user_role else None,
+                "role_name": user_role.role.role_name if user_role else "",
+                "all_roles": list(roles)
+            })
+        except User.DoesNotExist:
+            return JsonResponse({"error": "User not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+            
+    elif request.method in ['PUT', 'POST']:  # Support both PUT and POST
+        try:
+            # Debug: print request information
+            print("Content-Type:", request.content_type)
+            print("POST data:", request.POST)
+            print("FILES:", request.FILES)
+            
+            user = get_object_or_404(User, id=user_id)
+            profile = get_object_or_404(UserProfile, user=user)
 
-        # Update profile image if uploaded
-        if request.FILES.get('profile_image'):
-            profile.profile_image = request.FILES['profile_image']
+            # Handle data based on content type
+            if request.content_type and 'application/json' in request.content_type:
+                try:
+                    data = json.loads(request.body.decode('utf-8'))
+                    print("JSON data:", data)
+                except json.JSONDecodeError:
+                    return JsonResponse({'error': 'Invalid JSON'}, status=400)
+            else:
+                # Using POST data
+                data = request.POST
+                
+            # Check if any data was received
+            if not data and not request.FILES:
+                return JsonResponse({'error': 'No data received'}, status=400)
+                
+            # Update User model - match field names with the form
+            if 'first_name' in data and 'last_name' in data:
+                user.first_name = data['first_name']
+                user.last_name = data['last_name']
+                # Update full_name in profile
+                profile.full_name = f"{data['first_name']} {data['last_name']}".strip()
+                print(f"Updated name to: {profile.full_name}")
+            elif 'first_name' in data:
+                user.first_name = data['first_name']
+                # Update full_name in profile, preserving last name
+                profile.full_name = f"{data['first_name']} {user.last_name}".strip()
+                print(f"Updated first_name to: {data['first_name']}")
+            elif 'last_name' in data:
+                user.last_name = data['last_name']
+                # Update full_name in profile, preserving first name
+                profile.full_name = f"{user.first_name} {data['last_name']}".strip()
+                print(f"Updated last_name to: {data['last_name']}")
+                
+            # If a full_name is provided directly, use it and split it for User model
+            if 'full_name' in data:
+                profile.full_name = data['full_name']
+                name_parts = data['full_name'].split(maxsplit=1)
+                user.first_name = name_parts[0]
+                user.last_name = name_parts[1] if len(name_parts) > 1 else ""
+                print(f"Updated full_name to: {data['full_name']}")
+                
+            if 'email' in data:
+                user.email = data['email']
+                print(f"Updated email to: {data['email']}")
+            
+            user.save()
+            print("User saved")
 
-        profile.save()
+            # Update UserProfile model
+            if 'phone_number' in data:
+                profile.phone_number = data['phone_number']
+                print(f"Updated phone_number to: {data['phone_number']}")
+            
+            # Update profile image if uploaded
+            if request.FILES and 'profile_image' in request.FILES:
+                # Delete old image if exists
+                if profile.profile_image and profile.profile_image.name != 'user_image/default.png':
+                    import os
+                    from django.conf import settings
+                    
+                    # Get the full path to the old image
+                    old_image_path = os.path.join(settings.MEDIA_ROOT, str(profile.profile_image))
+                    
+                    # Check if file exists and is not a default image
+                    if os.path.isfile(old_image_path) and 'default' not in old_image_path:
+                        try:
+                            os.remove(old_image_path)
+                            print(f"Deleted old profile image: {old_image_path}")
+                        except Exception as e:
+                            print(f"Error deleting old image: {str(e)}")
+                
+                # Save new image
+                profile.profile_image = request.FILES['profile_image']
+                print("Updated profile image")
+            
+            profile.save()
+            print("Profile saved")
 
-        # Update user role if provided
-        if data.get('role_tag'):
-            role = get_object_or_404(Role, role_name=data['role_tag'])
-            UserRole.objects.filter(user=user).update(role=role)
+            # Update user role if provided
+            role_id = data.get('role')
+            if role_id:
+                try:
+                    role = get_object_or_404(Role, id=role_id)
+                    UserRole.objects.update_or_create(
+                        user=user,
+                        defaults={'role': role}
+                    )
+                    print(f"Updated role to: {role.role_name}")
+                except Exception as e:
+                    print(f"Error updating role: {str(e)}")
+                    # Continue with the update even if role update fails
 
-        return JsonResponse({'message': 'User updated successfully'})
-
+            return JsonResponse({'message': 'User updated successfully'})
+            
+        except Role.DoesNotExist:
+            return JsonResponse({'error': 'Selected role does not exist'}, status=400)
+        except Exception as e:
+            print(f"Error in edit_user: {str(e)}")
+            return JsonResponse({'error': str(e)}, status=500)
+            
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 @csrf_exempt
 def delete_user(request):
@@ -205,16 +315,26 @@ def get_users(request):
     user_data = []
 
     for user in users:
+        # Get the user's role
         user_role = UserRole.objects.filter(user_id=user['id']).select_related('role').first()
         role_name = user_role.role.role_name if user_role else "No Role"
         
         full_name = f"{user['first_name']} {user['last_name']}".strip()  # Concatenate first & last name
+        
+        # Get the UserProfile associated with the user
+        try:
+            user_profile = UserProfile.objects.get(user_id=user['id'])
+            profile_image_url = static(f'{user_profile.profile_image.name}')
+        except UserProfile.DoesNotExist:
+            # Use default image if no profile image is available
+            profile_image_url = static('default.png')
 
         user_data.append({
             'id': user['id'],
             'name': full_name if full_name else "N/A",  # Handle empty names
             'email': user['email'],
-            'role': role_name
+            'role': role_name,
+            'profile_image': profile_image_url  # Include profile image URL
         })
 
     return JsonResponse({'data': user_data})
