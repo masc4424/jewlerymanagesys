@@ -20,7 +20,7 @@ urlpatterns = [
 
         # View URLs
     path('role_list/', role_list, name='role_list'),
-    path('client_table/', client_users, name='user_table'),
+    path('client_table/', client_users, name='client_table'),
     
     # API URLs - using your existing functions
     path('api/roles/', get_roles, name='get_roles'),

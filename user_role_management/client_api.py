@@ -184,15 +184,22 @@ def edit_client_user(request):
             
             # Update role if provided
             if role_id:
-                user.groups.clear()
+                # First, clear existing user roles
+                UserRole.objects.filter(user=user).delete()
+                
                 try:
                     role = Role.objects.get(id=role_id)
-                    user.groups.add(role)
+                    # Create new user-role mapping
+                    UserRole.objects.create(
+                        user=user,
+                        role=role,
+                        created_by=request.user
+                    )
                 except Role.DoesNotExist:
-                    pass
+                    return JsonResponse({'status': 'error', 'message': 'Role not found'})
             else:
                 # If no role specified, ensure user has the Client role
-                user.groups.clear()
+                UserRole.objects.filter(user=user).delete()
                 client_role, created = Role.objects.get_or_create(
                     role_name="Client",
                     defaults={
@@ -200,7 +207,11 @@ def edit_client_user(request):
                         'created_by': request.user
                     }
                 )
-                user.groups.add(client_role)
+                UserRole.objects.create(
+                    user=user,
+                    role=client_role,
+                    created_by=request.user
+                )
             
             # Get or create user profile
             profile, created = UserProfile.objects.get_or_create(user=user)

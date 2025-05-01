@@ -18,6 +18,23 @@
 .form-preview-image:hover {
     opacity: 0.8;
 }
+
+/* SweetAlert2 customizations */
+.swal-overlay-zindex {
+    z-index: 2000 !important; /* Higher than sidebar/navbar */
+}
+
+.swal-popup-zindex {
+    z-index: 2001 !important;
+}
+
+.swal2-container {
+    z-index: 9999 !important;
+}
+
+.swal2-backdrop-show {
+    background-color: rgba(0, 0, 0, 0.7) !important; /* Darker backdrop */
+}
 </style>
 {% endblock %}
 
@@ -25,9 +42,9 @@
 <div class="container-fluid">
     <div class="card">
         <div class="d-flex justify-content-between align-items-center card-header">
-            <h5 class="card-header">Users List</h5>
+            <h5 class="card-header">Client List</h5>
             <div class="d-flex justify-content-end m-3">
-                <button class="btn btn-primary" id="createuser" data-bs-toggle="modal" data-bs-target="#addUserModal">Create User</button>
+                <button class="btn btn-primary" id="createuser" data-bs-toggle="modal" data-bs-target="#addUserModal">Create Client</button>
             </div>
         </div>
         <div class="card-body">
@@ -148,13 +165,6 @@
                                 <label for="edit_password" class="form-label">Password (leave blank to keep current)</label>
                                 <input type="password" class="form-control" id="edit_password" name="password">
                             </div>
-                            <div class="mb-3">
-                                <label for="edit_status" class="form-label">Status</label>
-                                <select class="form-select" id="edit_status" name="is_active">
-                                    <option value="true">Active</option>
-                                    <option value="false">Inactive</option>
-                                </select>
-                            </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -184,6 +194,6 @@
 {% endblock %}
 
 {% block extra_js %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.4.8/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{% static 'js/client_users.js' %}"></script>
 {% endblock %}

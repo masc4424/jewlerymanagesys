@@ -204,6 +204,13 @@
                 <div data-i18n="Analytics">Users</div>
               </a>
             </li>
+
+            <li class="menu-item {% if request.resolver_match.url_name == 'client_table' %}active{% endif %}">
+              <a href="{% url 'client_table' %}" class="menu-link">
+                <i class="menu-icon tf-icons bx bxs-user"></i>
+                <div data-i18n="Analytics">Clients</div>
+              </a>
+            </li>
             
 
           </ul>

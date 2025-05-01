@@ -25,6 +25,9 @@
                     <div class="mb-1"><img src="{% static 'assets\img\logo\logo_vanee.png' %}" alt=""></div>
                     <h4 class="mb-4">Manage your jewellery business at your finger tips</h4>
                 </div>
+                <div class="text-center mb-4">
+                    <div class="mb-1"><img src="{% static 'img\Frame_154.png' %}" alt=""></div>
+                </div>
                 <form method="POST" action="{% url 'login_api' %}">
                     {% csrf_token %}
                     {% if messages %}
