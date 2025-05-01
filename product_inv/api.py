@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from jewl_stones.models import Stone, StoneType, StoneTypeDetail
 from jewl_metals.models import *
+from user_role_management.models import *
 from product_inv.models import *
 from django.db.models import Sum
 from django.http import JsonResponse
@@ -201,7 +202,11 @@ def get_models_by_jewelry_type(request, jewelry_type_name=None):
 #             jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)
 #             model_img = request.FILES.get('model_img')
 #             selected_colors = request.POST.getlist('colors[]')
-
+            
+#             # Get stones data
+#             stones_json = request.POST.get('stones', '[]')
+#             stones_data = json.loads(stones_json)
+            
 #             # Validate required fields
 #             if not all([model_no, length, breadth, weight, jewelry_type_id, model_img, selected_colors]):
 #                 return JsonResponse({'error': 'All fields are required'}, status=400)
@@ -209,9 +214,6 @@ def get_models_by_jewelry_type(request, jewelry_type_name=None):
 #             # Check if model number already exists
 #             if Model.objects.filter(model_no=model_no).exists():
 #                 return JsonResponse({'error': 'Model number already exists'}, status=400)
-
-#             # Get the jewelry type
-#             jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)
 
 #             # Define the target directory
 #             target_directory = os.path.join(settings.BASE_DIR, 'product_inv/static/model_img/')
@@ -238,11 +240,49 @@ def get_models_by_jewelry_type(request, jewelry_type_name=None):
 #                 length=length,
 #                 breadth=breadth,
 #                 weight=weight,
-#                 model_img=relative_path,  # Save relative path instead of full path
+#                 model_img=relative_path,
 #                 jewelry_type=jewelry_type
 #             )
+            
+#             # Create model colors
 #             for color in selected_colors:
-#                             ModelColor.objects.create(model=model, color=color)
+#                 ModelColor.objects.create(model=model, color=color)
+            
+#             # Process stones data
+#             for stone_data in stones_data:
+#                 # Create RawStones entries
+#                 stone_type = get_object_or_404(StoneType, id=stone_data['stone_type_id'])
+#                 RawStones.objects.create(
+#                     model=model,
+#                     stone_type=stone_type
+#                 )
+                
+#                 # Create StoneCount entries if detail_id exists
+#                 if 'stone_type_detail_id' in stone_data and stone_data['stone_type_detail_id'] not in [None, '', 'undefined']:
+#                     try:
+#                         detail_id = int(stone_data['stone_type_detail_id'])  # Convert to int explicitly
+#                         stone_type_detail = StoneTypeDetail.objects.get(id=detail_id)
+#                         StoneCount.objects.create(
+#                             model=model,
+#                             stone_type_details=stone_type_detail,
+#                             count=stone_data['count']
+#                         )
+#                     except (ValueError, StoneTypeDetail.DoesNotExist) as e:
+#                         print(f"Error creating StoneCount: {e}")
+            
+#             # Process raw materials data
+#             raw_materials_json = request.POST.get('raw_materials', '[]')
+#             raw_materials_data = json.loads(raw_materials_json)
+            
+#             for material_data in raw_materials_data:
+#                 metal = get_object_or_404(Metal, id=material_data['material_id'])
+#                 RawMaterial.objects.create(
+#                     model=model,
+#                     metal=metal,
+#                     weight=material_data['weight'],
+#                     unit='g'  # Default to grams
+#                 )
+                    
 #             return JsonResponse({
 #                 'success': True, 
 #                 'message': 'Model created successfully',
@@ -259,6 +299,8 @@ def get_models_by_jewelry_type(request, jewelry_type_name=None):
 #             })
             
 #         except Exception as e:
+#             import traceback
+#             print(traceback.format_exc())
 #             return JsonResponse({'error': str(e)}, status=500)
 
 #     return JsonResponse({'error': 'Invalid request method'}, status=405)
@@ -276,13 +318,19 @@ def create_model(request):
             jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)
             model_img = request.FILES.get('model_img')
             selected_colors = request.POST.getlist('colors[]')
+            selected_clients = request.POST.getlist('clients[]')  # Get selected clients
+            status_id = request.POST.get('status')
+            
+            model_status = None
+            if status_id:
+                model_status = get_object_or_404(ModelStatus, id=status_id)
             
             # Get stones data
             stones_json = request.POST.get('stones', '[]')
             stones_data = json.loads(stones_json)
             
             # Validate required fields
-            if not all([model_no, length, breadth, weight, jewelry_type_id, model_img, selected_colors]):
+            if not all([model_no, length, breadth, weight, jewelry_type_id, model_img, selected_colors,status_id]):
                 return JsonResponse({'error': 'All fields are required'}, status=400)
 
             # Check if model number already exists
@@ -315,12 +363,29 @@ def create_model(request):
                 breadth=breadth,
                 weight=weight,
                 model_img=relative_path,
-                jewelry_type=jewelry_type
+                jewelry_type=jewelry_type,
+                status=model_status
             )
             
             # Create model colors
             for color in selected_colors:
                 ModelColor.objects.create(model=model, color=color)
+            
+            # Create model clients
+            current_user = request.user
+            for client_id in selected_clients:
+                try:
+                    client_user = User.objects.get(id=client_id)
+                    ModelClient.objects.create(
+                        model=model,
+                        client=client_user,
+                        created_by=current_user,
+                        updated_by=current_user
+                    )
+                except User.DoesNotExist:
+                    print(f"User with ID {client_id} does not exist")
+                except Exception as e:
+                    print(f"Error creating ModelClient: {e}")
             
             # Process stones data
             for stone_data in stones_data:
@@ -368,7 +433,8 @@ def create_model(request):
                     'weight': float(model.weight),
                     'image_path': relative_path,
                     'color': selected_colors,
-                    'jewelry_type_name': jewelry_type.name
+                    'jewelry_type_name': jewelry_type.name,
+                    'status': model_status.status if model_status else None
                 }
             })
             
@@ -767,3 +833,26 @@ def get_model_details(request, model_id):
         "model":model_data,
     })
 
+def get_clients(request):
+    """
+    API endpoint to return all clients (users) with client role
+    """
+    # Get all users with client role
+    client_role = Role.objects.filter(role_name='Client').first()
+    if client_role:
+        client_users = UserRole.objects.filter(role=client_role).select_related('user')
+        clients = [{'id': user_role.user.id, 'name': f"{user_role.user.first_name} {user_role.user.last_name}"} for user_role in client_users]
+    else:
+        # Fallback to get all users if client role doesn't exist
+        users = User.objects.all()
+        clients = [{'id': user.id, 'name': f"{user.first_name} {user.last_name}"} for user in users]
+    
+    return JsonResponse(clients, safe=False)
+
+def get_model_status(request):
+    """
+    API endpoint to return all model statuses
+    """
+    statuses = ModelStatus.objects.all()
+    statuses_list = [{'id': status.id, 'status': status.status} for status in statuses]
+    return JsonResponse(statuses_list, safe=False)

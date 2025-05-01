@@ -33,6 +33,8 @@ urlpatterns += [
     path('delete_jewelry_type/<int:id>/', delete_jewelry_type, name='create_jewelry_type'),
     path('model_edit/<int:model_id>/', edit_model, name='edit_model'),
     path('get_model_details/<int:model_id>/', get_model_details, name='get_model_details'),
+    path('get_clients/', get_clients, name='get_clients'),
+    path('get_model_status/', get_model_status, name='get_model_status'),
 
 
 ]

@@ -1,6 +1,8 @@
 from django.db import models
 from jewl_metals.models import *
 from jewl_stones.models import *
+from django.contrib.auth.models import User
+from django.utils import timezone
 
 class JewelryType(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -9,6 +11,22 @@ class JewelryType(models.Model):
     def __str__(self):
         return self.name
 
+class ModelStatus(models.Model):
+    """
+    A model to track status of various items in the system.
+    """
+    id = models.AutoField(primary_key=True)
+    status = models.CharField(max_length=50)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Status: {self.status} (ID: {self.id})"
+    
+    class Meta:
+        verbose_name = "Model Status"
+        verbose_name_plural = "Model Statuses"
+
 class Model(models.Model):
     model_no = models.CharField(max_length=100, unique=True)
     length = models.DecimalField(max_digits=10, decimal_places=2)
@@ -16,6 +34,7 @@ class Model(models.Model):
     weight = models.DecimalField(max_digits=10, decimal_places=2)
     model_img = models.ImageField(upload_to='model_img/')
     jewelry_type = models.ForeignKey(JewelryType, on_delete=models.CASCADE, related_name='models')
+    status = models.ForeignKey(ModelStatus, on_delete=models.SET_NULL, null=True, blank=True) 
 
     def __str__(self):
         return self.model_no
@@ -60,3 +79,21 @@ class StoneCount(models.Model):
  
     def __str__(self):
         return f"{self.model.model_no} - {self.stone_type_details.stone_type.type_name} ({self.count})"
+
+class ModelClient(models.Model):
+    model = models.ForeignKey(Model, on_delete=models.CASCADE)
+    client = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='modelclient_created_by')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='modelclient_updated_by')
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('model', 'client')
+        verbose_name = 'Model Client'
+        verbose_name_plural = 'Model Clients'
+    
+    def __str__(self):
+        return f"{self.model.model_no} - {self.client.username}"
+
+

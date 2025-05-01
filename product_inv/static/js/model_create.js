@@ -4,6 +4,10 @@ $(document).ready(function() {
         placeholder: "Select a stone",
         allowClear: true
     });
+    $('#clients').select2({
+        placeholder: "",
+        allowClear: true
+    });
     
     $('.stone-type-select').select2({
         placeholder: "Select stone type",
@@ -24,6 +28,7 @@ $(document).ready(function() {
     // Load stone names and materials when page loads
     loadStoneNames();
     loadMaterials();
+    loadModelStatuses();
     
     // Add Stone Used button click
     $('#addStoneButton').on('click', function() {
@@ -213,7 +218,7 @@ $(document).ready(function() {
             }
         });
     }
-    
+   
    // Function to load stone details based on selected stone type
     function loadStoneDetails(typeSelect) {
         const typeId = typeSelect.val();
@@ -722,6 +727,30 @@ $(document).ready(function() {
         $('#totalRawMaterialValue').text(formatNumber(totalValue) + ' gm');
         $('#totalRawMaterialWeight').html('<i class="bx bx-rupee fs-big"></i> ' +  formatNumber(totalWeight));
     }
+    function loadModelStatuses() {
+        $.ajax({
+            url: '/get_model_status/',  // Create this endpoint
+            type: 'GET',
+            success: function(response) {
+                const statusSelect = $('#status');
+                statusSelect.empty();
+                statusSelect.append('<option value="" selected disabled> </option>');
+                
+                response.forEach(status => {
+                    statusSelect.append(`<option value="${status.id}">${status.status}</option>`);
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading model statuses:', error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Failed to load model statuses. Please refresh the page.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        });
+    }
 
     // Handle form submission
     $('#createModelForm').on('submit', function(e) {
@@ -736,6 +765,10 @@ $(document).ready(function() {
         formData.delete('colors');
         colorSelections.forEach(color => {
             formData.append('colors[]', color);
+        });
+        const clientSelections = $('#clients').val();
+        clientSelections.forEach(clientId => {
+            formData.append('clients[]', clientId);
         });
         
         // Add the stones data as JSON
@@ -799,6 +832,35 @@ $(document).ready(function() {
             reader.readAsDataURL(file);
         } else {
             $('#previewContainer').addClass('d-none');
+        }
+    });
+});
+$(document).ready(function() {
+    // Fetch client data
+    $.ajax({
+        url: '/get_clients/',
+        type: 'GET',
+        dataType: 'json',
+        success: function(clients) {
+            // Populate clients dropdown
+            const clientsDropdown = $('#clients');
+            clientsDropdown.empty();
+            
+            clients.forEach(client => {
+                clientsDropdown.append(new Option(client.name, client.id));
+            });
+            
+            // Trigger change to refresh Select2
+            clientsDropdown.trigger('change');
+        },
+        error: function(xhr, status, error) {
+            console.error('Error fetching clients:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to load clients. Please refresh the page.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
         }
     });
 });
