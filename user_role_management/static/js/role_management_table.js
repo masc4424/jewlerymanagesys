@@ -37,15 +37,23 @@ function loadRoles() {
             tableBody.empty();
             
             if (data.roles.length === 0) {
-                tableBody.html('<tr><td colspan="3" class="text-center">No roles found</td></tr>');
+                tableBody.html('<tr><td colspan="4" class="text-center">No roles found</td></tr>');
                 return;
             }
             
             $.each(data.roles, function(index, role) {
+                // Create simplified tracking info HTML - without timestamps
+                var trackingInfo = `Created by: ${role.created_by}`;
+                
+                if (role.updated_by) {
+                    trackingInfo += `<br>Updated by: ${role.updated_by}`;
+                }
+                
                 var row = `
                     <tr>
                         <td>${index + 1}</td>
                         <td>${role.role_name}</td>
+                        <td class="tracking-info-cell">${trackingInfo}</td>
                         <td>
                             <div class="d-flex">
                                 <button class="btn btn-sm btn-outline-primary me-2 edit-role" 
@@ -66,6 +74,12 @@ function loadRoles() {
             
             // Add event listeners to edit and delete buttons
             addActionButtonListeners();
+            
+            // Add some styling for the tracking info cell
+            $('.tracking-info-cell').css({
+                'font-size': '0.875rem',
+                'max-width': '250px'
+            });
         },
         error: function(xhr, status, error) {
             console.error('Error loading roles:', error);

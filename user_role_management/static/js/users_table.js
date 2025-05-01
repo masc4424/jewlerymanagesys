@@ -173,7 +173,7 @@ function createUser() {
 // Fetch and Populate Users Table
 function fetchUsers() {
     $.ajax({
-        url: "/user/get_users/", // Adjust the URL to your API endpoint
+        url: "/user/get_users/",
         method: "GET",
         success: function (response) {
             let users = response.data;
@@ -181,14 +181,39 @@ function fetchUsers() {
             tbody.empty(); // Clear existing table rows
 
             users.forEach((user, index) => {
-                let profileImage = user.profile_image ? user.profile_image : '/static/user_image/avatar-default.png';
+                // Generate color based on user ID - this creates consistent colors for each user
+                const color = getUserColor(user.id);
                 
-                // Create profile image HTML
+                // Create profile display - either image or initials
+                let profileDisplay;
+                if (user.has_image && user.profile_image) {
+                    // Use actual profile image if available
+                    profileDisplay = `<img src="${user.profile_image}" alt="${user.name}" class="rounded-circle me-2"
+                        data-bs-toggle="modal" data-bs-target="#profileImageModal"
+                        data-image="${user.profile_image}" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;">`;
+                } else {
+                    // Use initials with background color
+                    profileDisplay = `<div class="rounded-circle me-2 d-flex align-items-center justify-content-center"
+                        style="width: 50px; height: 50px; background-color: ${color}; color: white; font-weight: bold; cursor: pointer;"
+                        data-bs-toggle="modal" data-bs-target="#initialsModal" 
+                        data-initials="${user.initials}" data-color="${color}" data-name="${user.name}">
+                        ${user.initials}
+                    </div>`;
+                }
+
+                // Create profile image HTML with name
                 let profileImageHTML = `
-                    <img src="${profileImage}" alt="Profile Image" class="img-fluid rounded-circle" 
-                         data-bs-toggle="modal" data-bs-target="#profileImageModal" 
-                         data-image="${profileImage}" style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;">
+                    <div class="d-flex align-items-center">
+                        ${profileDisplay}
+                        <span>${user.name}</span>
+                    </div>
                 `;
+
+                // Construct Created/Updated by info
+                let trackingInfo = `Created by: ${user.created_by}`;
+                if (user.updated_by && user.updated_by !== user.created_by) {
+                    trackingInfo += `<br>Updated by: ${user.updated_by}`;
+                }
 
                 let actionButtons = `
                     <button class="btn btn-sm btn-outline-primary edit-user-btn" data-id="${user.id}" onclick="fetchUserDetails(${user.id})">
@@ -201,9 +226,10 @@ function fetchUsers() {
 
                 let row = `<tr>
                     <td>${index + 1}</td>
-                    <td>${profileImageHTML} ${user.name}</td>
+                    <td>${profileImageHTML}</td>
                     <td>${user.email}</td>
                     <td>${user.role}</td>
+                    <td>${trackingInfo}</td>
                     <td>${actionButtons}</td>
                 </tr>`;
 
@@ -217,8 +243,24 @@ function fetchUsers() {
     });
 }
 
-// Dynamically generate the modal HTML for profile image display
-const modalHTML = `
+// Function to generate a consistent color based on user ID
+function getUserColor(userId) {
+    // List of visually distinct colors
+    const colors = [
+        "#1abc9c", "#2ecc71", "#3498db", "#9b59b6", "#34495e",
+        "#16a085", "#27ae60", "#2980b9", "#8e44ad", "#2c3e50",
+        "#f1c40f", "#e67e22", "#e74c3c", "#ecf0f1", "#95a5a6",
+        "#f39c12", "#d35400", "#c0392b", "#bdc3c7", "#7f8c8d"
+    ];
+    
+    // Use modulo to ensure the ID maps to a color in our array
+    const colorIndex = parseInt(userId) % colors.length;
+    return colors[colorIndex];
+}
+
+// Dynamically generate both modals - one for profile images, one for initials
+const modalsHTML = `
+    <!-- Profile Image Modal -->
     <div class="modal fade" id="profileImageModal" tabindex="-1" aria-labelledby="profileImageModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-sm">
             <div class="modal-content">
@@ -232,14 +274,43 @@ const modalHTML = `
             </div>
         </div>
     </div>
-`;
-// Append the modal to the body
-$("body").append(modalHTML);
 
-// Open modal when a profile image is clicked
+    <!-- Initials Modal -->
+    <div class="modal fade" id="initialsModal" tabindex="-1" aria-labelledby="initialsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="initialsModalLabel">User Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="initialsFullView" class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-3"
+                        style="width: 100px; height: 100px; font-size: 2rem; font-weight: bold;">
+                    </div>
+                    <h4 id="initialsUserName"></h4>
+                </div>
+            </div>
+        </div>
+    </div>
+`;
+$("body").append(modalsHTML);
+
+// Open profile image modal when clicked
 $("#usersTable").on("click", "img[data-bs-toggle='modal']", function () {
     const imageSrc = $(this).data("image");
     $("#profileImageFullView").attr("src", imageSrc);
+});
+
+// Open initials modal when clicked
+$("#usersTable").on("click", "div[data-bs-toggle='modal']", function () {
+    const initials = $(this).data("initials");
+    const color = $(this).data("color");
+    const name = $(this).data("name");
+    
+    $("#initialsFullView").text(initials);
+    $("#initialsFullView").css("background-color", color);
+    $("#initialsFullView").css("color", "white");
+    $("#initialsUserName").text(name);
 });
 
 // Fetch User Details and Open Edit Modal

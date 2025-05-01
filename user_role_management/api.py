@@ -19,6 +19,12 @@ from django.templatetags.static import static
 def create_user(request):
     if request.method == 'POST':
         try:
+            # Get the logged-in user for created_by field
+            current_user = request.user
+            
+            # For tracking created_by and updated_by (None if superuser)
+            tracking_user = None if current_user.is_superuser else current_user
+            
             # Use request.POST instead of json.loads(request.body)
             username = request.POST.get('username')
             name = request.POST.get('name')
@@ -47,11 +53,13 @@ def create_user(request):
                 last_name=last_name
             )
             
-            # Create UserProfile with full_name
+            # Create UserProfile with full_name and tracking user (None if superuser)
             user_profile = UserProfile.objects.create(
                 user=user, 
                 full_name=name,  # Store the complete name in full_name
-                phone_number=phone_number
+                phone_number=phone_number,
+                created_by=tracking_user,
+                updated_by=tracking_user
             )
 
             # Handle profile image if provided
@@ -59,7 +67,13 @@ def create_user(request):
                 user_profile.profile_image = profile_image
                 user_profile.save()
 
-            UserRole.objects.create(user=user, role=role)
+            # Create UserRole with tracking user (None if superuser)
+            UserRole.objects.create(
+                user=user, 
+                role=role,
+                created_by=tracking_user,
+                updated_by=tracking_user
+            )
 
             # Send email with login credentials
             subject = "Your Account Credentials"
@@ -114,6 +128,12 @@ def edit_user(request, user_id):
             
     elif request.method in ['PUT', 'POST']:  # Support both PUT and POST
         try:
+            # Get the logged-in user for updated_by field
+            current_user = request.user
+            
+            # For tracking updated_by (None if superuser)
+            tracking_user = None if current_user.is_superuser else current_user
+            
             # Debug: print request information
             print("Content-Type:", request.content_type)
             print("POST data:", request.POST)
@@ -175,6 +195,9 @@ def edit_user(request, user_id):
                 profile.phone_number = data['phone_number']
                 print(f"Updated phone_number to: {data['phone_number']}")
             
+            # Update updated_by field in the profile (None if superuser)
+            profile.updated_by = tracking_user
+            
             # Update profile image if uploaded
             if request.FILES and 'profile_image' in request.FILES:
                 # Delete old image if exists
@@ -205,10 +228,16 @@ def edit_user(request, user_id):
             if role_id:
                 try:
                     role = get_object_or_404(Role, id=role_id)
-                    UserRole.objects.update_or_create(
+                    user_role, created = UserRole.objects.update_or_create(
                         user=user,
-                        defaults={'role': role}
+                        defaults={'role': role, 'updated_by': tracking_user}
                     )
+                    
+                    # If this is a new UserRole, set the created_by field (None if superuser)
+                    if created:
+                        user_role.created_by = tracking_user
+                        user_role.save()
+                        
                     print(f"Updated role to: {role.role_name}")
                 except Exception as e:
                     print(f"Error updating role: {str(e)}")
@@ -308,16 +337,66 @@ def generate_reset_password_link(request):
 @csrf_exempt
 def create_role(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-        role_name = data.get('role_name')
+        try:
+            # Get the logged-in user for created_by field
+            current_user = request.user
+            
+            # For tracking created_by and updated_by (None if superuser)
+            tracking_user = None if current_user.is_superuser else current_user
+            
+            data = json.loads(request.body)
+            role_name = data.get('role_name')
 
-        if Role.objects.filter(role_name=role_name).exists():
-            return JsonResponse({'error': 'Role already exists'}, status=400)
+            if Role.objects.filter(role_name=role_name).exists():
+                return JsonResponse({'error': 'Role already exists'}, status=400)
 
-        role_unique_id = str(uuid.uuid4())  # Generate a unique UUID for the role
-        role = Role.objects.create(role_name=role_name, role_unique_id=role_unique_id)
+            role_unique_id = str(uuid.uuid4())  # Generate a unique UUID for the role
+            
+            # Create role with tracking fields
+            role = Role.objects.create(
+                role_name=role_name, 
+                role_unique_id=role_unique_id,
+                created_by=tracking_user,
+                updated_by=tracking_user
+            )
 
-        return JsonResponse({'message': 'Role created successfully', 'role_unique_id': role.role_unique_id})
+            return JsonResponse({'message': 'Role created successfully', 'role_unique_id': role.role_unique_id})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+@csrf_exempt
+def update_role(request):
+    if request.method == 'POST':
+        try:
+            # Get the logged-in user for updated_by field
+            current_user = request.user
+            
+            # For tracking updated_by (None if superuser)
+            tracking_user = None if current_user.is_superuser else current_user
+            
+            data = json.loads(request.body)
+            role_unique_id = data.get('role_unique_id')
+            new_role_name = data.get('role_name')
+
+            # Check if role exists
+            role = get_object_or_404(Role, role_unique_id=role_unique_id)
+            
+            # Check if new role name already exists (excluding current role)
+            if Role.objects.filter(role_name=new_role_name).exclude(role_unique_id=role_unique_id).exists():
+                return JsonResponse({'error': 'Role name already exists'}, status=400)
+            
+            # Update role and tracking field
+            role.role_name = new_role_name
+            role.updated_by = tracking_user
+            role.save()
+            
+            return JsonResponse({'message': 'Role updated successfully'})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+            
+    return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
 @csrf_exempt
@@ -339,58 +418,124 @@ def update_profile_image(request):
         messages.success(request, 'Profile image updated successfully')
     return redirect('profile')
 
+# Backend changes - modify get_users view
 def get_users(request):
+    # Exclude users who have the "client" role
     users = User.objects.exclude(is_superuser=True).values('id', 'first_name', 'last_name', 'email')
+    
+    # Filter out users with the "client" role using the UserRole table
+    users = [user for user in users if not UserRole.objects.filter(user_id=user['id']).filter(role__role_name="client").exists()]
+    
     user_data = []
 
     for user in users:
-        # Get the user's role
-        user_role = UserRole.objects.filter(user_id=user['id']).select_related('role').first()
+        user_id = user['id']
+        first_name = user['first_name'].strip() if user['first_name'] else ""
+        last_name = user['last_name'].strip() if user['last_name'] else ""
+        full_name = f"{first_name} {last_name}".strip() or "N/A"
+        
+        # Generate initials
+        initials = ""
+        if first_name:
+            initials += first_name[0].upper()
+        if last_name:
+            initials += last_name[0].upper()
+        # If no initials could be generated, use "NA"
+        if not initials:
+            initials = "NA"
+
+        # Get user role
+        user_role = UserRole.objects.filter(user_id=user_id).select_related('role').first()
         role_name = user_role.role.role_name if user_role else "No Role"
-        
-        full_name = f"{user['first_name']} {user['last_name']}".strip()  # Concatenate first & last name
-        
-        # Get the UserProfile associated with the user
+
         try:
-            user_profile = UserProfile.objects.get(user_id=user['id'])
-            profile_image_url = static(f'{user_profile.profile_image.name}')
+            user_profile = UserProfile.objects.select_related('created_by', 'updated_by').get(user_id=user_id)
+
+            # Profile image (now with has_image flag)
+            has_image = bool(user_profile.profile_image)
+            profile_image_url = static(user_profile.profile_image.name) if has_image else None
+
+            # Creator
+            created_by_user = user_profile.created_by
+            created_by = (
+                f"{created_by_user.first_name} {created_by_user.last_name}".strip()
+                if created_by_user else "System"
+            )
+            if created_by_user and not created_by.strip():
+                created_by = created_by_user.username
+
+            # Updater (only if different from creator)
+            updated_by = None
+            if user_profile.updated_by and user_profile.updated_by != user_profile.created_by:
+                updated_by = f"{user_profile.updated_by.first_name} {user_profile.updated_by.last_name}".strip()
+                if not updated_by:
+                    updated_by = user_profile.updated_by.username
+
+            # Tracking Info
+            tracking_info = f"Created by {created_by}"
+            if updated_by:
+                tracking_info += f", Updated by {updated_by}"
+
         except UserProfile.DoesNotExist:
-            # Use default image if no profile image is available
-            profile_image_url = static('default.png')
+            has_image = False
+            profile_image_url = None
+            created_by = "System"
+            updated_by = None
+            tracking_info = "No tracking information"
 
         user_data.append({
-            'id': user['id'],
-            'name': full_name if full_name else "N/A",  # Handle empty names
+            'id': user_id,
+            'name': full_name,
             'email': user['email'],
             'role': role_name,
-            'profile_image': profile_image_url  # Include profile image URL
+            'has_image': has_image,
+            'profile_image': profile_image_url,
+            'initials': initials,
+            'tracking_info': tracking_info,
+            'created_by': created_by,
+            'updated_by': updated_by
         })
 
     return JsonResponse({'data': user_data})
 
+
 def get_roles(request):
-    roles = Role.objects.all().values("id", "role_name", "role_unique_id")
-    return JsonResponse({"roles": list(roles)})
-
-@csrf_exempt
-def update_role(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        role_unique_id = data.get('role_unique_id')
-        new_role_name = data.get('role_name')
-
-        try:
-            # Check if role exists
-            role = get_object_or_404(Role, role_unique_id=role_unique_id)
-            
-            # Check if new role name already exists (excluding current role)
-            if Role.objects.filter(role_name=new_role_name).exclude(role_unique_id=role_unique_id).exists():
-                return JsonResponse({'error': 'Role name already exists'}, status=400)
-            
-            # Update role
-            role.role_name = new_role_name
-            role.save()
-            
-            return JsonResponse({'message': 'Role updated successfully'})
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+    # Fetch roles with related user information
+    roles = Role.objects.all().select_related('created_by', 'updated_by')
+    
+    roles_data = []
+    for role in roles:
+        # Get creator info
+        creator_name = "System"
+        if role.created_by:
+            first_name = role.created_by.first_name.strip() if role.created_by.first_name else ""
+            last_name = role.created_by.last_name.strip() if role.created_by.last_name else ""
+            creator_name = f"{first_name} {last_name}".strip()
+            if not creator_name:
+                creator_name = role.created_by.username
+        
+        # Get updater info (if different from creator)
+        updater_name = None
+        if role.updated_by and role.updated_by != role.created_by:
+            first_name = role.updated_by.first_name.strip() if role.updated_by.first_name else ""
+            last_name = role.updated_by.last_name.strip() if role.updated_by.last_name else ""
+            updater_name = f"{first_name} {last_name}".strip()
+            if not updater_name:
+                updater_name = role.updated_by.username
+        
+        # Format dates
+        created_at = role.created_at.strftime("%Y-%m-%d %H:%M") if role.created_at else ""
+        updated_at = role.updated_at.strftime("%Y-%m-%d %H:%M") if role.updated_at else ""
+        
+        roles_data.append({
+            "id": role.id,
+            "role_name": role.role_name,
+            "role_unique_id": role.role_unique_id,
+            "created_by": creator_name,
+            "updated_by": updater_name,
+            "created_at": created_at,
+            "updated_at": updated_at
+        })
+    
+    return JsonResponse({"roles": roles_data})
+        

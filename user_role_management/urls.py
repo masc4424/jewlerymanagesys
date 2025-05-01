@@ -1,6 +1,7 @@
 from django.urls import path
 from user_role_management.api import *
 from user_role_management.views import *
+from user_role_management.client_api import *
 
 from django.conf import settings
 from django.conf.urls.static import static
@@ -19,12 +20,19 @@ urlpatterns = [
 
         # View URLs
     path('role_list/', role_list, name='role_list'),
+    path('client_table/', client_users, name='user_table'),
     
     # API URLs - using your existing functions
     path('api/roles/', get_roles, name='get_roles'),
     path('api/create_role/', create_role, name='create_role'),
     path('api/delete_role/', delete_role, name='delete_role'),
     path('api/update_role/', update_role, name='update_role'),
+
+    # For API endpoints client
+    path('api/get_client_users/', get_client_users, name='get_client_users'),
+    path('api/add_client_user/', add_client_user, name='add_client_user'),
+    path('api/edit_client_user/', edit_client_user, name='edit_client_user'),
+    path('api/delete_client_user/', delete_client_user, name='delete_client_user'),
 ]
 
 urlpatterns += [
