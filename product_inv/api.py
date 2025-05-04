@@ -186,7 +186,7 @@ def get_models_by_jewelry_type(request, jewelry_type_name=None):
             except (ValueError, JewelryType.DoesNotExist):
                 return JsonResponse({'error': 'Jewelry type not found'}, status=404)
                 
-        models = Model.objects.filter(jewelry_type=jewelry_type).values('id', 'model_no', 'length', 'breadth', 'weight','model_img').annotate(no_of_pieces=Count('model_no')) 
+        models = Model.objects.filter(jewelry_type=jewelry_type).values('id', 'model_no', 'length', 'breadth', 'weight','model_img').annotate(no_of_pieces=Count('model_no'),status_name=F('status__status')) 
         return JsonResponse({'data': list(models)}, safe=False)
 
 # @csrf_exempt
@@ -444,6 +444,7 @@ def create_model(request):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
+
 # New endpoint to get all stones
 def get_stones(request):
     stones = Stone.objects.all()

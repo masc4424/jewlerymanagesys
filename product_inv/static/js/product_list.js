@@ -60,6 +60,61 @@ $(document).ready(function() {
                             </a>`;
                 }
             },
+            {
+                data: 'status_name',
+                render: function(data) {
+                  return data ? data : 'N/A';
+                }
+              },
+            // {
+            //     data: 'status_name',
+            //     render: function(data) {
+            //       if (!data) return '<span class="badge bg-secondary">N/A</span>';
+                  
+            //       // Use exact status values from the database
+            //       let badgeClass = 'bg-info';
+                  
+            //       switch(data) {
+            //         case 'CAGE':
+            //           badgeClass = 'bg-secondary';
+            //           break;
+            //         case 'WAX SETTING':
+            //           badgeClass = 'bg-warning';
+            //           break;
+            //         case 'CASTING':
+            //           badgeClass = 'bg-primary';
+            //           break;
+            //         case 'FILING':
+            //           badgeClass = 'bg-info';
+            //           break;
+            //         case 'POLISHING':
+            //           badgeClass = 'bg-light text-dark';
+            //           break;
+            //         case 'SETTING':
+            //           badgeClass = 'bg-warning';
+            //           break;
+            //         case 'PLATING':
+            //           badgeClass = 'bg-info';
+            //           break;
+            //         case 'QC-POST PLATING':
+            //           badgeClass = 'bg-dark';
+            //           break;
+            //         case 'READY TO DELIVER':
+            //           badgeClass = 'bg-success';
+            //           break;
+            //         case 'RE SETTING':
+            //           badgeClass = 'bg-warning';
+            //           break;
+            //         case 'FINISHED':
+            //           badgeClass = 'bg-success';
+            //           break;
+            //         default:
+            //           badgeClass = 'bg-secondary';
+            //       }
+                  
+            //       return `<span class="badge ${badgeClass}">${data}</span>`;
+            //     }
+            //   },
             { data: 'no_of_pieces' },
             {
                 data: null,
