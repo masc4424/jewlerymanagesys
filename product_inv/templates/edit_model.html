@@ -89,6 +89,27 @@
                                 </select>
                             </div>
                         </div>
+                        <!-- Add these to your edit form HTML -->
+
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="clients" class="form-label">Clients</label>
+                                <select class="form-select select22" id="clients" name="clients" multiple>
+                                    <!-- Options will be populated via JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Status</label>
+                                <select class="form-select" id="status" name="status" required>
+                                    <option value="" selected disabled>Select Status</option>
+                                    <!-- Status options will be populated via JavaScript -->
+                                </select>
+                                <input type="hidden" id="current_status_id" value="{{ model.status.id }}">
+                            </div>
+                        </div>
+
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="length" class="form-label">Length (cm)</label>

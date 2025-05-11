@@ -35,6 +35,8 @@ urlpatterns += [
     path('get_model_details/<int:model_id>/', get_model_details, name='get_model_details'),
     path('get_clients/', get_clients, name='get_clients'),
     path('get_model_status/', get_model_status, name='get_model_status'),
+    # Add this to your urls.py
+    path('get_model_clients/<int:model_id>/', get_model_clients, name='get_model_clients'),
 
 
 ]

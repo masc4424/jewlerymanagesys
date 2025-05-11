@@ -813,10 +813,12 @@ $(document).ready(function() {
             });
         });
     }
-    $('#updateModelForm').on('submit', function(e) {
-        e.preventDefault();  // Prevent default form submission
+    
+     // Handle form submission with updated clients and status
+     $('#updateModelForm').on('submit', function(e) {
+        e.preventDefault();
 
-        const modelId = $('#model_id').val();  // Hidden input field
+        const modelId = $('#model_id').val();
         const jewelryTypeId = $('#jewelry_type').val();
         const formData = new FormData(this);
         formData.append('jewelry_type', jewelryTypeId);
@@ -826,12 +828,17 @@ $(document).ready(function() {
         colorSelections.forEach(color => {
             formData.append('colors[]', color);
         });
+        
+        const clientSelections = $('#clients').val();
+        clientSelections.forEach(clientId => {
+            formData.append('clients[]', clientId);
+        });
 
         formData.append('stones', JSON.stringify(addedStones));
         formData.append('raw_materials', JSON.stringify(addedRawMaterials));
 
         $.ajax({
-            url: `/model_edit/${modelId}/`,  // Your Django endpoint
+            url: `/model_edit/${modelId}/`,
             type: 'POST',
             data: formData,
             processData: false,
@@ -861,8 +868,89 @@ $(document).ready(function() {
             }
         });
     });
+});
+$(document).ready(function() {
+    // Load clients dropdown
+    $.ajax({
+        url: '/get_clients/',
+        type: 'GET',
+        dataType: 'json',
+        success: function(clients) {
+            // Populate clients dropdown
+            const clientsDropdown = $('#clients');
+            clientsDropdown.empty();
+            
+            clients.forEach(client => {
+                clientsDropdown.append(new Option(client.name, client.id));
+            });
+            
+            // Select the current clients for this model
+            // We'll need to retrieve current clients from the server and pre-select them
+            const modelId = $('#model_id').val();
+            
+            if (modelId) {
+                $.ajax({
+                    url: `/get_model_clients/${modelId}/`, // You'll need to create this endpoint
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(modelClients) {
+                        const clientIds = modelClients.map(client => client.id);
+                        $('#clients').val(clientIds).trigger('change');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error fetching model clients:', error);
+                    }
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error fetching clients:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to load clients. Please refresh the page.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
     
+    // Load status dropdown
+    $.ajax({
+        url: '/get_model_status/',
+        type: 'GET',
+        dataType: 'json',
+        success: function(statuses) {
+            // Populate status dropdown
+            const statusDropdown = $('#status');
+            statusDropdown.empty();
+            let defaultOption = new Option('Select Status', '', true, true);
+            defaultOption.disabled = true;
+            statusDropdown.append(defaultOption);
+            
+            statuses.forEach(status => {
+                statusDropdown.append(new Option(status.status, status.id));
+            });
+            
+            // Select the current status for this model
+            const modelId = $('#model_id').val();
+            const currentStatusId = $('#current_status_id').val(); // You need to add this hidden field
+            
+            if (currentStatusId) {
+                $('#status').val(currentStatusId);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error fetching model statuses:', error);
+            Swal.fire({
+                title: 'Error!',
+                text: 'Failed to load statuses. Please refresh the page.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        }
+    });
 
+   
 });
     // // Function to populate material dropdown
     // function populateMaterialDropdown(select) {

@@ -23,6 +23,7 @@ $(document).ready(function() {
     let addedRawMaterials = [];
     let rawMaterialFormCounter = 0;
     let usedStoneIds = new Set(); // Track used stone IDs
+    let usedStoneTypeIds = new Set();
     let usedMaterialIds = new Set(); // Track used material IDs
     
     // Load stone names and materials when page loads
@@ -45,7 +46,6 @@ $(document).ready(function() {
         // Check if the number has no decimal part or ends with .00
         return parsed % 1 === 0 ? parsed.toFixed(0) : parsed.toFixed(2).replace(/\.00$/, '');
     }
-    // Function to calculate total stone details
     function calculateTotalStoneDetails() {
         let totalRate = 0;
         let totalWeight = 0;
@@ -156,13 +156,11 @@ $(document).ready(function() {
         
         if (window.stoneData && window.stoneData.length > 0) {
             $.each(window.stoneData, function(i, stone) {
-                // Only add stones that haven't been used yet
-                if (!usedStoneIds.has(stone.id.toString())) {
-                    select.append($('<option>', {
-                        value: stone.id,
-                        text: stone.name
-                    }));
-                }
+                // No need to filter based on usedStoneIds anymore
+                select.append($('<option>', {
+                    value: stone.id,
+                    text: stone.name
+                }));
             });
         } else {
             $.ajax({
@@ -172,13 +170,11 @@ $(document).ready(function() {
                 success: function(data) {
                     console.log("Stones loaded for dropdown:", data);
                     $.each(data, function(i, stone) {
-                        // Only add stones that haven't been used yet
-                        if (!usedStoneIds.has(stone.id.toString())) {
-                            select.append($('<option>', {
-                                value: stone.id,
-                                text: stone.name
-                            }));
-                        }
+                        // No need to filter based on usedStoneIds anymore
+                        select.append($('<option>', {
+                            value: stone.id,
+                            text: stone.name
+                        }));
                     });
                 },
                 error: function(xhr, status, error) {
@@ -207,10 +203,13 @@ $(document).ready(function() {
             dataType: 'json',
             success: function(data) {
                 $.each(data, function(i, type) {
-                    typeSelect.append($('<option>', {
-                        value: type.id,
-                        text: type.type_name
-                    }));
+                    // Only add stone types that haven't been used yet
+                    if (!usedStoneTypeIds.has(type.id.toString())) {
+                        typeSelect.append($('<option>', {
+                            value: type.id,
+                            text: type.type_name
+                        }));
+                    }
                 });
             },
             error: function(xhr, status, error) {
@@ -423,8 +422,8 @@ $(document).ready(function() {
             $('#savedStonesTable tbody').append(newRow);
         });
         
-        // Add the stone ID to the set of used stone IDs
-        usedStoneIds.add(stoneNameSelect.val().toString());
+        // Add the stone type ID to the set of used stone type IDs
+        usedStoneTypeIds.add(stoneTypeSelect.val().toString());
         
         // Calculate and update total stone details
         calculateTotalStoneDetails();
@@ -437,13 +436,13 @@ $(document).ready(function() {
             const row = $(this).closest('tr');
             const index = row.data('index');
             
-            // Get the stone ID to remove from used stones
+            // Get the stone type ID to remove from used stones
             const removedStone = addedStones[index];
-            if (removedStone && removedStone.stone_id) {
-                // Only remove from usedStoneIds if this was the last instance of this stone
-                const remainingOfThisStone = addedStones.filter(s => s.stone_id === removedStone.stone_id);
-                if (remainingOfThisStone.length <= 1) {
-                    usedStoneIds.delete(removedStone.stone_id.toString());
+            if (removedStone && removedStone.stone_type_id) {
+                // Only remove from usedStoneTypeIds if this was the last instance of this stone type
+                const remainingOfThisType = addedStones.filter(s => s.stone_type_id === removedStone.stone_type_id);
+                if (remainingOfThisType.length <= 1) {
+                    usedStoneTypeIds.delete(removedStone.stone_type_id.toString());
                 }
             }
             

@@ -89,7 +89,6 @@ class ModelClient(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
-        unique_together = ('model', 'client')
         verbose_name = 'Model Client'
         verbose_name_plural = 'Model Clients'
     
