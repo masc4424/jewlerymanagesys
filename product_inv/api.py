@@ -354,7 +354,7 @@ def create_model(request):
                     destination.write(chunk)
 
             # Save relative path in the database
-            relative_path = f"model_image/{new_filename}"
+            relative_path = f"model_img/{new_filename}"
 
             # Create new model
             model = Model.objects.create(
