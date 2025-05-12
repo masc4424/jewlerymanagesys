@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.http import JsonResponse
 from user_role_management.models import *
 from django.contrib.auth.decorators import login_required
 
@@ -38,3 +39,10 @@ def dashboard_client_render(request):
         'role_unique_id': role_u_id,
         'user': user_with_role  # Pass the enhanced user object to the template
     })
+
+
+def client_modal(request):
+    if request.method == "GET" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        html = render(request, 'client_side_modal.html').content.decode('utf-8')
+        return JsonResponse({'status': 'success', 'html': html})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)

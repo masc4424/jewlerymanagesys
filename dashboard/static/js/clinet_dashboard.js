@@ -67,7 +67,48 @@ window.incrementQty = function (index) {
 // Decrease quantity
 window.decrementQty = function (index) {
     let qty = parseInt($(`#qty-${index}`).text());
+    console.log("Current quantity:", qty);
+    
     if (qty > 1) {
         $(`#qty-${index}`).text(qty - 1);
+        console.log("Decreased to:", qty - 1);
+    } else {
+        console.log("Quantity is 1, returning to Add to Cart state");
+        // Hide the quantity controls
+        let controlsElement = document.getElementById(`cart-controls-${index}`);
+        controlsElement.classList.add('d-none');
+        
+        // Show the Add to Cart button
+        let addButton = document.getElementById(`add-btn-${index}`);
+        addButton.classList.remove('d-none');
+        
+        // Reset the quantity to 1 for next time
+        $(`#qty-${index}`).text(1);
+        
+        console.log("Controls hidden:", controlsElement.classList.contains('d-none'));
+        console.log("Add button visible:", !addButton.classList.contains('d-none'));
     }
 };
+
+function openClientSideModal() {
+    $.ajax({
+        url: '/client/modal/',
+        type: 'GET',
+        success: function (response) {
+            if (response.status === 'success') {
+                // Append modal HTML if not already present
+                if ($('#clientSideModal').length === 0) {
+                    $('body').append(response.html);
+                }
+
+                // Show the offcanvas modal using Bootstrap 5
+                let modalElement = document.getElementById('clientSideModal');
+                let modal = new bootstrap.Offcanvas(modalElement);
+                modal.show();
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('Modal fetch error:', error);
+        }
+    });
+}
