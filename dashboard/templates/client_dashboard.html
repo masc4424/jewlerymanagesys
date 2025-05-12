@@ -10,13 +10,16 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-end mb-3">
         <button id="go-to-cart" class="btn btn-primary" onclick="openClientSideModal()">
-            Go to Cart <span class="badge bg-light text-dark">3</span>
+            Go to Cart <span class="badge bg-light text-dark">0</span>
         </button>
     </div>
     
     <div class="row" id="model-cards"></div>
     <div id="response-container" class="mt-3"></div>
 </div>
+
+<!-- CSRF Token for AJAX -->
+{% csrf_token %}
 {% endblock %}
 
 {% block extra_js %}

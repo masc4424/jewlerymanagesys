@@ -3,6 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from product_inv.models import ModelClient, Model
 from django.templatetags.static import static
+from django.views.decorators.http import require_POST
+from order.models import ClientAddToCart
 import json
 from django.conf import settings
 import traceback
@@ -118,3 +120,103 @@ def get_client_models(request):
             'status': 'error',
             'message': f"An error occurred: {str(e)}"
         }, status=500)
+    
+
+@login_required
+@require_POST
+def add_to_cart(request):
+    """Add a model to the client's cart"""
+    model_id = request.POST.get('model_id')
+    quantity = int(request.POST.get('quantity', 1))
+    
+    if not model_id:
+        return JsonResponse({'status': 'error', 'message': 'Model ID is required'}, status=400)
+        
+    try:
+        model = Model.objects.get(id=model_id)
+        
+        # Always create a new cart item
+        cart_item = ClientAddToCart.objects.create(
+            client=request.user,
+            model=model,
+            quantity=quantity
+        )
+        
+        message = f"Added {model.model_no} to your cart"
+        return JsonResponse({'status': 'success', 'message': message})
+        
+    except Model.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Model not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+def get_cart_count(request):
+    """Get the count of items in the client's cart"""
+    count = ClientAddToCart.objects.filter(client=request.user).count()
+    return JsonResponse({'status': 'success', 'count': count})
+
+
+@login_required
+def get_cart_items(request):
+    """Get all items in the client's cart"""
+    cart_items = ClientAddToCart.objects.filter(client=request.user).select_related('model')
+    
+    items = []
+    for item in cart_items:
+        items.append({
+            'id': item.id,
+            'model_id': item.model.id,
+            'model_no': item.model.model_no,
+            'jewelry_type_name': item.model.jewelry_type.name if hasattr(item.model, 'jewelry_type') else '',
+            'weight': item.model.weight,
+            'quantity': item.quantity,
+            'image': item.model.model_img.url if hasattr(item.model, 'model_img') and item.model.model_img else '',
+        })
+    
+    return JsonResponse({'status': 'success', 'items': items})
+
+
+@login_required
+@require_POST
+def update_cart_item(request):
+    """Update the quantity of an item in the cart"""
+    cart_item_id = request.POST.get('cart_item_id')
+    quantity = int(request.POST.get('quantity', 1))
+    
+    if not cart_item_id:
+        return JsonResponse({'status': 'error', 'message': 'Cart item ID is required'}, status=400)
+        
+    try:
+        cart_item = ClientAddToCart.objects.get(id=cart_item_id, client=request.user)
+        cart_item.quantity = quantity
+        cart_item.save()
+        
+        return JsonResponse({'status': 'success', 'message': 'Cart updated successfully'})
+        
+    except ClientAddToCart.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Cart item not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+@login_required
+@require_POST
+def remove_from_cart(request):
+    """Remove an item from the cart"""
+    cart_item_id = request.POST.get('cart_item_id')
+    
+    if not cart_item_id:
+        return JsonResponse({'status': 'error', 'message': 'Cart item ID is required'}, status=400)
+        
+    try:
+        cart_item = ClientAddToCart.objects.get(id=cart_item_id, client=request.user)
+        cart_item.delete()
+        
+        return JsonResponse({'status': 'success', 'message': 'Item removed from cart'})
+        
+    except ClientAddToCart.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Cart item not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)

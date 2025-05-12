@@ -42,3 +42,16 @@ class DefectiveOrder(models.Model):
 
     def __str__(self):
         return f"Defective Order {self.order.id} - {self.defective_pieces} pieces"
+
+class ClientAddToCart(models.Model):
+    client = models.ForeignKey(User, on_delete=models.CASCADE, related_name='client_cart_items')
+    model = models.ForeignKey(Model, on_delete=models.CASCADE, related_name='cart_items')
+    quantity = models.PositiveIntegerField(default=1)
+    date_added = models.DateTimeField(auto_now_add=True)
+    order_id = models.CharField(max_length=100, null=True, blank=True)  # Can be null as specified
+    
+    class Meta:
+        ordering = ['-date_added']  # Order by most recent first
+        
+    def __str__(self):
+        return f"{self.client.username} - {self.model.model_no} ({self.quantity})"
