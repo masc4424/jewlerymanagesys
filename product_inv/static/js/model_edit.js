@@ -1,6 +1,16 @@
 $(document).ready(function() {
     // Initialize Select2
     $('.select22').select2();
+    if ($('#previewContainer').length) {
+        // If the image inside doesn't have a src or has an empty src, hide the container
+        const imgSrc = $('#imagePreview').attr('src');
+        if (!imgSrc || imgSrc === '#' || imgSrc === '') {
+            // Hide the preview container with direct CSS
+            $('#previewContainer').css('display', 'none');
+            // Remove the src attribute completely
+            $('#imagePreview').removeAttr('src');
+        }
+    }
     
     // Initialize arrays and counters
     let addedStones = [];
@@ -35,117 +45,429 @@ $(document).ready(function() {
         return parsed % 1 === 0 ? parsed.toFixed(0) : parsed.toFixed(2).replace(/\.00$/, '');
     }
     
-    // Function to load existing model data
-    function loadModelData() {
-        const modelId = $('#model_id').val();
+    // // Function to load existing model data
+    // function loadModelData() {
+    //     const modelId = $('#model_id').val();
         
-        $.ajax({
-            url: `/get_model_details/${modelId}/`,
-            type: 'GET',
-            dataType: 'json',
-            success: function(data) {
-                console.log("Model data loaded:", data);
-                if (data.model) {
-                    $('#model_no').val(data.model.name); // Assuming there's an input field with ID model_name
+    //     $.ajax({
+    //         url: `/get_model_details/${modelId}/`,
+    //         type: 'GET',
+    //         dataType: 'json',
+    //         success: function(data) {
+    //             console.log("Model data loaded:", data);
+    //             if (data.model) {
+    //                 $('#model_no').val(data.model.name); // Assuming there's an input field with ID model_name
     
-                    // Set colors if it's a dropdown or multi-select
-                    if (Array.isArray(data.model.colors)) {
-                        $('#colors').val(data.model.colors).trigger('change'); // Assuming Select2 or multiselect
-                    }
-                    $('#length').val(data.model.length);
-                    $('#breadth').val(data.model.breadth);
-                    $('#weight').val(data.model.weight);
+    //                 // Set colors if it's a dropdown or multi-select
+    //                 if (Array.isArray(data.model.colors)) {
+    //                     $('#colors').val(data.model.colors).trigger('change'); // Assuming Select2 or multiselect
+    //                 }
+    //                 $('#length').val(data.model.length);
+    //                 $('#breadth').val(data.model.breadth);
+    //                 $('#weight').val(data.model.weight);
 
-                    // Show existing image preview from server
-                    if (data.model.model_image) {
-                        const imageUrl = '/static/' + data.model.model_image.replace(/^\/?static\//, '');
-                        $('#imagePreview').attr('src', imageUrl);
-                        $('#previewContainer').removeClass('d-none');
-                    } else {
-                        $('#imagePreview').attr('src', '#');
-                        $('#previewContainer').addClass('d-none');
-                    }
+    //                 // Show existing image preview from server
+    //                 if (data.model.model_image) {
+    //                     const imageUrl = '/static/' + data.model.model_image.replace(/^\/?static\//, '');
+    //                     $('#imagePreview').attr('src', imageUrl);
+    //                     $('#previewContainer').removeClass('d-none');
+    //                 } else {
+    //                     $('#imagePreview').attr('src', '#');
+    //                     $('#previewContainer').addClass('d-none');
+    //                 }
+    //             }
+                
+    //             // Load stone data
+    //             if (data.stones && data.stones.length > 0) {
+    //                 data.stones.forEach(stone => {
+    //                     // Add to internal array
+    //                     addedStones.push({
+    //                         stone_id: stone.stone_id,
+    //                         stone_name: stone.stone_name,
+    //                         stone_type_id: stone.stone_type_id,
+    //                         stone_type_name: stone.stone_type_name,
+    //                         weight: stone.weight,
+    //                         length: stone.length,
+    //                         breadth: stone.breadth,
+    //                         rate: stone.rate,
+    //                         count: stone.count,
+    //                         stone_type_detail_id: stone.stone_type_detail_id,
+    //                         id: stone.id  // Store the stone relationship ID for updates
+    //                     });
+                        
+    //                     // Add stone ID to used stones set
+    //                     usedStoneIds.add(stone.stone_id.toString());
+                        
+    //                     // Add to display table
+    //                     addStoneToTable(addedStones.length - 1);
+    //                 });
+                    
+    //                 // Calculate stone totals
+    //                 calculateTotalStoneDetails();
+    //             }
+                
+    //             // Load raw material data
+    //             if (data.raw_materials && data.raw_materials.length > 0) {
+    //                 data.raw_materials.forEach(material => {
+    //                     // Add to internal array
+    //                     addedRawMaterials.push({
+    //                         material_id: material.material_id,
+    //                         material_name: material.material_name,
+    //                         weight: material.weight,
+    //                         rate: material.rate,
+    //                         total_value: material.total_value,
+    //                         id: material.id  // Store the material relationship ID for updates
+    //                     });
+                        
+    //                     // Add material ID to used materials set
+    //                     usedMaterialIds.add(material.material_id.toString());
+                        
+    //                     // Add to display table
+    //                     addRawMaterialToTable(addedRawMaterials.length - 1);
+    //                 });
+                    
+    //                 // Calculate raw material totals
+    //                 calculateTotalRawMaterialDetails();
+    //             }
+    //         },
+    //         error: function(xhr, status, error) {
+    //             console.error('Error loading model details:', error);
+    //             Swal.fire({
+    //                 title: 'Error',
+    //                 text: 'Failed to load model details. Please try again later.',
+    //                 icon: 'error'
+    //             });
+    //         }
+    //     });
+    // }
+
+    // --
+    // function loadModelData() {
+    //     const modelId = $('#model_id').val();
+        
+    //     $.ajax({
+    //         url: `/get_model_details/${modelId}/`,
+    //         type: 'GET',
+    //         dataType: 'json',
+    //         success: function(data) {
+    //             console.log("Model data loaded:", data);
+                
+    //             // Load basic model information
+    //             if (data.model) {
+    //                 // Update model number (fixed naming from 'name' to 'model_no')
+    //                 $('#model_no').val(data.model.model_no);
+                    
+    //                 // Set dimensions and weight
+    //                 $('#length').val(data.model.length);
+    //                 $('#breadth').val(data.model.breadth);
+    //                 $('#weight').val(data.model.weight);
+                    
+    //                 // Set jewelry type if dropdown exists
+    //                 if (data.model.jewelry_type_id && $('#jewelry_type').length) {
+    //                     $('#jewelry_type').val(data.model.jewelry_type_id).trigger('change');
+    //                 }
+                    
+    //                 // Set status if dropdown exists
+    //                 if (data.model.status_id && $('#status').length) {
+    //                     $('#status').val(data.model.status_id).trigger('change');
+    //                 }
+                    
+    //                 // Set colors if it's a dropdown or multi-select
+    //                 if (Array.isArray(data.model.colors)) {
+    //                     $('#colors').val(data.model.colors).trigger('change'); // Assuming Select2 or multiselect
+    //                 }
+                    
+    //                 // Show existing image preview
+                    // if (data.model.model_img) {
+                    //     const imageUrl = data.model.model_img;
+                    //     $('#imagePreview').attr('src', imageUrl);
+                    //     $('#previewContainer').removeClass('d-none');
+                    // } else {
+                    //     $('#imagePreview').attr('src', '#');
+                    //     $('#previewContainer').addClass('d-none');
+                    // }
+    //             }
+                
+    //             // Load clients data
+    //             if (data.clients && data.clients.length > 0 && $('#clients').length) {
+    //                 const clientIds = data.clients.map(client => client.client_id);
+    //                 $('#clients').val(clientIds).trigger('change'); // Assuming Select2 or multiselect
+    //             }
+                
+    //             // Clear existing stone data
+    //             addedStones = [];
+    //             usedStoneIds = new Set();
+    //             $('#stonesTable tbody').empty();
+                
+    //             // Load raw stones data first if needed
+    //             if (data.raw_stones && data.raw_stones.length > 0) {
+    //                 // If you have UI for raw stones, add handling here
+    //                 // This might populate a separate table or selection
+    //                 console.log("Raw stones data:", data.raw_stones);
+    //             }
+                
+    //             // Load stone count data
+    //             if (data.stones && data.stones.length > 0) {
+    //                 data.stones.forEach(stone => {
+    //                     // Add to internal array
+    //                     addedStones.push({
+    //                         stone_id: stone.stone_id,
+    //                         stone_name: stone.stone_name,
+    //                         stone_type_id: stone.stone_type_id,
+    //                         stone_type_name: stone.stone_type_name,
+    //                         weight: stone.weight,
+    //                         length: stone.length,
+    //                         breadth: stone.breadth,
+    //                         rate: stone.rate,
+    //                         count: stone.count,
+    //                         stone_type_detail_id: stone.stone_type_detail_id,
+    //                         id: stone.id  // Store the stone relationship ID for updates
+    //                     });
+                        
+    //                     // Add stone ID to used stones set
+    //                     usedStoneIds.add(stone.stone_id.toString());
+                        
+    //                     // Add to display table
+    //                     addStoneToTable(addedStones.length - 1);
+    //                 });
+                    
+    //                 // Calculate stone totals
+    //                 calculateTotalStoneDetails();
+    //             }
+                
+    //             // Clear existing raw material data
+    //             addedRawMaterials = [];
+    //             usedMaterialIds = new Set();
+    //             $('#materialsTable tbody').empty();
+                
+    //             // Load raw material data
+    //             if (data.raw_materials && data.raw_materials.length > 0) {
+    //                 data.raw_materials.forEach(material => {
+    //                     // Add to internal array
+    //                     addedRawMaterials.push({
+    //                         material_id: material.material_id,
+    //                         material_name: material.material_name,
+    //                         weight: material.weight,
+    //                         unit: material.unit || 'g', // Include unit field that was added
+    //                         rate: material.rate,
+    //                         total_value: material.total_value,
+    //                         id: material.id  // Store the material relationship ID for updates
+    //                     });
+                        
+    //                     // Add material ID to used materials set
+    //                     usedMaterialIds.add(material.material_id.toString());
+                        
+    //                     // Add to display table
+    //                     addRawMaterialToTable(addedRawMaterials.length - 1);
+    //                 });
+                    
+    //                 // Calculate raw material totals
+    //                 calculateTotalRawMaterialDetails();
+    //             }
+                
+              
+    //         },
+    //         error: function(xhr, status, error) {
+    //             console.error('Error loading model details:', error);
+    //             Swal.fire({
+    //                 title: 'Error',
+    //                 text: 'Failed to load model details. Please try again later.',
+    //                 icon: 'error'
+    //             });
+    //         }
+    //     });
+    // }
+
+
+   // Fix for the "Unknown Stone" issue in loadModelData function
+function loadModelData() {
+    const modelId = $('#model_id').val();
+    
+    $.ajax({
+        url: `/get_model_details/${modelId}/`,
+        type: 'GET',
+        dataType: 'json',
+        success: function(data) {
+            console.log("Model data loaded:", data);
+            
+            // Load basic model information
+            if (data.model) {
+                // Update model number
+                $('#model_no').val(data.model.model_no);
+                
+                // Set dimensions and weight
+                $('#length').val(data.model.length);
+                $('#breadth').val(data.model.breadth);
+                $('#weight').val(data.model.weight);
+                
+                // Set jewelry type if dropdown exists
+                if (data.model.jewelry_type_id && $('#jewelry_type').length) {
+                    $('#jewelry_type').val(data.model.jewelry_type_id).trigger('change');
                 }
                 
-                // Load stone data
-                if (data.stones && data.stones.length > 0) {
-                    data.stones.forEach(stone => {
-                        // Add to internal array
-                        addedStones.push({
-                            stone_id: stone.stone_id,
-                            stone_name: stone.stone_name,
-                            stone_type_id: stone.stone_type_id,
-                            stone_type_name: stone.stone_type_name,
-                            weight: stone.weight,
-                            length: stone.length,
-                            breadth: stone.breadth,
-                            rate: stone.rate,
-                            count: stone.count,
-                            stone_type_detail_id: stone.stone_type_detail_id,
-                            id: stone.id  // Store the stone relationship ID for updates
-                        });
-                        
-                        // Add stone ID to used stones set
+                // Set status if dropdown exists
+                if (data.model.status_id && $('#status').length) {
+                    $('#status').val(data.model.status_id).trigger('change');
+                }
+                
+                // Set colors if it's a dropdown or multi-select
+                if (Array.isArray(data.model.colors)) {
+                    $('#colors').val(data.model.colors).trigger('change'); // Assuming Select2 or multiselect
+                }
+                
+                if (data.model.model_img && data.model.model_img.trim() !== '') {
+                    const imageUrl = data.model.model_img;
+                    $('#imagePreview').attr('src', imageUrl);
+                    $('#previewContainer').css('display', 'block'); // Force display block
+                } else {
+                    // Hide the preview container entirely with CSS
+                    $('#previewContainer').css('display', 'none'); // Force display none
+                    // Also remove the src attribute
+                    $('#imagePreview').removeAttr('src');
+                }
+            }
+            
+            // Load clients data
+            if (data.clients && data.clients.length > 0 && $('#clients').length) {
+                const clientIds = data.clients.map(client => client.client_id);
+                $('#clients').val(clientIds).trigger('change'); // Assuming Select2 or multiselect
+            }
+            
+            // Clear existing stone data
+            addedStones = [];
+            usedStoneIds = new Set();
+            $('#stonesTable tbody').empty();
+            
+            // Process stones data
+            // First check for complete stones data (StoneCount objects with full details)
+            if (data.stones && data.stones.length > 0) {
+                console.log("Processing stones data:", data.stones);
+                
+                data.stones.forEach(stone => {
+                    // Add to internal array with all properties
+                    addedStones.push({
+                        stone_id: stone.stone_id,
+                        stone_name: stone.stone_name || "No Stone Selected",
+                        stone_type_id: stone.stone_type_id,
+                        stone_type_name: stone.stone_type_name || "Unknown Type",
+                        weight: stone.weight || 0,
+                        length: stone.length || 0,
+                        breadth: stone.breadth || 0,
+                        rate: stone.rate || 0,
+                        count: stone.count || 1,
+                        stone_type_detail_id: stone.stone_type_detail_id,
+                        id: stone.id  // Store the stone relationship ID for updates
+                    });
+                    
+                    // Add stone ID to used stones set if it exists
+                    if (stone.stone_id) {
                         usedStoneIds.add(stone.stone_id.toString());
-                        
-                        // Add to display table
-                        addStoneToTable(addedStones.length - 1);
-                    });
+                    }
                     
-                    // Calculate stone totals
-                    calculateTotalStoneDetails();
-                }
+                    // Add to display table
+                    addStoneToTable(addedStones.length - 1);
+                });
+            } 
+            // If no stones data, check for raw_stones with enhanced data
+            else if (data.raw_stones && data.raw_stones.length > 0) {
+                console.log("Processing raw_stones data:", data.raw_stones);
                 
-                // Load raw material data
-                if (data.raw_materials && data.raw_materials.length > 0) {
-                    data.raw_materials.forEach(material => {
-                        // Add to internal array
-                        addedRawMaterials.push({
-                            material_id: material.material_id,
-                            material_name: material.material_name,
-                            weight: material.weight,
-                            rate: material.rate,
-                            total_value: material.total_value,
-                            id: material.id  // Store the material relationship ID for updates
-                        });
-                        
-                        // Add material ID to used materials set
-                        usedMaterialIds.add(material.material_id.toString());
-                        
-                        // Add to display table
-                        addRawMaterialToTable(addedRawMaterials.length - 1);
-                    });
+                data.raw_stones.forEach(stone => {
+                    console.log("Raw stone structure:", stone);
                     
-                    // Calculate raw material totals
-                    calculateTotalRawMaterialDetails();
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error('Error loading model details:', error);
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Failed to load model details. Please try again later.',
-                    icon: 'error'
+                    // Create a stone object with available data
+                    // Now raw_stones should include stone_id and stone_name from the backend
+                    const stoneObj = {
+                        stone_id: stone.stone_id || null,
+                        stone_name: stone.stone_name || "No Stone Selected",
+                        stone_type_id: stone.stone_type_id,
+                        stone_type_name: stone.stone_type_name || "Unknown Type",
+                        weight: 0,
+                        length: 0,
+                        breadth: 0,
+                        rate: 0,
+                        count: 1,
+                        stone_type_detail_id: null,
+                        id: null
+                    };
+                    
+                    // Add to internal array
+                    addedStones.push(stoneObj);
+                    
+                    // Add stone ID to used stones set if it exists
+                    if (stoneObj.stone_id) {
+                        usedStoneIds.add(stoneObj.stone_id.toString());
+                    }
+                    
+                    // Add to display table
+                    addStoneToTable(addedStones.length - 1);
                 });
             }
-        });
-    }
-
-    // Show preview on file selection
-    $('#model_img').on('change', function (event) {
-        const file = event.target.files[0];
-        if (file && file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = function (e) {
-                $('#imagePreview').attr('src', e.target.result);
-                $('#previewContainer').removeClass('d-none');
-            };
-            reader.readAsDataURL(file);
-        } else {
-            $('#imagePreview').attr('src', '#');
-            $('#previewContainer').addClass('d-none');
+            
+            // Calculate stone totals if we have any stones
+            if (addedStones.length > 0) {
+                calculateTotalStoneDetails();
+            }
+            
+            // Clear existing raw material data
+            addedRawMaterials = [];
+            usedMaterialIds = new Set();
+            $('#materialsTable tbody').empty();
+            
+            // Load raw material data
+            if (data.raw_materials && data.raw_materials.length > 0) {
+                data.raw_materials.forEach(material => {
+                    // Add to internal array
+                    addedRawMaterials.push({
+                        material_id: material.material_id,
+                        material_name: material.material_name,
+                        weight: material.weight,
+                        unit: material.unit || 'g', // Include unit field that was added
+                        rate: material.rate,
+                        total_value: material.total_value,
+                        id: material.id  // Store the material relationship ID for updates
+                    });
+                    
+                    // Add material ID to used materials set
+                    usedMaterialIds.add(material.material_id.toString());
+                    
+                    // Add to display table
+                    addRawMaterialToTable(addedRawMaterials.length - 1);
+                });
+                
+                // Calculate raw material totals
+                calculateTotalRawMaterialDetails();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading model details:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Failed to load model details. Please try again later.',
+                icon: 'error'
+            });
         }
     });
+}
+
+$('#model_img').on('change', function (event) {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            $('#imagePreview').attr('src', e.target.result);
+            $('#previewContainer').removeClass('d-none');
+        };
+        reader.readAsDataURL(file);
+    } else {
+        // If no valid file is selected, completely hide the preview using CSS
+        $('#previewContainer').css('display', 'none'); // Force display none
+        // Also remove the src attribute
+        $('#imagePreview').removeAttr('src');
+    }
+});
+
+
     
     // Function to add a stone to the display table
     function addStoneToTable(index) {
@@ -820,9 +1142,10 @@ $(document).ready(function() {
 
         const modelId = $('#model_id').val();
         const jewelryTypeId = $('#jewelry_type').val();
+        const statusId = $('#status').val(); 
         const formData = new FormData(this);
         formData.append('jewelry_type', jewelryTypeId);
-
+        formData.append('statusId', statusId);
         const colorSelections = $('#colors').val();
         formData.delete('colors');
         colorSelections.forEach(color => {

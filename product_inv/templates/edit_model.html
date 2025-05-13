@@ -36,6 +36,7 @@
                             <div class="mb-3">
                                 <label for="colors" class="form-label">Model Colors</label>
                                 <select class="form-select select22" id="colors" name="colors" multiple required>
+                                    <option value="GJ" {% if 'GJ' in model.colors %}selected{% endif %}>Ganga Jamuna</option>
                                     <option value="Black" {% if 'Black' in model.colors %}selected{% endif %}>Black</option>
                                     <option value="White" {% if 'White' in model.colors %}selected{% endif %}>White</option>
                                     <option value="Gray" {% if 'Gray' in model.colors %}selected{% endif %}>Gray</option>

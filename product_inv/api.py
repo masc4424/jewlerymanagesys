@@ -895,51 +895,175 @@ def edit_model(request, model_id):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
+# def get_model_details(request, model_id):
+#     model = get_object_or_404(Model, id=model_id)
+
+#     model_data = {
+#         "id": model.id,
+#         "name": model.model_no,
+#         "length":model.length,
+#         "breadth":model.breadth,
+#         "weight":model.weight,
+#         "model_image": f"static/model_img/{model.model_img.name.split('/')[-1]}",
+#         "colors": [color.color for color in model.model_colors.all()]
+#     }
+
+#     # --- Stones ---
+#     stones = []
+#     stone_counts = StoneCount.objects.filter(model=model).select_related('stone_type_details__stone_type', 'stone_type_details__stone')
+
+#     for sc in stone_counts:
+#         std = sc.stone_type_details
+#         stone_data = {
+#             "id": sc.id,
+#             "count": sc.count,
+#             "stone_type_detail_id": std.id,
+#             "stone_id": std.stone.id,
+#             "stone_name": std.stone.name,
+#             "stone_type_id": std.stone_type.id,
+#             "stone_type_name": std.stone_type.type_name,
+#             "weight": float(std.weight),
+#             "length": std.length,
+#             "breadth": std.breadth,
+#             "rate": float(std.rate)
+#         }
+#         stones.append(stone_data)
+
+#     # --- Metal Rates Subquery ---
+#     latest_rates = MetalRate.objects.filter(
+#         metal=OuterRef('metal')
+#     ).order_by('-date')  # Gets latest rate per metal
+
+#     # --- Raw Materials ---
+#     raw_materials = []
+#     raw_mats = RawMaterial.objects.filter(model=model).select_related('metal').annotate(
+#         latest_rate=Subquery(latest_rates.values('rate')[:1])
+#     )
+
+#     for rm in raw_mats:
+#         rate = rm.latest_rate or 0
+#         material_data = {
+#             "id": rm.id,
+#             "material_id": rm.metal.id,
+#             "material_name": rm.metal.name,
+#             "weight": float(rm.weight),
+#             "rate": float(rate),
+#             "total_value": float(rm.weight) * float(rate)
+#         }
+#         raw_materials.append(material_data)
+
+#     return JsonResponse({
+#         "stones": stones,
+#         "raw_materials": raw_materials,
+#         "model":model_data,
+#     })
+
 def get_model_details(request, model_id):
     model = get_object_or_404(Model, id=model_id)
-
+    
+    # Get model colors
+    selected_colors = [color.color for color in model.model_colors.all()]
+    
+    # Get jewelry type
+    jewelry_type = model.jewelry_type
+    
+    # Get status
+    model_status = model.status
+    
+    # Get image path
+    if model.model_img:
+        relative_path = model.model_img
+        image_path = f"static/{relative_path}"
+    else:
+        image_path = ""
+    
+    # Basic model data
     model_data = {
         "id": model.id,
-        "name": model.model_no,
-        "length":model.length,
-        "breadth":model.breadth,
-        "weight":model.weight,
-        "model_image": f"static/model_img/{model.model_img.name.split('/')[-1]}",
-        "colors": [color.color for color in model.model_colors.all()]
+        "model_no": model.model_no,
+        "length": float(model.length),
+        "breadth": float(model.breadth),
+        "weight": float(model.weight),
+        "model_img": image_path,
+        "colors": selected_colors,
+        "jewelry_type_id": jewelry_type.id if jewelry_type else None,
+        "jewelry_type_name": jewelry_type.name if jewelry_type else None,
+        "status_id": model_status.id if model_status else None,
+        "status": model_status.status if model_status else None
     }
-
-    # --- Stones ---
-    stones = []
-    stone_counts = StoneCount.objects.filter(model=model).select_related('stone_type_details__stone_type', 'stone_type_details__stone')
-
-    for sc in stone_counts:
-        std = sc.stone_type_details
-        stone_data = {
-            "id": sc.id,
-            "count": sc.count,
-            "stone_type_detail_id": std.id,
-            "stone_id": std.stone.id,
-            "stone_name": std.stone.name,
-            "stone_type_id": std.stone_type.id,
-            "stone_type_name": std.stone_type.type_name,
-            "weight": float(std.weight),
-            "length": std.length,
-            "breadth": std.breadth,
-            "rate": float(std.rate)
+    
+    # --- Clients ---
+    clients = []
+    model_clients = ModelClient.objects.filter(model=model).select_related('client')
+    for client in model_clients:
+        client_data = {
+            "id": client.id,
+            "client_id": client.client.id,
+            "client_name": client.client.get_full_name() or client.client.username,
+            "created_by": client.created_by.username if client.created_by else None,
+            "updated_by": client.updated_by.username if client.updated_by else None,
+            "created_at": client.created_at.strftime("%Y-%m-%d %H:%M:%S") if client.created_at else None,
+            "updated_at": client.updated_at.strftime("%Y-%m-%d %H:%M:%S") if client.updated_at else None,
         }
-        stones.append(stone_data)
-
+        clients.append(client_data)
+    
+    # --- Raw Stones ---
+    # First, enhance raw_stones data by joining with StoneType's related Stone
+    raw_stones = []
+    raw_stones_objects = RawStones.objects.filter(model=model).select_related('stone_type', 'stone_type__stone')
+    for rs in raw_stones_objects:
+        # Get the stone associated with this stone type
+        stone = rs.stone_type.stone if hasattr(rs.stone_type, 'stone') else None
+        
+        raw_stone_data = {
+            "id": rs.id,
+            "stone_type_id": rs.stone_type.id,
+            "stone_type_name": rs.stone_type.type_name,
+            "stone_id": stone.id if stone else None,
+            "stone_name": stone.name if stone else "No Stone Selected"
+        }
+        raw_stones.append(raw_stone_data)
+    
+    # --- Stone Counts with Complete Details ---
+    stones = []
+    sc_objects = StoneCount.objects.filter(model=model).select_related(
+        'stone_type_details', 
+        'stone_type_details__stone_type', 
+        'stone_type_details__stone'
+    )
+    
+    for sc in sc_objects:
+        std = sc.stone_type_details
+        # Make sure we have access to both stone and stone_type data
+        if std:
+            stone = std.stone if hasattr(std, 'stone') else None
+            stone_type = std.stone_type if hasattr(std, 'stone_type') else None
+            
+            stone_data = {
+                "id": sc.id,
+                "count": sc.count,
+                "stone_type_detail_id": std.id,
+                "stone_id": stone.id if stone else None,
+                "stone_name": stone.name if stone else "No Stone Selected",
+                "stone_type_id": stone_type.id if stone_type else None,
+                "stone_type_name": stone_type.type_name if stone_type else "Unknown Type",
+                "weight": float(std.weight) if hasattr(std, 'weight') and std.weight else 0,
+                "length": std.length if hasattr(std, 'length') and std.length else 0,
+                "breadth": std.breadth if hasattr(std, 'breadth') and std.breadth else 0,
+                "rate": float(std.rate) if hasattr(std, 'rate') and std.rate else 0
+            }
+            stones.append(stone_data)
+    
     # --- Metal Rates Subquery ---
     latest_rates = MetalRate.objects.filter(
         metal=OuterRef('metal')
     ).order_by('-date')  # Gets latest rate per metal
-
+    
     # --- Raw Materials ---
     raw_materials = []
     raw_mats = RawMaterial.objects.filter(model=model).select_related('metal').annotate(
         latest_rate=Subquery(latest_rates.values('rate')[:1])
     )
-
     for rm in raw_mats:
         rate = rm.latest_rate or 0
         material_data = {
@@ -947,17 +1071,19 @@ def get_model_details(request, model_id):
             "material_id": rm.metal.id,
             "material_name": rm.metal.name,
             "weight": float(rm.weight),
+            "unit": rm.unit,
             "rate": float(rate),
             "total_value": float(rm.weight) * float(rate)
         }
         raw_materials.append(material_data)
-
+    
     return JsonResponse({
+        "model": model_data,
+        "clients": clients,
+        "raw_stones": raw_stones,
         "stones": stones,
         "raw_materials": raw_materials,
-        "model":model_data,
     })
-
 def get_clients(request):
     """
     API endpoint to return all clients (users) with client role
