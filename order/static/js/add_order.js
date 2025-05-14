@@ -6,7 +6,7 @@ $(document).ready(function () {
 
         if (!clientId) return;
 
-        $.get(`/api/client-models/${clientId}/`, function (data) {
+        $.get(`/client/${clientId}/models/`, function (data) {
             data.models.forEach(function (model) {
                 let card = `
                     <div class="col-md-4 mb-4">
