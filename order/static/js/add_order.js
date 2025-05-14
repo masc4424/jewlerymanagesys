@@ -105,7 +105,7 @@ $(document).ready(function () {
         }
 
         $.ajax({
-            url: '/api/create-orders/',
+            url: '/orders/create/',
             method: 'POST',
             headers: {
                 'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val()
