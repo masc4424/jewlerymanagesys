@@ -6,6 +6,7 @@ from django.templatetags.static import static
 from django.views.decorators.http import require_POST
 from order.models import ClientAddToCart
 import json
+from django.db.models import Sum
 from django.conf import settings
 import traceback
 
@@ -153,9 +154,19 @@ def add_to_cart(request):
 
 @login_required
 def get_cart_count(request):
-    """Get the count of items in the client's cart"""
-    count = ClientAddToCart.objects.filter(client=request.user).count()
-    return JsonResponse({'status': 'success', 'count': count})
+    """Get the count of total pieces in the client's cart"""
+    # Get count of unique items
+    item_count = ClientAddToCart.objects.filter(client=request.user).count()
+    
+    # Get total quantity of all items
+    total_quantity = ClientAddToCart.objects.filter(client=request.user).aggregate(
+        total=Sum('quantity'))['total'] or 0
+    
+    return JsonResponse({
+        'status': 'success', 
+        'count': item_count,
+        'total_quantity': total_quantity
+    })
 
 
 @login_required

@@ -164,7 +164,8 @@ function updateCartCount() {
         type: 'GET',
         success: function(response) {
             if (response.status === 'success') {
-                $('#go-to-cart .badge').text(response.count);
+                // Display the total pieces count instead of just the number of items
+                $('#go-to-cart .badge').text(response.total_quantity);
             }
         },
         error: function(xhr, status, error) {
