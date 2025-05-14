@@ -31,7 +31,8 @@ $(document).ready(function () {
 
                                 <button class="btn btn-primary select-btn" data-model-id="${model.id}">Select</button>
 
-                                <input class="form-check-input model-check d-none" type="checkbox" data-model-id="${model.id}" checked>
+                                <!-- Default: unchecked -->
+                                <input class="form-check-input model-check d-none" type="checkbox" data-model-id="${model.id}">
                             </div>
                         </div>
                     </div>
@@ -45,11 +46,10 @@ $(document).ready(function () {
     $('#modelsContainer').on('click', '.select-btn', function () {
         let modelId = $(this).data('model-id');
 
-        // Mark selected
         $(this).addClass('d-none'); // Hide select button
         $(`.counter-section[data-model-id="${modelId}"]`).removeClass('d-none'); // Show counter
         $(`.quantity-input[data-model-id="${modelId}"]`).val(1); // Set quantity to 1
-        $(`.model-check[data-model-id="${modelId}"]`).prop('checked', true); // Check checkbox
+        $(`.model-check[data-model-id="${modelId}"]`).prop('checked', true); // Mark as selected
     });
 
     // Increment button
