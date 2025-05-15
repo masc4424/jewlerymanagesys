@@ -58,7 +58,7 @@ def get_orders_json(request):
             'sl_no': i,
             'model_no': model_no,
             'model_image': model_image,
-            'client': order.client.username if order.client else "No Client",
+            'client': f"{order.client.first_name} {order.client.last_name}" if order.client else "No Client",
             'status': status_text,
             'status_id': status_id,
             'quantity': order.quantity,
