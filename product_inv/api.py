@@ -814,7 +814,7 @@ def edit_model(request, model_id):
                     for chunk in model_img.chunks():
                         destination.write(chunk)
 
-                model.model_img = f"model_image/{new_filename}"
+                model.model_img = f"model_img/{new_filename}"
 
             # Update basic fields
             model.model_no = model_no
