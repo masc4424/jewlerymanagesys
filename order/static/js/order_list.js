@@ -90,6 +90,24 @@ $(document).ready(function() {
         }
     });
 
+    $('#ordersFilterTabs button').on('click', function() {
+        let filter = $(this).data('filter');
+        // Use DataTables API to filter or reload with filter param
+        let table = $('#usersTable').DataTable();
+        
+        if (filter === 'all') {
+            table.ajax.url('orders/json/').load();
+        } else if (filter === 'delivered') {
+            table.ajax.url('orders/json/?status=delivered').load();
+        } else if (filter === 'not-delivered') {
+            table.ajax.url('orders/json/?status=not-delivered').load();
+        }
+        
+        $('#ordersFilterTabs button').removeClass('active');
+        $(this).addClass('active');
+    });
+
+
     // Initialize today's date for delivery date inputs
     var today = new Date().toISOString().split('T')[0];
     $('#estDeliveryDate, #repeatEstDeliveryDate, #updateEstDeliveryDate').attr('min', today);

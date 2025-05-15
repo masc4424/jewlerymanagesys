@@ -1,43 +1,66 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods
+from django.shortcuts import get_object_or_404
 from django.templatetags.static import static
+from django.http import JsonResponse
 from order.models import Order, RepeatedOrder
 from product_inv.models import *
 import json
 from datetime import date, timedelta, datetime
 
+@csrf_exempt
+@require_http_methods(["GET", "POST"])
 def get_orders_json(request):
+    if request.method == "POST":
+        try:
+            body = json.loads(request.body)
+            order_id = body.get('order_id')
+            status_id = body.get('status_id')
+            
+            if not order_id or not status_id:
+                return JsonResponse({'error': 'Missing order_id or status_id'}, status=400)
+
+            order = get_object_or_404(Order, id=order_id)
+            status = get_object_or_404(ModelStatus, id=status_id)
+
+            order.status = status
+            order.save()
+
+            return JsonResponse({'success': True, 'message': 'Order status updated successfully.'})
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    # GET logic (original code)
     orders = Order.objects.all().select_related('client', 'model', 'color', 'status')
     data = []
-    
+
     for i, order in enumerate(orders, start=1):
-        # Get repeated orders information
         repeated_orders = order.repeated_orders.all()
         total_repeats = repeated_orders.count()
         delivered_repeats = repeated_orders.filter(delivered=True).count()
         in_progress = total_repeats - delivered_repeats
-        
-        # Get model information
+
         model_no = order.model.model_no if order.model else "N/A"
         weight = order.model.weight if order.model else "N/A"
-        
-        # Generate model image URL
+
         model_image = ""
         if order.model and order.model.model_img:
             model_image = static(f"model_img/{order.model.model_img.name.split('/')[-1]}")
-        
-        # Get status information from ModelStatus
+
         status_text = order.status.status if order.status else "N/A"
         status_id = order.status.id if order.status else None
-        
+
         data.append({
             'sl_no': i,
             'model_no': model_no,
             'model_image': model_image,
             'client': order.client.username if order.client else "No Client",
-            'status': status_text,  # Changed to use the status from ModelStatus
-            'status_id': status_id,  # Added to store the ID for the dropdown
+            'status': status_text,
+            'status_id': status_id,
             'quantity': order.quantity,
             'delivered': 'Yes' if order.delivered else 'No',
             'repeated_order': total_repeats,
@@ -47,26 +70,28 @@ def get_orders_json(request):
             'delivery_date': order.est_delivery_date.strftime("%Y-%m-%d"),
             'order_id': order.id,
         })
-    
+
     return JsonResponse({'data': data})
 
 def client_models(request, client_id):
-    model_clients = ModelClient.objects.filter(client_id=client_id).select_related('model')
+    model_clients = ModelClient.objects.filter(client_id=client_id).select_related('model__status')
     models = []
 
     for mc in model_clients:
         model = mc.model
         colors = ModelColor.objects.filter(model=model).values('id', 'color')
 
-        # Use Django's static() to generate the URL
         image_path = static(f"model_img/{model.model_img.name.split('/')[-1]}") if model.model_img else ""
 
         models.append({
             'id': model.id,
+            'length': model.length,
+            'breadth': model.breadth,
             'model_no': model.model_no,
             'weight': str(model.weight),
             'image': image_path,
             'colors': list(colors),
+            'status_name': model.status.status if model.status else "N/A"
         })
 
     return JsonResponse({'models': models})

@@ -1,6 +1,7 @@
 from django.urls import path
 from order.api import*
 from order.views import*
+from order.client_order_api_views import *
 
 # view
 urlpatterns = [
@@ -10,6 +11,7 @@ urlpatterns = [
     path('repeted_order', repeted_order, name='repeted_order'),
     path('invoices', invoice_list, name='invoices'),
     path('invoice_add', invoice_add, name='invoices'),
+    path('client_order_list', client_order_list, name='client_order_list'),
 ]
 
 #api
@@ -22,4 +24,14 @@ urlpatterns += [
     path('orders/update_order/', update_order, name='update_order'),
     path('orders/get_order/<int:order_id>/', get_order, name='get_order'),
     path('api/repeated-orders/', repeated_orders_data, name='repeated_orders_data'),
+]
+
+urlpatterns += [
+    # Client order API endpoints
+    path('api/client/orders/', client_orders_api, name='client_orders_api'),
+    path('api/orders/<int:order_id>/approve/', approve_order, name='approve_order'),
+    path('api/orders/<int:order_id>/deny/', deny_order, name='deny_order'),
+    path('api/orders/<int:order_id>/return/', return_order, name='return_order'),
+    path('api/repeated-orders/<int:order_id>/return/', return_order, name='return_repeated_order'),
+    path('api/repeated-orders/<int:order_id>/cancel/', cancel_repeated_order, name='cancel_repeated_order'),
 ]

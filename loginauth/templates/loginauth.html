@@ -2,31 +2,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Jewelry Management System</title>
-    <link rel="icon" type="image/x-icon" href="{% static 'assets/img/logo/vanee.png' %}">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/loginauth.css' %}">
-    <link href="https://fonts.googleapis.com/css?family=Poppins:600&display=swap" rel="stylesheet">
-    <script src="https://kit.fontawesome.com/a81368914c.js"></script>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/x-icon" href="{% static 'assets/img/logo/vanee.png' %}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" type="text/css" href="{% static 'css/loginauth.css' %}" />
+    <link href="https://fonts.googleapis.com/css?family=Poppins:600&display=swap" rel="stylesheet" />
+    <script src="https://kit.fontawesome.com/a81368914c.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="row g-0">
         <div class="col-md-6 product-image-container">
             <div class="product-image">
-                <img src="{% static 'img/Login-min.png' %}" alt="Gold Bracelet">
+                <img src="{% static 'img/Login-min.png' %}" alt="Gold Bracelet" />
             </div>
         </div>
         <div class="col-md-6 login-section">
             <div class="login-container">
                 <div class="text-center mb-4">
-                    <div class="mb-1"><img src="{% static 'assets\img\logo\logo_vanee.png' %}" alt="" class="h-50 w-50"></div>
+                    <div class="mb-1">
+                        <img src="{% static 'assets/img/logo/logo_vanee.png' %}" alt="" class="h-50 w-50" />
+                    </div>
                     <h4 class="mt-4 mb-4">Manage your jewellery business at your finger tips</h4>
                 </div>
                 <div class="text-center mb-4">
-                    <div class="mb-1"><img src="{% static 'img\Frame_154.png' %}" alt=""></div>
+                    <div class="mb-1">
+                        <img src="{% static 'img/Frame_154.png' %}" alt="" />
+                    </div>
                 </div>
                 <form method="POST" action="{% url 'login_api' %}">
                     {% csrf_token %}
@@ -36,11 +40,22 @@
                         {% endfor %}
                     {% endif %}
                     <div class="mb-3">
-                        <input type="email" class="form-control" name="email" placeholder="Email" required>
+                        <input type="email" class="form-control" name="email" placeholder="Email" required />
                     </div>
                     <div class="mb-3 position-relative">
-                        <input type="password" class="form-control" name="password" id="password" placeholder="Password" required>
-                        <span class="position-absolute top-50 end-0 translate-middle-y pe-3" onclick="togglePassword()" style="cursor: pointer;">
+                        <input
+                            type="password"
+                            class="form-control"
+                            name="password"
+                            id="password"
+                            placeholder="Password"
+                            required
+                        />
+                        <span
+                            class="position-absolute top-50 end-0 translate-middle-y pe-3"
+                            onclick="togglePassword()"
+                            style="cursor: pointer;"
+                        >
                             <i class="fas fa-eye" id="togglePasswordIcon"></i>
                         </span>
                     </div>
@@ -49,7 +64,23 @@
             </div>
         </div>
     </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-    <script type="text/javascript" src="{% static 'js/loginauth.js' %}"></script>
+
+    <script>
+        function togglePassword() {
+            const passwordInput = document.getElementById('password');
+            const icon = document.getElementById('togglePasswordIcon');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
 </body>
 </html>

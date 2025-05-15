@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Orders Management{% endblock %}
+
+{% block extra_css %}
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
+    <style>
+        .nav-tabs .nav-link {
+            font-weight: 500;
+        }
+        .filter-btn {
+            margin-right: 5px;
+            margin-bottom: 8px;
+        }
+        .filter-btn.active {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+        }
+        .tab-content {
+            padding-top: 1rem;
+        }
+        .badge {
+            font-size: 85%;
+        }
+        .table-img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+        }
+        .return-details {
+            background-color: rgba(0, 0, 0, 0.03);
+            cursor: pointer;
+        }
+        .detail-btn {
+            min-width: 80px;
+        }
+        tr.return-details {
+            display: none;
+        }
+        #returnsTable tbody tr:not(.return-details) {
+            cursor: pointer;
+        }
+        #returnsTable tbody tr:not(.return-details):hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        .status-badge-container {
+            min-width: 110px;
+        }
+        .order-stats {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="container-fluid py-4">
+        <div class="d-flex justify-content-between mb-3">
+            <h4>Order Management</h4>
+        </div>
+        
+        <!-- Tabs Navigation -->
+        <ul class="nav nav-tabs mb-3" id="orderTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="my-orders-tab" data-bs-toggle="tab" data-bs-target="#my-orders" type="button" role="tab" aria-controls="my-orders" aria-selected="true">
+                    My Orders
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="reorders-tab" data-bs-toggle="tab" data-bs-target="#reorders" type="button" role="tab" aria-controls="reorders" aria-selected="false">
+                    Reorders
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="returns-tab" data-bs-toggle="tab" data-bs-target="#returns" type="button" role="tab" aria-controls="returns" aria-selected="false">
+                    Returns
+                </button>
+            </li>
+        </ul>
+        
+        <!-- Tabs Content -->
+        <div class="tab-content" id="orderTabsContent">
+            <!-- My Orders Tab -->
+            <div class="tab-pane fade show active" id="my-orders" role="tabpanel" aria-labelledby="my-orders-tab">
+                <div class="d-flex flex-wrap mb-3">
+                    <button class="btn btn-sm btn-outline-primary filter-btn active" data-filter="all-orders">All Orders</button>
+                    <button class="btn btn-sm btn-outline-success filter-btn" data-filter="approved">Approved</button>
+                    <button class="btn btn-sm btn-outline-warning filter-btn" data-filter="not-approved">Pending Approval</button>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="myOrdersTable">
+                                <thead>
+                                    <!-- Table headers will be populated by DataTables -->
+                                </thead>
+                                <tbody>
+                                    <!-- Table body will be populated by DataTables -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Reorders Tab -->
+            <div class="tab-pane fade" id="reorders" role="tabpanel" aria-labelledby="reorders-tab">
+                <div class="d-flex flex-wrap mb-3">
+                    <button class="btn btn-sm btn-outline-primary filter-btn active" data-filter="all-reorders">All Reorders</button>
+                    <button class="btn btn-sm btn-outline-info filter-btn" data-filter="status-cade">CADE</button>
+                    <button class="btn btn-sm btn-outline-info filter-btn" data-filter="status-wax-setting">WAX SETTING</button>
+                    <button class="btn btn-sm btn-outline-info filter-btn" data-filter="status-casting">CASTING</button>
+                    <button class="btn btn-sm btn-outline-info filter-btn" data-filter="status-filling">FILLING</button>
+                    <button class="btn btn-sm btn-outline-info filter-btn" data-filter="status-polishing">POLISHING</button>
+                    <button class="btn btn-sm btn-outline-info filter-btn" data-filter="status-setting">SETTING</button>
+                    <button class="btn btn-sm btn-outline-info filter-btn" data-filter="status-plating">PLATING</button>
+                    <button class="btn btn-sm btn-outline-info filter-btn" data-filter="status-qc">QC-POST PLATING</button>
+                    <button class="btn btn-sm btn-outline-success filter-btn" data-filter="status-ready">READY TO DELIVER</button>
+                    <button class="btn btn-sm btn-outline-info filter-btn" data-filter="status-re-setting">RE SETTING</button>
+                    <button class="btn btn-sm btn-outline-success filter-btn" data-filter="status-finished">FINISHED</button>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="reordersTable">
+                                <thead>
+                                    <!-- Table headers will be populated by DataTables -->
+                                </thead>
+                                <tbody>
+                                    <!-- Table body will be populated by DataTables -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Returns Tab -->
+            <div class="tab-pane fade" id="returns" role="tabpanel" aria-labelledby="returns-tab">
+                <div class="d-flex flex-wrap mb-3">
+                    <button class="btn btn-sm btn-outline-primary filter-btn active" data-filter="all-returns">All Returns</button>
+                    <button class="btn btn-sm btn-outline-danger filter-btn" data-filter="defective">Defective</button>
+                    <button class="btn btn-sm btn-outline-warning filter-btn" data-filter="returned">Returned</button>
+                </div>
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover" id="returnsTable">
+                                <thead>
+                                    <!-- Table headers will be populated by DataTables -->
+                                </thead>
+                                <tbody>
+                                    <!-- Table body will be populated by DataTables -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Deny Order Modal -->
+    <div class="modal fade" id="denyOrderModal" tabindex="-1" aria-labelledby="denyOrderModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="denyOrderModalLabel">Deny Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="denyOrderForm">
+                        <input type="hidden" id="denyOrderId" name="order_id">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                        
+                        <div class="mb-3">
+                            <label for="defectivePieces" class="form-label">Defective Pieces</label>
+                            <input type="number" class="form-control" id="defectivePieces" name="defective_pieces" min="1" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="issueDescription" class="form-label">Issue Description</label>
+                            <textarea class="form-control" id="issueDescription" name="issue_description" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="defectImage" class="form-label">Defect Image</label>
+                            <input type="file" class="form-control" id="defectImage" name="defect_image">
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-danger">Deny Order</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Return Order Modal -->
+    <div class="modal fade" id="returnOrderModal" tabindex="-1" aria-labelledby="returnOrderModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="returnOrderModalLabel">Return Order</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="returnOrderForm">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                        <input type="hidden" id="returnOrderId" name="order_id">
+                        <input type="hidden" id="isRepeatedOrder" name="is_repeated_order">
+                        
+                        <div class="mb-3">
+                            <label for="returnPieces" class="form-label">Number of Pieces to Return</label>
+                            <input type="number" class="form-control" id="returnPieces" name="defective_pieces" min="1" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="returnReason" class="form-label">Reason for Return</label>
+                            <textarea class="form-control" id="returnReason" name="issue_description" rows="3" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="returnImage" class="form-label">Return Image (Optional)</label>
+                            <input type="file" class="form-control" id="returnImage" name="defect_image">
+                        </div>
+                        
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-warning">Return Order</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alert Container -->
+    <div id="alertContainer" class="position-fixed top-0 end-0 p-3" style="z-index: 5"></div>
+    
+    {% csrf_token %}
+{% endblock %}
+
+{% block extra_js %}
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="{% static 'js/client_order_list.js' %}"></script>
+{% endblock %}

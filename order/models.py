@@ -13,6 +13,7 @@ class Order(models.Model):
     date_of_order = models.DateField(default=date.today)
     est_delivery_date = models.DateField()
     delivered = models.BooleanField(default=False)
+    is_approved = models.BooleanField(default=False)
 
     def __str__(self):
         client_name = self.client.username if self.client else "No Client"
@@ -42,6 +43,8 @@ class DefectiveOrder(models.Model):
     issue_description = models.TextField()
     reported_date = models.DateField(default=date.today)
     defect_image = models.ImageField(upload_to='defective_orders/', blank=True, null=True)
+    is_defective = models.BooleanField(default=False)
+    is_return = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Defective Order {self.order.id} - {self.defective_pieces} pieces"
