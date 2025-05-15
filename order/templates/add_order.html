@@ -17,7 +17,8 @@
         {% endfor %}
     </select>
 
-    <div id="modelsContainer" class="mt-4 d-flex flex-wrap"></div>
+    <!-- <div id="modelsContainer" class="mt-4 d-flex flex-wrap"></div> -->
+    <div id="modelsContainer" class="row mt-4 d-flex flex-wrap"></div>
 
     <button class="btn btn-success mt-3" id="submitOrderBtn">Submit Order</button>
 </div>
@@ -25,4 +26,5 @@
 
 {% block extra_js %}
     <script src="{% static 'js/add_order.js' %}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 {% endblock %}

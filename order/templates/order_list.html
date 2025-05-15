@@ -4,6 +4,30 @@
 {% block title %}Orders{% endblock %}
 
 {% block extra_css %}
+    <style>
+        .zoom-controls .btn {
+            margin: 0 5px;
+            border-radius: 4px;
+            padding: 6px 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .specs-text {
+            font-size: 16px;
+            color: #6c757d;
+        }
+        
+        .image-container {
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        
+        #modelFullImage {
+            transition: transform 0.3s ease;
+            transform-origin: center center;
+        }
+    </style>
     <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
@@ -24,6 +48,20 @@
                 </a>
             </div>
         </div>
+
+        <!-- Tabs for filtering -->
+        <ul class="nav nav-tabs orders-tabs" id="ordersFilterTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="all-orders-tab" data-filter="all" type="button" role="tab">All Orders</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="delivered-tab" data-filter="delivered" type="button" role="tab">Mark as Delivered</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="not-delivered-tab" data-filter="not-delivered" type="button" role="tab">Mark as Not Delivered</button>
+            </li>
+        </ul>
+
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
@@ -52,7 +90,7 @@
     </div>
 
     <!-- Image Preview Modal -->
-    <div class="modal fade" id="modelImageModal" tabindex="-1" aria-labelledby="modelImageModalLabel" aria-hidden="true">
+    <!-- <div class="modal fade" id="modelImageModal" tabindex="-1" aria-labelledby="modelImageModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
@@ -61,6 +99,39 @@
                 </div>
                 <div class="modal-body text-center">
                     <img id="modelFullImage" src="" class="img-fluid" alt="Model Image">
+                    <div class="mt-3">
+                        <h6>Model No: <span id="modelNoDisplay"></span></h6>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div> -->
+    <div class="modal fade" id="modelImageModal" tabindex="-1" aria-labelledby="modelImageModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modelImageModalLabel">Model Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="zoom-controls mb-3">
+                        <button class="btn btn-outline-secondary btn-sm me-2" id="zoomOut">
+                            <i class="fas fa-search-minus"></i> Zoom Out
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm" id="zoomIn">
+                            <i class="fas fa-search-plus"></i> Zoom In
+                        </button>
+                        <button class="btn btn-outline-secondary btn-sm ms-2" id="resetZoom">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                    
+                    <!-- Image container with zoom functionality -->
+                    <div class="image-container">
+                        <img id="modelFullImage" src="" class="img-fluid" alt="Model Image">
+                    </div>
+                    
                     <div class="mt-3">
                         <h6>Model No: <span id="modelNoDisplay"></span></h6>
                     </div>
@@ -170,6 +241,84 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize zoom level
+        let zoomLevel = 1;
+        const zoomStep = 0.1;
+        const minZoom = 0.5;
+        const maxZoom = 3;
+        
+        // Get elements
+        const img = document.getElementById('modelFullImage');
+        const zoomIn = document.getElementById('zoomIn');
+        const zoomOut = document.getElementById('zoomOut');
+        const resetZoom = document.getElementById('resetZoom');
+        
+        // Zoom in function
+        if (zoomIn) {
+            zoomIn.addEventListener('click', function() {
+                if (zoomLevel < maxZoom) {
+                    zoomLevel += zoomStep;
+                    applyZoom();
+                }
+            });
+        }
+        
+        // Zoom out function
+        if (zoomOut) {
+            zoomOut.addEventListener('click', function() {
+                if (zoomLevel > minZoom) {
+                    zoomLevel -= zoomStep;
+                    applyZoom();
+                }
+            });
+        }
+        
+        // Reset zoom function
+        if (resetZoom) {
+            resetZoom.addEventListener('click', function() {
+                zoomLevel = 1;
+                applyZoom();
+            });
+        }
+        
+        // Apply zoom level to image
+        function applyZoom() {
+            if (img) {
+                img.style.transform = `scale(${zoomLevel})`;
+            }
+        }
+        
+        // Handle showing the model number when modal opens
+        const modelImageModal = document.getElementById('modelImageModal');
+        if (modelImageModal) {
+            modelImageModal.addEventListener('show.bs.modal', function(event) {
+                // Get the button that triggered the modal
+                const button = event.relatedTarget;
+                if (button) {
+                    // Extract model number from data attribute
+                    const modelNo = button.getAttribute('data-model-no');
+                    const imgSrc = button.getAttribute('data-img-src');
+                    
+                    // Update the modal content
+                    const modelNoDisplay = document.getElementById('modelNoDisplay');
+                    if (modelNoDisplay) {
+                        modelNoDisplay.textContent = modelNo || '';
+                    }
+                    
+                    if (img && imgSrc) {
+                        img.src = imgSrc;
+                    }
+                    
+                    // Reset zoom when opening modal
+                    zoomLevel = 1;
+                    applyZoom();
+                }
+            });
+        }
+    });
+</script>
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
