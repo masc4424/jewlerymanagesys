@@ -1,13 +1,15 @@
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
-from product_inv.models import ModelClient, Model
+from product_inv.models import ModelClient, Model, ModelColor
 from django.templatetags.static import static
 from django.views.decorators.http import require_POST
-from order.models import ClientAddToCart
+from order.models import ClientAddToCart, Order, RepeatedOrder
 import json
+from django.db.models import Sum
 from django.conf import settings
 import traceback
+from order.models import Order
 
 @login_required(login_url='login')
 def get_client_models(request):
@@ -53,7 +55,7 @@ def get_client_models(request):
             status_name = model.status.status if model.status else "N/A"
             
             # Get model colors
-            colors = list(model.model_colors.values_list('color', flat=True))
+            colors = list(model.model_colors.values('id', 'color'))
             
             # Get raw materials
             materials = []
@@ -81,6 +83,25 @@ def get_client_models(request):
                     'stone_size': stone_count.stone_type_details.size,
                     'stone_quality': stone_count.stone_type_details.quality
                 })
+
+            try:
+                # Filter orders by model AND its colors
+                order = Order.objects.filter(
+                    client=request.user,
+                    model=model,
+                    color__in=model.model_colors.all()
+                ).first()
+
+                if order:
+                    order_data = {
+                        'order_id': order.id,
+                        'order_color': order.color.color if order.color else None
+                    }
+                else:
+                    order_data = None
+
+            except Order.DoesNotExist:
+                order_data = None
             
             # Create model data dictionary
             model_data = {
@@ -95,7 +116,8 @@ def get_client_models(request):
                 'colors': colors,
                 'materials': materials,
                 'stones': stones,
-                'stone_counts': stone_counts
+                'stone_counts': stone_counts,
+                'order': order_data
             }
             
             models_data.append(model_data)
@@ -120,51 +142,167 @@ def get_client_models(request):
             'status': 'error',
             'message': f"An error occurred: {str(e)}"
         }, status=500)
+
+@login_required(login_url='login')
+def check_order_for_color(request, model_id):
+    """
+    Check if an order exists for the logged-in client and selected model color
+    """
+    # Debug logging to see what parameters are coming in
+    print(f"check_order_for_color called with model_id: {model_id}, type: {type(model_id)}")
+    print(f"GET parameters: {request.GET}")
     
+    if request.method != 'GET':
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET method is allowed'
+        }, status=405)
+    
+    # Ensure model_id is an integer
+    try:
+        model_id = int(model_id)
+    except ValueError:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Invalid model ID: {model_id}'
+        }, status=400)
+    
+    # Get color from query parameters
+    color = request.GET.get('color')
+    if not color:
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Color parameter is required'
+        }, status=400)
+    
+    try:
+        model = Model.objects.get(id=model_id)
+        
+        # Check if there's an order for the given model and color
+        order_exists = Order.objects.filter(
+            client=request.user,
+            model=model,
+            color=color
+        ).exists()
+        
+        return JsonResponse({
+            'status': 'success',
+            'data': {'order_exists': order_exists}
+        })
+    
+    except Model.DoesNotExist:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Model with ID {model_id} not found'
+        }, status=404)
+    
+    except Exception as e:
+        print(f"Exception in check_order_for_color: {str(e)}")
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
 
 @login_required
 @require_POST
 def add_to_cart(request):
-    """Add a model to the client's cart"""
     model_id = request.POST.get('model_id')
     quantity = int(request.POST.get('quantity', 1))
-    
+    color_id = request.POST.get('color')  # This is the color ID
+    order_id = request.POST.get('order_id')  # Get the order ID (primary key of Order)
+
     if not model_id:
         return JsonResponse({'status': 'error', 'message': 'Model ID is required'}, status=400)
-        
+
     try:
         model = Model.objects.get(id=model_id)
-        
-        # Always create a new cart item
+
+        # Validate color if provided
+        color_obj = None
+        if color_id:
+            try:
+                color_id = int(color_id)
+            except ValueError:
+                return JsonResponse({'status': 'error', 'message': 'Invalid color ID'}, status=400)
+
+            color_obj = ModelColor.objects.filter(id=color_id, model=model).first()
+            if not color_obj:
+                valid_ids = list(ModelColor.objects.filter(model=model).values_list('id', flat=True))
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'Invalid color for this model. Valid IDs: {valid_ids}'
+                }, status=400)
+
+        # Validate order if provided
+        order_obj = None
+        if order_id:
+            try:
+                order_obj = Order.objects.get(id=order_id)
+            except Order.DoesNotExist:
+                return JsonResponse({'status': 'error', 'message': 'Invalid order ID'}, status=400)
+
+        # Create cart item
         cart_item = ClientAddToCart.objects.create(
             client=request.user,
             model=model,
-            quantity=quantity
+            color=color_obj,
+            quantity=quantity,
+            order=order_obj  # ForeignKey to Order
         )
-        
-        message = f"Added {model.model_no} to your cart"
+
+        message = f"Added {model.model_no} ({color_obj.color if color_obj else 'No Color'}) to your cart"
         return JsonResponse({'status': 'success', 'message': message})
-        
+
     except Model.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Model not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
-
 @login_required
 def get_cart_count(request):
-    """Get the count of items in the client's cart"""
-    count = ClientAddToCart.objects.filter(client=request.user).count()
-    return JsonResponse({'status': 'success', 'count': count})
+    """Get the count of total pieces in the client's cart"""
+    # Get count of unique items
+    item_count = ClientAddToCart.objects.filter(client=request.user).count()
+    
+    # Get total quantity of all items
+    total_quantity = ClientAddToCart.objects.filter(client=request.user).aggregate(
+        total=Sum('quantity'))['total'] or 0
+    
+    return JsonResponse({
+        'status': 'success', 
+        'count': item_count,
+        'total_quantity': total_quantity
+    })
 
 
 @login_required
 def get_cart_items(request):
     """Get all items in the client's cart"""
     cart_items = ClientAddToCart.objects.filter(client=request.user).select_related('model')
-    
+
     items = []
     for item in cart_items:
+        if hasattr(item.model, 'model_img') and item.model.model_img:
+            image_url = static(str(item.model.model_img))  # e.g., 'model_img/VSJ-385.png'
+        else:
+            image_url = static('img/default_image.png')  # fallback image
+
+        # Initialize order_id as None
+        order_id = None
+
+        # Try to get the order_id from the model
+        if item.model and hasattr(item.model, 'orders'):
+            order = item.model.orders.first()  # Get the first order for the model, or None
+            if order:
+                order_id = order.id
+
+        # If no order found for the model, try getting from the color
+        if not order_id and item.color:
+            if hasattr(item.color, 'orders'):
+                order = item.color.orders.first()  # Get the first order for the color, or None
+                if order:
+                    order_id = order.id
+
         items.append({
             'id': item.id,
             'model_id': item.model.id,
@@ -172,9 +310,11 @@ def get_cart_items(request):
             'jewelry_type_name': item.model.jewelry_type.name if hasattr(item.model, 'jewelry_type') else '',
             'weight': item.model.weight,
             'quantity': item.quantity,
-            'image': item.model.model_img.url if hasattr(item.model, 'model_img') and item.model.model_img else '',
+            'color': item.color.color if item.color else '',
+            'image': image_url,
+            'order_id': order_id  # Include the order_id
         })
-    
+
     return JsonResponse({'status': 'success', 'items': items})
 
 
@@ -220,3 +360,49 @@ def remove_from_cart(request):
         return JsonResponse({'status': 'error', 'message': 'Cart item not found'}, status=404)
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+@require_POST
+@login_required
+def create_repeated_order(request):
+    cart_items = ClientAddToCart.objects.filter(client=request.user, order_id__isnull=False)
+
+    if not cart_items.exists():
+        return JsonResponse({'status': 'error', 'message': 'No cart items found with an order_id'}, status=400)
+
+    first_item = cart_items.first()
+    try:
+        original_order = Order.objects.get(id=first_item.order_id)
+    except Order.DoesNotExist:
+        return JsonResponse({'status': 'error', 'message': 'Original order not found'}, status=404)
+
+    repeated_orders = []
+
+    for item in cart_items:
+        repeated = RepeatedOrder.objects.create(
+            original_order=original_order,
+            client=request.user,
+            color=item.color,
+            quantity=item.quantity,
+            est_delivery_date=None
+        )
+        repeated.repeat_order_id = str(repeated.id)
+        repeated.save()
+
+        # Delete only specific cart item (filtered by client, model, and color)
+        ClientAddToCart.objects.filter(
+            client=request.user,
+            model=item.model,
+            color=item.color
+        ).delete()
+
+        repeated_orders.append({
+            'repeat_order_id': repeated.repeat_order_id,
+            'model_no': item.model.model_no,
+            'quantity': item.quantity
+        })
+
+    return JsonResponse({
+        'status': 'success',
+        'message': 'Repeated orders created successfully',
+        'data': repeated_orders
+    })

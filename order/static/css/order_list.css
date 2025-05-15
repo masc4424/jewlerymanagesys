@@ -1,4 +1,62 @@
-.dropdown-menu {
-    position: fixed !important;
-    z-index: 1050 !important;
+.model-thumbnail {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.model-thumbnail:hover {
+    transform: scale(1.1);
+}
+
+.model-thumbnail-img {
+    object-fit: cover;
+    border: 2px solid #ddd;
+}
+
+.action-menu .dropdown-item {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+}
+
+.action-menu .dropdown-item i {
+    width: 16px;
+    text-align: center;
+}
+
+/* Status colors */
+.status-delivered {
+    color: #28a745;
+    font-weight: 500;
+}
+
+.status-pending {
+    color: #ffc107;
+    font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+    .model-info {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .model-thumbnail {
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Export buttons styling */
+.dt-buttons .btn {
+    margin-right: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Table hover effect */
+#usersTable tbody tr {
+    transition: background-color 0.2s;
+}
+
+#usersTable tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
 }
