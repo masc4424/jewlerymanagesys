@@ -7,6 +7,30 @@
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 {% endblock %}
 {% block content %}
+<style>
+    /* Add this to your CSS */
+.nav-tabs .nav-link.active {
+    background-color: #fff !important;
+    color: #696cff !important;
+    border-color: #d9dee3 #d9dee3 #fff !important;
+    border-bottom: 2px solid #696cff !important;
+}
+.nav-tabs .nav-item .nav-link:not(.active) {
+    background-color: white !important;
+}
+
+.tab-pane.active {
+    display: block !important;
+}
+
+th {
+    text-transform: none !important;
+    font-size: 13px;
+}
+label.form-label {
+    text-transform: none !important;
+}
+</style>
 
 <div class="content-wrapper">
     <div class="container-xxl flex-grow-1 container-p-y p-0">
