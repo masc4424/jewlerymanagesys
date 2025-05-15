@@ -160,15 +160,32 @@ label.form-label {
                             <label for="model_img" class="form-label">Model Image</label>
                             <div class="d-flex align-items-center">
                                 <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/png">
-                                <div id="previewContainer" class="border p-1 d-flex justify-content-center align-items-center {% if not model.image_url %}d-none{% endif %}"
+                                <div id="previewContainer" class="border p-1 d-flex justify-content-center align-items-center {% if not model.model_img %}d-none{% endif %}"
                                      style="height: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
-                                    <img id="imagePreview" src="{{ model.image_url|default:'#' }}" alt="Image Preview" class="img-fluid"
-                                         style="max-width: 100%; max-height: 100%;">
+                                    <img id="imagePreview" src="{{ model.model.img|default:'#' }}" alt="Image Preview" class="img-fluid img-thumbnail"
+                                         style="max-width: 100%; max-height: 100%; cursor: pointer;"  data-bs-toggle="modal" data-bs-target="#imageModal">
                                 </div>
                             </div>
                             <small class="text-muted">Leave empty to keep current image</small>
                         </div>
                     </div>
+
+                   <!-- Image Modal -->
+                    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content position-relative">
+                            
+                            <!-- Close Button -->
+                            <button type="button" class="btn-close position-absolute top-0 end-0" data-bs-dismiss="modal" aria-label="Close"></button>
+                            
+                            <div class="modal-body p-0">
+                            <img id="modalImage" src="#" alt="Large Preview" class="img-fluid w-100">
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+  
+  
                     
                     <!-- Materials Tabs Section -->
                     <div class="card mb-4">

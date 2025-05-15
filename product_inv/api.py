@@ -173,22 +173,47 @@ def get_jewelry_types_with_model_count(request):
     jewelry_data = JewelryType.objects.annotate(model_count=Count('models')).values('id', 'name', 'unique_id', 'model_count')
     return JsonResponse({'data': list(jewelry_data)})
 
+from collections import defaultdict
+
 def get_models_by_jewelry_type(request, jewelry_type_name=None):
     if jewelry_type_name:
         try:
-            # Try getting by name first
             jewelry_type = JewelryType.objects.get(name=jewelry_type_name)
         except JewelryType.DoesNotExist:
-            # Fallback to ID if it's actually a numeric ID
             try:
                 jewelry_id = int(jewelry_type_name)
                 jewelry_type = JewelryType.objects.get(id=jewelry_id)
             except (ValueError, JewelryType.DoesNotExist):
                 return JsonResponse({'error': 'Jewelry type not found'}, status=404)
-                
-        models = Model.objects.filter(jewelry_type=jewelry_type).values('id', 'model_no', 'length', 'breadth', 'weight','model_img').annotate(no_of_pieces=Count('model_no'),status_name=F('status__status')) 
-        return JsonResponse({'data': list(models)}, safe=False)
 
+        models = Model.objects.filter(jewelry_type=jewelry_type).values(
+            'id', 'model_no', 'length', 'breadth', 'weight', 'model_img'
+        ).annotate(
+            no_of_pieces=Count('model_no'),
+            status_name=F('status__status')
+        )
+
+        model_ids = [m['id'] for m in models]
+        clients_map = (
+            ModelClient.objects
+            .filter(model_id__in=model_ids)
+            .select_related('client')
+            .values('model_id', 'client__first_name', 'client__last_name')
+        )
+
+        model_clients = defaultdict(list)
+        for entry in clients_map:
+            full_name = f"{entry['client__first_name']} {entry['client__last_name']}".strip()
+            if not full_name:  # fallback in case name is empty
+                full_name = 'Unnamed Client'
+            model_clients[entry['model_id']].append(full_name)
+
+        for model in models:
+            client_list = model_clients.get(model['id'], [])
+            model['clients'] = ', '.join(client_list) if client_list else 'N/A'
+
+        return JsonResponse({'data': list(models)}, safe=False)
+        
 # @csrf_exempt
 # def create_model(request):
 #     if request.method == 'POST':
@@ -973,9 +998,11 @@ def get_model_details(request, model_id):
     # Get image path
     if model.model_img:
         relative_path = model.model_img
-        image_path = f"static/{relative_path}"
+        image_path = f"/static/{relative_path}"
     else:
         image_path = ""
+
+    
     
     # Basic model data
     model_data = {

@@ -178,10 +178,28 @@ label.form-label {
                                         aria-label="Close"></button>
                     
                                     <!-- Static placeholder or preloaded image -->
-                                    <img id="imagePreview" src="https://via.placeholder.com/150" class="img-fluid"
-                                        style="max-width: 100%; max-height: 100%;" alt="Preview">
+                                    <img id="imagePreview" src="#" class="img-fluid img-thumbnail"
+                                    style="max-width: 100%; max-height: 100%; cursor: pointer;"  data-bs-toggle="modal" data-bs-target="#imageModal">
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                    <!-- Image Modal -->
+                    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content position-relative">
+                            <button type="button" class="btn-close position-absolute top-0 end-0 z-3" data-bs-dismiss="modal" aria-label="Close"></button>
+
+                            <!-- Close Button -->
+                    
+                            <div class="modal-body p-0">
+                            <div class="position-relative">
+                                <img id="modalImage" src="#" alt="Large Preview" class="img-fluid w-100" style="z-index: 1;">
+                            </div>
+                            </div>
+                            
+                        </div>
+
                         </div>
                     </div>
                     

@@ -6,11 +6,17 @@ $(document).ready(function() {
         const imgSrc = $('#imagePreview').attr('src');
         if (!imgSrc || imgSrc === '#' || imgSrc === '') {
             // Hide the preview container with direct CSS
-            $('#previewContainer').css('display', 'none');
+            $('#previewContainer').addClass('d-none');
             // Remove the src attribute completely
             $('#imagePreview').removeAttr('src');
         }
     }
+    // When the image preview is clicked, show it in the modal
+    $('#imagePreview').on('click', function () {
+        const src = $(this).attr('src');
+        $('#modalImage').attr('src', src);
+    });
+
     
     // Initialize arrays and counters
     let addedStones = [];
@@ -318,10 +324,10 @@ function loadModelData() {
                 if (data.model.model_img && data.model.model_img.trim() !== '') {
                     const imageUrl = data.model.model_img;
                     $('#imagePreview').attr('src', imageUrl);
-                    $('#previewContainer').css('display', 'block'); // Force display block
+                    $('#previewContainer').removeClass('d-none'); 
                 } else {
                     // Hide the preview container entirely with CSS
-                    $('#previewContainer').css('display', 'none'); // Force display none
+                    $('#previewContainer').addClass('d-none'); // Force display none
                     // Also remove the src attribute
                     $('#imagePreview').removeAttr('src');
                 }
@@ -461,7 +467,7 @@ $('#model_img').on('change', function (event) {
         reader.readAsDataURL(file);
     } else {
         // If no valid file is selected, completely hide the preview using CSS
-        $('#previewContainer').css('display', 'none'); // Force display none
+        $('#previewContainer').addClass('d-none'); // Force display none
         // Also remove the src attribute
         $('#imagePreview').removeAttr('src');
     }

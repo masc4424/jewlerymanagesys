@@ -15,6 +15,14 @@ $(document).ready(function() {
                     return meta.row + 1; // Sr No.
                 }
             },
+            {
+                data: 'clients',
+                render: function(data) {
+                    return data === 'N/A' ? 'N/A' : data;
+                }
+            },
+            
+            
             { data: 'model_no' },
             { 
                 data: null,

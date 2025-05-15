@@ -18,6 +18,12 @@ $(document).ready(function() {
         placeholder: "Select raw material",
         allowClear: true
     });
+     // When the image preview is clicked, show it in the modal
+     $('#imagePreview').on('click', function () {
+        const src = $(this).attr('src');
+        $('#modalImage').attr('src', src);
+    });
+
     let addedStones = [];
     let stoneFormCounter = 0;
     let addedRawMaterials = [];
