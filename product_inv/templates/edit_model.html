@@ -162,7 +162,7 @@ label.form-label {
                                 <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/png">
                                 <div id="previewContainer" class="border p-1 d-flex justify-content-center align-items-center {% if not model.model_img %}d-none{% endif %}"
                                      style="height: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
-                                    <img id="imagePreview" src="{{ model.model.img|default:'#' }}" alt="Image Preview" class="img-fluid img-thumbnail"
+                                    <img id="imagePreview" src="{{ model.model_img|default:'#' }}" alt="Image Preview" class="img-fluid img-thumbnail"
                                          style="max-width: 100%; max-height: 100%; cursor: pointer;"  data-bs-toggle="modal" data-bs-target="#imageModal">
                                 </div>
                             </div>

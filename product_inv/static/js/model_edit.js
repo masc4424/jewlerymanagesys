@@ -324,12 +324,14 @@ function loadModelData() {
                 if (data.model.model_img && data.model.model_img.trim() !== '') {
                     const imageUrl = data.model.model_img;
                     $('#imagePreview').attr('src', imageUrl);
+                    $('#modalImage').attr('src', imageUrl); // Also update modal image
                     $('#previewContainer').removeClass('d-none'); 
                 } else {
                     // Hide the preview container entirely with CSS
                     $('#previewContainer').addClass('d-none'); // Force display none
                     // Also remove the src attribute
                     $('#imagePreview').removeAttr('src');
+                    $('#modalImage').removeAttr('src');
                 }
             }
             

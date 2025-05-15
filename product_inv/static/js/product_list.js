@@ -123,7 +123,7 @@ $(document).ready(function() {
             //       return `<span class="badge ${badgeClass}">${data}</span>`;
             //     }
             //   },
-            { data: 'no_of_pieces' },
+            // { data: 'no_of_pieces' },
             {
                 data: null,
                 render: function(data) {
