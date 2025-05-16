@@ -82,14 +82,30 @@ body {
 	min-height: 100vh;
 }
 
+/* Added responsive styles for Frame_154.png */
+.responsive-frame {
+	max-width: 100%;
+	height: auto;
+}
+
 @media (max-width: 768px) {
 	.product-image-container {
 		display: none;
 	}
 	
 	.login-container {
-		margin: 2rem;
-		width: 100%;
+		margin: 1rem;
+		width: 90%;
 		max-width: 400px;
+	}
+	
+	h4 {
+		font-size: 1.2rem;
+	}
+}
+
+@media (max-width: 576px) {
+	.login-container {
+		padding: 1.5rem;
 	}
 }
