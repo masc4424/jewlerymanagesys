@@ -99,7 +99,7 @@ function loadModels() {
                 if ($('#imageZoomModal').length === 0) {
                     $('body').append(`
                         <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-md">
+                            <div class="modal-dialog modal-dialog-centered modal-fullscreen">
                                 <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title" id="imageModalTitle">Image Preview</h5>
