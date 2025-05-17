@@ -1,11 +1,11 @@
 from django.contrib import admin
-from .models import JewelryType, Model, ModelColor, RawMaterial, RawStones, StoneCount
+from .models import *
 
 
 
 @admin.register(JewelryType)
 class JewelryTypeAdmin(admin.ModelAdmin):
-    list_display = ('name', 'unique_id', 'created_by', 'created_at')
+    list_display = ('name', 'unique_id', 'created_by','updated_by', 'created_at', 'updated_at')
     search_fields = ('name', 'unique_id')
     list_filter = ('created_at',)
 
