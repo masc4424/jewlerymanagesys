@@ -150,7 +150,7 @@ $(document).ready(function() {
                     }
                     
                     // If we get here, it's a single order (should not happen with your grouping)
-                    let statusText = row.orders[0].status || 'N/A';
+                    let statusText = row.orders.status || 'N/A';
                     let badgeClass = 'bg-secondary';
                     
                     // Set badge color based on status text
@@ -206,7 +206,7 @@ $(document).ready(function() {
                     }
                     
                     // Single order case (shouldn't happen with grouping)
-                    let isDelivered = (row.orders[0].delivered === 'Yes');
+                    let isDelivered = (row.orders.delivered === 'Yes');
                     let badgeClass = isDelivered ? 'bg-success' : 'bg-warning';
                     let statusText = isDelivered ? 'Delivered' : 'Not Delivered';
                     
