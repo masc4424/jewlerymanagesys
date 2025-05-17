@@ -23,6 +23,12 @@ $(document).ready(function() {
                             </a>`;
                 }
             },
+            {   // New column for tracking info
+                data: 'tracking_info',
+                render: function(data) {
+                    return `<small>${data}</small>`;
+                }
+            },
             {
                 data: null,
                 render: function(data) {
@@ -51,6 +57,9 @@ $(document).ready(function() {
             }
         ]
     });
+
+    // Rest of your JavaScript remains the same
+    
     $('#createJewelryTypeForm').on('submit', function(e) {
         e.preventDefault();
         
@@ -72,15 +81,8 @@ $(document).ready(function() {
                     // Show success message with toast instead of SweetAlert
                     showToast('success', 'Jewelry Type created successfully');
             
-                    // Get the DataTable instance
-                    let table = $('#jewelryTable').DataTable();
-            
-                    // Add new row dynamically
-                    table.row.add({
-                        "name": response.jewelry_type_name,
-                        "model_count": 0,  // Assuming new type has no models initially
-                        "id": response.jewelry_type_id
-                    }).draw(false); // Draw the table without resetting pagination
+                    // Reload the table to get fresh data with tracking info
+                    $('#jewelryTable').DataTable().ajax.reload();
                 } else {
                     // Show error message with toast
                     showToast('error', response.error || 'Failed to create jewelry type');

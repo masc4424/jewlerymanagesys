@@ -18,14 +18,20 @@ $(document).ready(function() {
                     return `<a href="/stone-types/?stone_name=${encodeURIComponent(row.stone_name)}" class="text-primary">${data}<i class="bx bx-chevron-right"></i></a>`;
                 }
             },
+            // {
+            //     data: 'status',
+            //     render: function(data, type, row) {
+            //         if (data === 'ACTIVE') {
+            //             return '<small class="badge bg-label-success me-1" style="font-size:11px;">Active</small>';
+            //         } else {
+            //             return '<small class="badge bg-label-danger me-1" style="font-size:11px;">Inactive</small>';
+            //         }
+            //     }
+            // },
             {
-                data: 'status',
+                data: 'tracking_info',
                 render: function(data, type, row) {
-                    if (data === 'ACTIVE') {
-                        return '<small class="badge bg-label-success me-1" style="font-size:11px;">Active</small>';
-                    } else {
-                        return '<small class="badge bg-label-danger me-1" style="font-size:11px;">Inactive</small>';
-                    }
+                    return `<small class="text-muted">${data}</small>`;
                 }
             },
             {

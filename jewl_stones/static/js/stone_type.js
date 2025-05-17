@@ -27,6 +27,12 @@ $(document).ready(function() {
                 }
             },
             {
+                data: 'tracking_info',
+                render: function(data, type, row) {
+                    return `<small class="text-muted">${data}</small>`;
+                }
+            },
+            {
                 data: null,
                 render: function(data, type, row) {
                     // Using type_name as the identifier if id is not available

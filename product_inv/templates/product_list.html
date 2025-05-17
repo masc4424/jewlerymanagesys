@@ -6,6 +6,53 @@
     <link rel="stylesheet" href="{% static 'css/product_list.css' %}">
 {% endblock %}
 {% block content %}
+<style>
+  .modal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  padding-top: 100px;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.9);
+}
+
+.modal-content {
+  width: 95%;
+  max-width: 95vw;
+  height: auto;
+}
+
+
+@keyframes zoom {
+  from { transform: scale(0) }
+  to { transform: scale(1) }
+}
+
+.close {
+  position: absolute;
+  top: 15px;
+  right: 35px;
+  color: white;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.close:hover {
+  color: #bbb;
+}
+
+#caption {
+  text-align: center;
+  color: #ccc;
+  padding: 10px;
+}
+
+</style>
 <div class="content-wrapper">
     <div class="container-xxl flex-grow-1 container-p-y p-0">
       
@@ -30,11 +77,12 @@
                     <th>Model No</th>
                     <!-- <th>Length (mm)</th>
                     <th>Breadth (gm)</th> -->
+                    <th>Status</th>
                     <th>Dimensions (LxB)(cm)</th>
                     <th>Weight (gm)</th>
-                    <th>Image</th>
+                    <!-- <th>Image</th> -->
                     <th>Material</th>
-                    <th>Status</th>
+                  
                     <!-- <th>No of Pieces</th> -->
                     <th>Action</th>
                 </tr>
@@ -45,7 +93,7 @@
     </div>
 </div>
 <!-- Image Modal -->
-<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+<!-- <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
@@ -57,6 +105,13 @@
         </div>
       </div>
     </div>
+</div> -->
+
+<!-- Modal for image preview -->
+<div id="imageModal" class="modal">
+  <span class="close">&times;</span>
+  <img class="modal-content" id="modalImage">
+  <div id="caption"></div>
 </div>
 
 

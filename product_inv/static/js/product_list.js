@@ -1,12 +1,14 @@
 $(document).ready(function() {
     // Create toast container on page load
     createToastContainer();
+    const cacheBuster = new Date().getTime();
     
     // Store the DataTable instance in a variable to access it later
     const modelTable = $('#modelTable').DataTable({
         ajax: {
             url: `/get_model_data/${jewelry_type_name}/`, 
-            dataSrc: 'data'
+            dataSrc: 'data',
+            cache: false 
         },
         columns: [
             { 
@@ -21,9 +23,33 @@ $(document).ready(function() {
                     return data === 'N/A' ? 'N/A' : data;
                 }
             },
+            {
+                data: 'model_no',
+                render: function(model_no, type, row) {
+                    const timestamp = new Date().getTime();
+                    // const imageSrc = `/static/model_img/${model_no}.png?t=${timestamp}`;
+                    // Add cache buster to image URL
+                    const imageSrc = `/static/model_img/${model_no}.png?t=${cacheBuster}`;
+                    
+                    return `
+                        <div class="text-center">
+                            <img src="${imageSrc}" alt="${model_no}" class="img-thumbnail preview-img mb-1 ms-3 rounded-circle"
+                                 style="width: 35px; height: 35px; object-fit: cover; cursor: pointer;" />
+                            <div class="me-5">${model_no}</div>
+                        </div>
+                    `;
+                }
+            },
             
             
-            { data: 'model_no' },
+            
+            // { data: 'model_no' },
+            {
+                data: 'status_name',
+                render: function(data) {
+                  return data ? data : 'N/A';
+                }
+             },
             { 
                 data: null,
                 render: function(data) {
@@ -37,6 +63,7 @@ $(document).ready(function() {
                     return `${formattedLength} × ${formattedBreadth}`; // Dimensions column
                 }
             },
+
             { 
                 data: 'weight',
                 render: function(data) {
@@ -44,36 +71,31 @@ $(document).ready(function() {
                     return weight % 1 === 0 ? weight.toFixed(0) : weight.toFixed(2);
                 }
             },
-            {
-                data: 'model_no',
-                render: function(model_no, type, row) {
-                    const timestamp = new Date().getTime();
-                    const imageSrc = `/static/model_img/${model_no}.png?t=${timestamp}`;
+            // {
+            //     data: 'model_no',
+            //     render: function(model_no, type, row) {
+            //         const timestamp = new Date().getTime();
+            //         const imageSrc = `/static/model_img/${model_no}.png?t=${timestamp}`;
                     
-                    return `
-                        <a href="javascript:void(0);" onclick="showImage('${imageSrc}', '${model_no}')" 
-                           data-id="${row.id}" data-model_no="${model_no}" class="d-flex gap-2">
-                            <img src="${imageSrc}" alt="Model Image" class="img-thumbnail" 
-                                 style="width: 40px; height: 40px; object-fit: cover;" /> 
-                        </a>
-                    `;
-                }
-            },
+            //         return `
+            //             <a href="javascript:void(0);" onclick="showImage('${imageSrc}', '${model_no}')" 
+            //                data-id="${row.id}" data-model_no="${model_no}" class="d-flex gap-2">
+            //                 <img src="${imageSrc}" alt="Model Image" class="img-thumbnail" 
+            //                      style="width: 40px; height: 40px; object-fit: cover;" /> 
+            //             </a>
+            //         `;
+            //     }
+            // },
             
             {
                 data: 'model_no',
                 render: function(model_no) {
-                    return `<a href="/product/${model_no}/" title="View Material">
+                    return `<a href="/product/${model_no}/?_=${cacheBuster}" title="View Material">
                                 <i class="bx bx-show"></i> &gt; 
                             </a>`;
                 }
             },
-            {
-                data: 'status_name',
-                render: function(data) {
-                  return data ? data : 'N/A';
-                }
-              },
+           
             // {
             //     data: 'status_name',
             //     render: function(data) {
@@ -134,8 +156,9 @@ $(document).ready(function() {
                             </button>
                             <div class="dropdown-menu">
                                 <a class="dropdown-item edit-model-btn" 
-                                    href="/edit_model/${jewelry_type_name}/?model_id=${data.id}"
+                                    href="/edit_model/${jewelry_type_name}/?model_id=${data.id}&_=${cacheBuster}"
                                     data-model-id="${data.id}">
+                                    
                                     <i class="bx bx-edit-alt me-1"></i> Edit
                                 </a>
             
@@ -383,3 +406,18 @@ function showToast(type, message) {
     });
     toast.show();
 }
+// Modal image preview logic
+$(document).on('click', '.preview-img', function () {
+    const modal = document.getElementById("imageModal");
+    const modalImg = document.getElementById("modalImage");
+    const captionText = document.getElementById("caption");
+
+    modal.style.display = "block";
+    modalImg.src = this.src;
+    captionText.innerHTML = this.alt;
+});
+
+// Close modal when clicking on the close button
+document.querySelector(".close").onclick = function () {
+    document.getElementById("imageModal").style.display = "none";
+};

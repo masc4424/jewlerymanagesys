@@ -169,9 +169,9 @@ def stone_distribution_view(request, model_no):
     stone_data = get_model_distribution(model_no)
     return JsonResponse({'stone_and_material_distribution': stone_data})
 
-def get_jewelry_types_with_model_count(request):
-    jewelry_data = JewelryType.objects.annotate(model_count=Count('models')).values('id', 'name', 'unique_id', 'model_count')
-    return JsonResponse({'data': list(jewelry_data)})
+# def get_jewelry_types_with_model_count(request):
+#     jewelry_data = JewelryType.objects.annotate(model_count=Count('models')).values('id', 'name', 'unique_id', 'model_count')
+#     return JsonResponse({'data': list(jewelry_data)})
 
 from collections import defaultdict
 
@@ -641,29 +641,32 @@ def delete_model(request, model_id):
 def create_jewelry_type(request):
     if request.method == 'POST':
         name = request.POST.get('name')
-        
+
         if not name:
             return JsonResponse({'success': False, 'error': 'Name is required'})
-        
-        # Check if a jewelry type with this name already exists
+
         if JewelryType.objects.filter(name=name).exists():
             return JsonResponse({'success': False, 'error': 'A jewelry type with this name already exists'})
-        
-        # Generate a unique ID
+
         unique_id = str(uuid.uuid4())[:8]
-        
-        # Create the new jewelry type
-        jewelry_type = JewelryType.objects.create(
+
+        jewelry_type = JewelryType(
             name=name,
-            unique_id=unique_id
+            unique_id=unique_id,
         )
-        
+
+        if not request.user.is_superuser:
+            jewelry_type.created_by = request.user
+            jewelry_type.updated_by = request.user
+
+        jewelry_type.save()
+
         return JsonResponse({
             'success': True,
             'jewelry_type_id': jewelry_type.id,
             'jewelry_type_name': jewelry_type.name
         })
-        
+
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @csrf_exempt
@@ -676,7 +679,11 @@ def edit_jewelry_type(request, id):
 
         try:
             jewelry_type = JewelryType.objects.get(id=id)
-            jewelry_type.name = name
+            jewelry_type.name = name  # Removed the comma to avoid tuple assignment
+
+            if not request.user.is_superuser:
+                jewelry_type.updated_by = request.user
+
             jewelry_type.save()
             return JsonResponse({'success': True})
         except JewelryType.DoesNotExist:
@@ -696,105 +703,6 @@ def delete_jewelry_type(request, id):
             return JsonResponse({'success': False, 'error': 'Jewelry Type not found'})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
-
-# @csrf_exempt
-# def edit_model(request, model_id):
-#     if request.method == 'POST':
-#         try:
-#             model = get_object_or_404(Model, id=model_id)
-
-#             # Get form data
-#             model_no = request.POST.get('model_no')
-#             length = request.POST.get('length')
-#             breadth = request.POST.get('breadth')
-#             weight = request.POST.get('weight')
-#             jewelry_type_id = request.POST.get('jewelry_type')
-#             jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)
-#             model_img = request.FILES.get('model_img')
-#             selected_colors = request.POST.getlist('colors[]')
-
-#             stones_json = request.POST.get('stones', '[]')
-#             stones_data = json.loads(stones_json)
-
-#             raw_materials_json = request.POST.get('raw_materials', '[]')
-#             raw_materials_data = json.loads(raw_materials_json)
-
-#             if not all([model_no, length, breadth, weight, jewelry_type_id, selected_colors]):
-#                 return JsonResponse({'error': 'All fields are required'}, status=400)
-
-#             # Update image if new one is uploaded
-#             if model_img:
-#                 target_directory = os.path.join(settings.BASE_DIR, 'product_inv/static/model_img/')
-#                 os.makedirs(target_directory, exist_ok=True)
-#                 file_extension = os.path.splitext(model_img.name)[1]
-#                 new_filename = f"{model_no}{file_extension}"
-#                 file_path = os.path.join(target_directory, new_filename)
-
-#                 with open(file_path, 'wb+') as destination:
-#                     for chunk in model_img.chunks():
-#                         destination.write(chunk)
-
-#                 model.model_img = f"model_image/{new_filename}"
-
-#             # Update basic fields
-#             model.model_no = model_no
-#             model.length = length
-#             model.breadth = breadth
-#             model.weight = weight
-#             model.jewelry_type = jewelry_type
-#             model.save()
-
-#             # Clear and re-create model colors
-#             ModelColor.objects.filter(model=model).delete()
-#             for color in selected_colors:
-#                 ModelColor.objects.create(model=model, color=color)
-
-#             # Clear and recreate RawStones and StoneCount
-#             RawStones.objects.filter(model=model).delete()
-#             StoneCount.objects.filter(model=model).delete()
-#             for stone_data in stones_data:
-#                 stone_type = get_object_or_404(StoneType, id=stone_data['stone_type_id'])
-#                 RawStones.objects.create(model=model, stone_type=stone_type)
-
-#                 if 'stone_type_detail_id' in stone_data and stone_data['stone_type_detail_id'] not in [None, '', 'undefined']:
-#                     try:
-#                         detail_id = int(stone_data['stone_type_detail_id'])
-#                         stone_type_detail = StoneTypeDetail.objects.get(id=detail_id)
-#                         StoneCount.objects.create(
-#                             model=model,
-#                             stone_type_details=stone_type_detail,
-#                             count=stone_data['count']
-#                         )
-#                     except (ValueError, StoneTypeDetail.DoesNotExist):
-#                         pass
-
-#             # Clear and recreate RawMaterials
-#             RawMaterial.objects.filter(model=model).delete()
-#             for material_data in raw_materials_data:
-#                 metal = get_object_or_404(Metal, id=material_data['material_id'])
-#                 RawMaterial.objects.create(
-#                     model=model,
-#                     metal=metal,
-#                     weight=material_data['weight'],
-#                     unit='g'
-#                 )
-
-#             return JsonResponse({
-#                 'success': True,
-#                 'message': 'Model updated successfully',
-#                 'model': {
-#                     'id': model.id,
-#                     'model_no': model.model_no,
-#                     'jewelry_type_name': jewelry_type.name
-#                 }
-#             })
-
-#         except Exception as e:
-#             import traceback
-#             print(traceback.format_exc())
-#             return JsonResponse({'error': str(e)}, status=500)
-
-#     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 @csrf_exempt
 def edit_model(request, model_id):
@@ -920,68 +828,6 @@ def edit_model(request, model_id):
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-# def get_model_details(request, model_id):
-#     model = get_object_or_404(Model, id=model_id)
-
-#     model_data = {
-#         "id": model.id,
-#         "name": model.model_no,
-#         "length":model.length,
-#         "breadth":model.breadth,
-#         "weight":model.weight,
-#         "model_image": f"static/model_img/{model.model_img.name.split('/')[-1]}",
-#         "colors": [color.color for color in model.model_colors.all()]
-#     }
-
-#     # --- Stones ---
-#     stones = []
-#     stone_counts = StoneCount.objects.filter(model=model).select_related('stone_type_details__stone_type', 'stone_type_details__stone')
-
-#     for sc in stone_counts:
-#         std = sc.stone_type_details
-#         stone_data = {
-#             "id": sc.id,
-#             "count": sc.count,
-#             "stone_type_detail_id": std.id,
-#             "stone_id": std.stone.id,
-#             "stone_name": std.stone.name,
-#             "stone_type_id": std.stone_type.id,
-#             "stone_type_name": std.stone_type.type_name,
-#             "weight": float(std.weight),
-#             "length": std.length,
-#             "breadth": std.breadth,
-#             "rate": float(std.rate)
-#         }
-#         stones.append(stone_data)
-
-#     # --- Metal Rates Subquery ---
-#     latest_rates = MetalRate.objects.filter(
-#         metal=OuterRef('metal')
-#     ).order_by('-date')  # Gets latest rate per metal
-
-#     # --- Raw Materials ---
-#     raw_materials = []
-#     raw_mats = RawMaterial.objects.filter(model=model).select_related('metal').annotate(
-#         latest_rate=Subquery(latest_rates.values('rate')[:1])
-#     )
-
-#     for rm in raw_mats:
-#         rate = rm.latest_rate or 0
-#         material_data = {
-#             "id": rm.id,
-#             "material_id": rm.metal.id,
-#             "material_name": rm.metal.name,
-#             "weight": float(rm.weight),
-#             "rate": float(rate),
-#             "total_value": float(rm.weight) * float(rate)
-#         }
-#         raw_materials.append(material_data)
-
-#     return JsonResponse({
-#         "stones": stones,
-#         "raw_materials": raw_materials,
-#         "model":model_data,
-#     })
 
 def get_model_details(request, model_id):
     model = get_object_or_404(Model, id=model_id)
@@ -1149,3 +995,63 @@ def get_model_status(request):
     statuses = ModelStatus.objects.all()
     statuses_list = [{'id': status.id, 'status': status.status} for status in statuses]
     return JsonResponse(statuses_list, safe=False)
+
+def get_jewelry_types_with_model_count(request):
+    # Get all jewelry types with model count using annotation
+    # This is more efficient than doing a separate query for each jewelry type
+    jewelry_types = JewelryType.objects.annotate(model_count=Count('models'))
+    
+    data = []
+    for jewelry_type in jewelry_types:
+        # Get creator and updater information
+        created_by = "System"
+        updated_by = None
+        tracking_info = "No tracking information"
+        
+        try:
+            # Get creator information if available
+            if hasattr(jewelry_type, 'created_by') and jewelry_type.created_by:
+                created_by_user = jewelry_type.created_by
+                created_by = (
+                    f"{created_by_user.first_name} {created_by_user.last_name}".strip()
+                    if created_by_user else "System"
+                )
+                if created_by_user and not created_by.strip():
+                    created_by = created_by_user.username
+            
+            # Get updater information if available and different from creator
+            if hasattr(jewelry_type, 'updated_by') and jewelry_type.updated_by:
+                if not jewelry_type.updated_by or jewelry_type.updated_by == jewelry_type.created_by:
+                    updated_by = None
+                else:
+                    updated_by_user = jewelry_type.updated_by
+                    updated_by = f"{updated_by_user.first_name} {updated_by_user.last_name}".strip()
+                    if not updated_by.strip():
+                        updated_by = updated_by_user.username
+            
+            # Build tracking info string
+            tracking_info = f"Created by {created_by}"
+            if updated_by:
+                tracking_info += f", Updated by {updated_by}"
+                
+        except Exception:
+            # If any error occurs, use default values
+            pass
+        
+        # Include unique_id if it exists in the jewelry_type model
+        item_data = {
+            'id': jewelry_type.id,
+            'name': jewelry_type.name,
+            'model_count': jewelry_type.model_count,
+            'created_by': created_by,
+            'updated_by': updated_by,
+            'tracking_info': tracking_info
+        }
+        
+        # Add unique_id if it exists in the model
+        if hasattr(jewelry_type, 'unique_id'):
+            item_data['unique_id'] = jewelry_type.unique_id
+        
+        data.append(item_data)
+    
+    return JsonResponse({'data': data})

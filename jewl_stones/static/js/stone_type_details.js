@@ -55,6 +55,12 @@ $(document).ready(function() {
                 }
             },
             {
+                data: 'tracking_info',
+                render: function(data, type, row) {
+                    return `<small class="text-muted">${data}</small>`;
+                }
+            },
+            {
                 data: null,
                 render: function(data, type, row) {
                     // Debug why id is undefined

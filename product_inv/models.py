@@ -7,6 +7,10 @@ from django.utils import timezone
 class JewelryType(models.Model):
     name = models.CharField(max_length=255, unique=True)
     unique_id = models.CharField(max_length=100, unique=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_jewelry_types')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_jewelry_types')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
