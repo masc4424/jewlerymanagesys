@@ -9,8 +9,10 @@ class JewelryType(models.Model):
     unique_id = models.CharField(max_length=100, unique=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_jewelry_types')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_jewelry_types')
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    # created_at = models.DateTimeField(auto_now_add=True)
+    # updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(default=timezone.now)  # Use default instead of auto_now_add
+    updated_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return self.name
