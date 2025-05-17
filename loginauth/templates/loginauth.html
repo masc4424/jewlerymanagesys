@@ -11,6 +11,43 @@
     <link rel="stylesheet" type="text/css" href="{% static 'css/loginauth.css' %}" />
     <link href="https://fonts.googleapis.com/css?family=Poppins:600&display=swap" rel="stylesheet" />
     <script src="https://kit.fontawesome.com/a81368914c.js" crossorigin="anonymous"></script>
+    <style>
+        .category-pill {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: #f0f0f0;
+            border-radius: 50px;
+            padding: 6px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+            height: 35px;
+            width: 100%;
+        }
+        .category-pill:hover {
+            background-color: #e6e6e6;
+        }
+        .category-pill img {
+            height: 16px;
+            width: auto;
+            margin-right: 8px;
+            display: inline-block !important;
+        }
+        .pill-label {
+            font-size: 0.85rem;
+            font-weight: 400;
+            color: #333;
+            display: inline-block !important;
+        }
+        .active-pill {
+            border: 1px solid #4d90fe;
+            box-shadow: none;
+        }
+        .row-pills {
+            margin: 0 auto;
+        }
+    </style>
 </head>
 <body>
     <div class="row g-0">
@@ -27,11 +64,37 @@
                     </div>
                     <h4 class="mt-4 mb-4">Manage your jewellery business at your finger tips</h4>
                 </div>
+
+                <!-- Responsive Category Pills -->
                 <div class="text-center mb-4">
-                    <div class="mb-1">
-                        <img src="{% static 'img/Frame_154.png' %}" alt="" class="responsive-frame" />
+                    <div class="row row-pills row-cols-2 row-cols-sm-4 g-2">
+                        <div class="col">
+                            <div class="category-pill active-pill" onclick="selectCategory(this, 'necklace')">
+                                <img src="{% static 'img/necklace.png' %}" alt="Necklace" class="me-1" />
+                                <span class="pill-label">Necklaces</span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="category-pill" onclick="selectCategory(this, 'waist_belt')">
+                                <img src="{% static 'img/waist_belt.png' %}" alt="Waist Belt" class="me-1" />
+                                <span class="pill-label">Waist Belts</span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="category-pill" onclick="selectCategory(this, 'bangels')">
+                                <img src="{% static 'img/bangels.png' %}" alt="Bangles" class="me-1" />
+                                <span class="pill-label">Bangles</span>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="category-pill" onclick="selectCategory(this, 'pendant')">
+                                <img src="{% static 'img/pendent.png' %}" alt="Pendant" class="me-1" />
+                                <span class="pill-label">Pendants</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
                 <form method="POST" action="{% url 'login_api' %}">
                     {% csrf_token %}
                     {% if messages %}
