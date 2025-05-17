@@ -15,10 +15,8 @@ class Stone(models.Model):
     )
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_stone')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_stone')
-    # created_at = models.DateTimeField(auto_now_add=True)
-    # updated_at = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(default=timezone.now)  # Use default instead of auto_now_add
-    updated_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.name
@@ -29,8 +27,8 @@ class StoneType(models.Model):
     stone = models.ForeignKey(Stone, on_delete=models.CASCADE, related_name='types')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_stone_types')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_stone_types')
-    created_at = models.DateTimeField(default=timezone.now)  # Use default instead of auto_now_add
-    updated_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.type_name
@@ -45,8 +43,8 @@ class StoneTypeDetail(models.Model):
     stone_type = models.ForeignKey(StoneType, on_delete=models.CASCADE, related_name='details')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_stone_type_details')
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_stone_type_details')
-    created_at = models.DateTimeField(default=timezone.now)  # Use default instead of auto_now_add
-    updated_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.shape} - {self.length}x{self.breadth}"
