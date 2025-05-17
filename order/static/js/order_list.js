@@ -149,19 +149,8 @@ $(document).ready(function() {
                                   title="${tooltipContent}">${predominantStatus}${multiOrderIndicator}</span>`;
                     }
                     
-                    // If we get here, it's a single order (should not happen with your grouping)
-                    let statusText = row.orders.status || 'N/A';
-                    let badgeClass = 'bg-secondary';
-                    
-                    // Set badge color based on status text
-                    if (statusText.toLowerCase().includes('completed')) badgeClass = 'bg-success';
-                    if (statusText.toLowerCase().includes('pending')) badgeClass = 'bg-warning';
-                    if (statusText.toLowerCase().includes('processing') || 
-                        statusText.toLowerCase().includes('setting')) badgeClass = 'bg-info';
-                    if (statusText.toLowerCase().includes('cancelled') || 
-                        statusText.toLowerCase().includes('canceled')) badgeClass = 'bg-danger';
-                    
-                    return `<span class="badge ${badgeClass}">${statusText}</span>`;
+                    // If there are no orders in the group, return N/A with a neutral badge
+                    return '<span class="badge bg-secondary">N/A</span>';
                 }
             },
             { 
@@ -205,12 +194,8 @@ $(document).ready(function() {
                                   title="${tooltipContent}">${statusText}</span>`;
                     }
                     
-                    // Single order case (shouldn't happen with grouping)
-                    let isDelivered = (row.orders.delivered === 'Yes');
-                    let badgeClass = isDelivered ? 'bg-success' : 'bg-warning';
-                    let statusText = isDelivered ? 'Delivered' : 'Not Delivered';
-                    
-                    return `<span class="badge ${badgeClass}">${statusText}</span>`;
+                    // If there are no orders in the group, return N/A with a neutral badge
+                    return '<span class="badge bg-secondary">N/A</span>';
                 }
             },
             { 
@@ -246,7 +231,7 @@ $(document).ready(function() {
                     let tooltipContent = '<div>Repeat Orders:</div>';
                     let inProgress = row.in_progress || 0;
                     
-                    tooltipContent += `<div>Total Repeats: ${data}</div>`;
+                    tooltipContent += `<div>Total Repeats: ${data || 0}</div>`;
                     tooltipContent += `<div>In Progress: ${inProgress}</div>`;
                     
                     // Add badge styling based on repeat count
@@ -256,10 +241,15 @@ $(document).ready(function() {
                     return `<span class="badge ${badgeClass}" 
                               data-bs-toggle="tooltip" 
                               data-bs-html="true" 
-                              title="${tooltipContent}">${data}</span>`;
+                              title="${tooltipContent}">${data || 0}</span>`;
                 }
             },
-            { data: 'weight' },
+            { 
+                data: 'weight',
+                render: function(data, type, row) {
+                    return data || 'N/A';
+                }
+            },
             { 
                 data: null,
                 render: function(data, type, row) {
@@ -310,19 +300,19 @@ $(document).ready(function() {
                             html += `
                                 <li class="dropdown-item order-item">
                                     <div class="d-flex justify-content-between w-100">
-                                        <span>Order #${order.order_id}</span>
+                                        <span>Order #${order.order_id || 'N/A'}</span>
                                         <span class="ms-2">${order.status || 'N/A'}</span>
                                     </div>
                                     <div class="btn-group mt-1 w-100">
-                                        <button class="btn btn-sm btn-outline-primary update-order" data-id="${order.order_id}">
+                                        <button class="btn btn-sm btn-outline-primary update-order" data-id="${order.order_id || ''}">
                                             <i class="fa-solid fa-pen-to-square"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-warning change-status" data-id="${order.order_id}" 
+                                        <button class="btn btn-sm btn-outline-warning change-status" data-id="${order.order_id || ''}" 
                                             data-delivery-date="${order.delivery_date || ''}" data-delivered="${order.delivered === 'Yes'}"
                                             data-status-id="${order.status_id || ''}">
                                             <i class="fa-solid fa-toggle-on"></i>
                                         </button>
-                                        <button class="btn btn-sm btn-outline-success repeat-order" data-id="${order.order_id}">
+                                        <button class="btn btn-sm btn-outline-success repeat-order" data-id="${order.order_id || ''}">
                                             <i class="fa-solid fa-rotate"></i>
                                         </button>
                                     </div>
@@ -349,7 +339,7 @@ $(document).ready(function() {
                         return html;
                     }
                     
-                    // Single order actions (shouldn't happen with grouping)
+                    // For rows without orders, provide a simplified action menu
                     return `
                         <div class="action-menu">
                             <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -357,25 +347,11 @@ $(document).ready(function() {
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
                                 <li>
-                                    <button class="dropdown-item d-flex align-items-center update-order" data-id="${row.order_id || ''}">
-                                        <i class="fa-solid fa-pen-to-square me-2 text-primary"></i>
-                                        <span>Update</span>
-                                    </button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item d-flex align-items-center change-status" 
-                                        data-id="${row.order_id || ''}" 
-                                        data-delivery-date="${row.delivery_date || ''}" 
-                                        data-delivered="${row.delivered === 'Yes'}"
-                                        data-status-id="${row.status_id || ''}">
-                                        <i class="fa-solid fa-toggle-on me-2 text-warning"></i>
-                                        <span>Change Status</span>
-                                    </button>
-                                </li>
-                                <li>
-                                    <button class="dropdown-item d-flex align-items-center repeat-order" data-id="${row.order_id || ''}">
-                                        <i class="fa-solid fa-rotate me-2 text-success"></i>
-                                        <span>Repeat Order</span>
+                                    <button class="dropdown-item d-flex align-items-center create-similar-order" 
+                                        data-client-id="${row.client_id || ''}" 
+                                        data-model-no="${row.model_no || ''}">
+                                        <i class="fa-solid fa-plus me-2 text-primary"></i>
+                                        <span>Create New Order</span>
                                     </button>
                                 </li>
                             </ul>
