@@ -720,4 +720,17 @@ $(document).ready(function() {
         // This would typically handle batch operations on selected orders
         toastr.info('This feature is coming soon');
     });
+
+    $(document).ready(function() {
+        // Listen for when the modal is hidden
+        $('#modelImageModal').on('hidden.bs.modal', function () {
+            // Remove the modal backdrop
+            $('.modal-backdrop').remove();
+            // Make sure the body doesn't have the 'modal-open' class
+            $('body').removeClass('modal-open');
+            // Reset any inline styles that might have been added to the body
+            $('body').css('overflow', '');
+            $('body').css('padding-right', '');
+        });
+    });
 });
