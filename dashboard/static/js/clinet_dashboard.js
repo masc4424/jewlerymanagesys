@@ -63,7 +63,7 @@ function loadModels() {
                                             <!-- Add button: Will be visible only if there's an order -->
                                             ${hasOrder ? `
                                                 <button class="btn btn-success btn-sm" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
-                                                    Add to Cart
+                                                    Re-order <i class="fa-solid fa-rotate-right"></i>
                                                 </button>
                                             ` : `
                                                 <button class="btn btn-secondary btn-sm" disabled>
@@ -166,7 +166,7 @@ function checkOrderForColor(modelId, selectedColor) {
             if (response.status === 'success' && response.data && response.data.order_exists) {
                 $(`#add-btn-${modelId}`).prop('disabled', false);
                 $(`#add-btn-${modelId}`).removeClass('btn-secondary').addClass('btn-success');
-                $(`#add-btn-${modelId}`).text('Add to Cart');
+                $(`#add-btn-${modelId}`).html('Re-order <i class="fa-solid fa-rotate-right"></i>');
             } else {
                 $(`#add-btn-${modelId}`).prop('disabled', true);
                 $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');

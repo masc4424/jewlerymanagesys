@@ -10,6 +10,69 @@ from product_inv.models import *
 import json
 from datetime import date, timedelta, datetime
 
+# @csrf_exempt
+# @require_http_methods(["GET", "POST"])
+# def get_orders_json(request):
+#     if request.method == "POST":
+#         try:
+#             body = json.loads(request.body)
+#             order_id = body.get('order_id')
+#             status_id = body.get('status_id')
+            
+#             if not order_id or not status_id:
+#                 return JsonResponse({'error': 'Missing order_id or status_id'}, status=400)
+
+#             order = get_object_or_404(Order, id=order_id)
+#             status = get_object_or_404(ModelStatus, id=status_id)
+
+#             order.status = status
+#             order.save()
+
+#             return JsonResponse({'success': True, 'message': 'Order status updated successfully.'})
+#         except json.JSONDecodeError:
+#             return JsonResponse({'error': 'Invalid JSON'}, status=400)
+#         except Exception as e:
+#             return JsonResponse({'error': str(e)}, status=500)
+
+#     # GET logic (original code)
+#     orders = Order.objects.all().select_related('client', 'model', 'color', 'status')
+#     data = []
+
+#     for i, order in enumerate(orders, start=1):
+#         repeated_orders = order.repeated_orders.all()
+#         total_repeats = repeated_orders.count()
+#         delivered_repeats = repeated_orders.filter(delivered=True).count()
+#         in_progress = total_repeats - delivered_repeats
+
+#         model_no = order.model.model_no if order.model else "N/A"
+#         weight = order.model.weight if order.model else "N/A"
+
+#         model_image = ""
+#         if order.model and order.model.model_img:
+#             model_image = static(f"model_img/{order.model.model_img.name.split('/')[-1]}")
+
+#         status_text = order.status.status if order.status else "N/A"
+#         status_id = order.status.id if order.status else None
+
+#         data.append({
+#             'sl_no': i,
+#             'model_no': model_no,
+#             'model_image': model_image,
+#             'client': f"{order.client.first_name} {order.client.last_name}" if order.client else "No Client",
+#             'status': status_text,
+#             'status_id': status_id,
+#             'quantity': order.quantity,
+#             'delivered': 'Yes' if order.delivered else 'No',
+#             'repeated_order': total_repeats,
+#             'in_progress': in_progress,
+#             'weight': weight,
+#             'color': order.color.color if order.color else "N/A",
+#             'delivery_date': order.est_delivery_date.strftime("%Y-%m-%d"),
+#             'order_id': order.id,
+#         })
+
+#     return JsonResponse({'data': data})
+
 @csrf_exempt
 @require_http_methods(["GET", "POST"])
 def get_orders_json(request):
@@ -18,7 +81,7 @@ def get_orders_json(request):
             body = json.loads(request.body)
             order_id = body.get('order_id')
             status_id = body.get('status_id')
-            
+
             if not order_id or not status_id:
                 return JsonResponse({'error': 'Missing order_id or status_id'}, status=400)
 
@@ -34,43 +97,88 @@ def get_orders_json(request):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-    # GET logic (original code)
+    # GET logic (with grouping functionality)
     orders = Order.objects.all().select_related('client', 'model', 'color', 'status')
-    data = []
-
-    for i, order in enumerate(orders, start=1):
+    
+    # Create a dictionary to group orders
+    grouped_orders = {}
+    
+    # Group orders by client, date_of_order, and model_no
+    for order in orders:
+        client_id = order.client.id if order.client else None
+        client_name = f"{order.client.first_name} {order.client.last_name}" if order.client else "No Client"
+        date_of_order = order.date_of_order.strftime("%Y-%m-%d")
+        model_no = order.model.model_no if order.model else "N/A"
+        
+        # Create a unique key for grouping
+        group_key = f"{client_id}_{date_of_order}_{model_no}"
+        
+        if group_key not in grouped_orders:
+            grouped_orders[group_key] = {
+                'client': client_name,
+                'client_id': client_id,
+                'date_of_order': date_of_order,
+                'model_no': model_no,
+                'orders': [],
+                'total_quantity': 0,
+                'total_delivered': 0,
+                'total_repeated_orders': 0,
+                'total_in_progress': 0,
+                'weight': order.model.weight if order.model else "N/A",
+                'model_image': ""
+            }
+            
+            # Set model image for the group
+            if order.model and order.model.model_img:
+                grouped_orders[group_key]['model_image'] = static(f"model_img/{order.model.model_img.name.split('/')[-1]}")
+        
+        # Calculate order details
         repeated_orders = order.repeated_orders.all()
         total_repeats = repeated_orders.count()
         delivered_repeats = repeated_orders.filter(delivered=True).count()
         in_progress = total_repeats - delivered_repeats
-
-        model_no = order.model.model_no if order.model else "N/A"
-        weight = order.model.weight if order.model else "N/A"
-
-        model_image = ""
-        if order.model and order.model.model_img:
-            model_image = static(f"model_img/{order.model.model_img.name.split('/')[-1]}")
-
+        
+        # Update group totals
+        grouped_orders[group_key]['total_quantity'] += order.quantity
+        grouped_orders[group_key]['total_delivered'] += 1 if order.delivered else 0
+        grouped_orders[group_key]['total_repeated_orders'] += total_repeats
+        grouped_orders[group_key]['total_in_progress'] += in_progress
+        
+        # Add individual order details to the group
         status_text = order.status.status if order.status else "N/A"
         status_id = order.status.id if order.status else None
-
-        data.append({
-            'sl_no': i,
-            'model_no': model_no,
-            'model_image': model_image,
-            'client': f"{order.client.first_name} {order.client.last_name}" if order.client else "No Client",
+        
+        grouped_orders[group_key]['orders'].append({
+            'order_id': order.id,
             'status': status_text,
             'status_id': status_id,
             'quantity': order.quantity,
             'delivered': 'Yes' if order.delivered else 'No',
             'repeated_order': total_repeats,
             'in_progress': in_progress,
-            'weight': weight,
             'color': order.color.color if order.color else "N/A",
             'delivery_date': order.est_delivery_date.strftime("%Y-%m-%d"),
-            'order_id': order.id,
         })
-
+    
+    # Convert dictionary to list for response
+    data = []
+    for i, (_, group) in enumerate(grouped_orders.items(), start=1):
+        group_data = {
+            'sl_no': i,
+            'client': group['client'],
+            'client_id': group['client_id'],
+            'date_of_order': group['date_of_order'],
+            'model_no': group['model_no'],
+            'model_image': group['model_image'],
+            'quantity': group['total_quantity'],
+            'delivered_count': group['total_delivered'],
+            'repeated_order': group['total_repeated_orders'],
+            'in_progress': group['total_in_progress'],
+            'weight': group['weight'],
+            'orders': group['orders']
+        }
+        data.append(group_data)
+    
     return JsonResponse({'data': data})
 
 def client_models(request, client_id):
