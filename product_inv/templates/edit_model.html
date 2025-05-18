@@ -41,6 +41,11 @@ label.form-label {
    
 
 }
+@media (max-width: 768px) {
+  .zoom-controls {
+    margin-top: 58px;
+  }
+}
 </style>
 
 <div class="content-wrapper">
@@ -190,7 +195,7 @@ label.form-label {
                             
                             <div class="modal-header">
                                 <h6 class="modal-title mb-2" id="modelImageModalLabel"> <span id="">{{ model.model_no }}</span></h6>
-                                <div class="zoom-controls mb-3 mt-4">
+                                <div class="zoom-controls mt-5">
                                 <button class="btn btn-outline-secondary btn-sm me-2" id="zoomOut">
                                     <i class="fas fa-search-minus"></i> Zoom Out
                                 </button>
@@ -206,7 +211,7 @@ label.form-label {
                             </div>
                             <!-- Close Button -->
 
-                            <div class="modal-body p-0">
+                            <div class="modal-body p-0 mt-3">
                             <div class="position-relative">
                                 <img id="modalImage" src="#" alt="Large Preview" class="img-fluid w-100" style="z-index: 1;">
                             </div>
