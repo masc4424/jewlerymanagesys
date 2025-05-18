@@ -8,7 +8,10 @@ $(document).ready(function() {
         placeholder: "",
         allowClear: true
     });
-    
+    $('#colors.select22').select2({
+        placeholder: "Select colors...",
+        allowClear: true
+    }).val(['GJ', 'White', 'Gold', 'Rose Gold']).trigger('change');
     $('.stone-type-select').select2({
         placeholder: "Select stone type",
         allowClear: true

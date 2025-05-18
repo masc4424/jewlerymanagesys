@@ -30,6 +30,17 @@ th {
 label.form-label {
     text-transform: none !important;
 }
+.zoom-controls {
+  position: absolute;
+   
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+   
+
+}
 </style>
 <div class="content-wrapper">
     <div class="container-xxl flex-grow-1 container-p-y p-0">
@@ -147,49 +158,51 @@ label.form-label {
                                 <input type="number" step="0.01" class="form-control" id="weight" name="weight" required>
                             </div>
                         </div>
+                        <div class="col-md-9">
+                            <div class="mb-3 col-lg-auto">
+                                <label for="model_img" class="form-label">Model Image</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/*" required onchange="this.nextElementSibling.classList.remove('d-none')">
+                        
+                                </div>
+                            </div>
+                        </div>
+    
+                        <div id="previewContainer" class="col-md-2 position-relative border p-1 d-none"
+                        style="height: 183px; width: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
+                        
+                        <!-- Close button -->
+                        <button type="button" class="btn-close position-absolute bottom-100 end-0"
+                            onclick="this.parentElement.classList.add('d-none'); this.parentElement.previousElementSibling.value = ''"
+                            aria-label="Close"></button>
+        
+                        <!-- Static placeholder or preloaded image -->
+                        <img id="imagePreview" src="#" class="img-fluid img-thumbnail"
+                        style="max-width: 100%; max-height: 100%; cursor: pointer;"  data-bs-toggle="modal" data-bs-target="#imageModal">
+                    </div>
                     </div>
 
-                    <!-- <div class="col-md-12">
-                        <div class="mb-3 col-lg-auto">
-                            <label for="model_img" class="form-label">Model Image</label>
-                            <div class="d-flex align-items-center">
-                                <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/png" required>
-                                <div id="previewContainer" class="border p-1 d-flex justify-content-center align-items-center d-none"
-                                     style="height: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
-                                    <img id="imagePreview" src="#" alt="Image Preview" class="img-fluid"
-                                         style="max-width: 100%; max-height: 100%;">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                     -->
-                     <div class="col-md-12">
-                        <div class="mb-3 col-lg-auto">
-                            <label for="model_img" class="form-label">Model Image</label>
-                            <div class="d-flex align-items-center">
-                                <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/png" required onchange="this.nextElementSibling.classList.remove('d-none')">
-                    
-                                <div id="previewContainer" class="position-relative border p-1 d-none"
-                                    style="height: 183px; width: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
-                                    
-                                    <!-- Close button -->
-                                    <button type="button" class="btn-close position-absolute bottom-100 end-0"
-                                        onclick="this.parentElement.classList.add('d-none'); this.parentElement.previousElementSibling.value = ''"
-                                        aria-label="Close"></button>
-                    
-                                    <!-- Static placeholder or preloaded image -->
-                                    <img id="imagePreview" src="#" class="img-fluid img-thumbnail"
-                                    style="max-width: 100%; max-height: 100%; cursor: pointer;"  data-bs-toggle="modal" data-bs-target="#imageModal">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                 
                     <!-- Image Modal -->
                     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-dialog modal-dialog-centered modal-fullscreen">
                         <div class="modal-content position-relative">
-                            <button type="button" class="btn-close position-absolute top-0 end-0 z-3" data-bs-dismiss="modal" aria-label="Close"></button>
-
+                            
+                            <div class="modal-header">
+                                <div class="zoom-controls mb-3 mt-4">
+                                  <button class="btn btn-outline-secondary btn-sm me-2" id="zoomOut">
+                                      <i class="fas fa-search-minus"></i> Zoom Out
+                                  </button>
+                                  <button class="btn btn-outline-secondary btn-sm" id="zoomIn">
+                                      <i class="fas fa-search-plus"></i> Zoom In
+                                  </button>
+                                  <button class="btn btn-outline-secondary btn-sm ms-2" id="resetZoom">
+                                      <i class="fas fa-redo"></i> Reset
+                                  </button>
+                              </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                
+                            </div>
                             <!-- Close Button -->
                     
                             <div class="modal-body p-0">
@@ -417,6 +430,114 @@ label.form-label {
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    // Initialize zoom functionality when the DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize zoom level
+        window.currentZoomLevel = 1;
+        const zoomStep = 0.1;
+        const minZoom = 0.5;
+        const maxZoom = 3;
+
+        // Get elements
+        const img = document.getElementById('modalImage');
+        const zoomIn = document.getElementById('zoomIn');
+        const zoomOut = document.getElementById('zoomOut');
+        const resetZoom = document.getElementById('resetZoom');
+
+        // Zoom in function
+        zoomIn.addEventListener('click', function() {
+            if (window.currentZoomLevel < maxZoom) {
+                window.currentZoomLevel += zoomStep;
+                applyZoom();
+            }
+        });
+
+        // Zoom out function
+        zoomOut.addEventListener('click', function() {
+            if (window.currentZoomLevel > minZoom) {
+                window.currentZoomLevel -= zoomStep;
+                applyZoom();
+            }
+        });
+
+        // Reset zoom function
+        resetZoom.addEventListener('click', function() {
+            window.currentZoomLevel = 1;
+            applyZoom();
+        });
+
+        // Mouse wheel zoom
+        const modalBody = document.querySelector('#imageModal .modal-body');
+        modalBody.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            if (e.deltaY < 0 && window.currentZoomLevel < maxZoom) {
+                // Zoom in
+                window.currentZoomLevel += zoomStep;
+                applyZoom();
+            } else if (e.deltaY > 0 && window.currentZoomLevel > minZoom) {
+                // Zoom out
+                window.currentZoomLevel -= zoomStep;
+                applyZoom();
+            }
+        });
+    });
+
+    // Apply zoom level to image
+    function applyZoom() {
+        const img = document.getElementById('modalImage');
+        if (img) {
+            img.style.transition = 'transform 0.2s ease';
+            img.style.transform = `scale(${window.currentZoomLevel})`;
+        }
+    }
+
+    // Preview image function
+    function previewImage(input) {
+        const previewContainer = document.getElementById('previewContainer');
+        const imagePreview = document.getElementById('imagePreview');
+        
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                imagePreview.src = e.target.result;
+                previewContainer.classList.remove('d-none');
+            };
+            
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // Close preview function
+    function closePreview() {
+        const previewContainer = document.getElementById('previewContainer');
+        const fileInput = document.getElementById('model_img');
+        const imagePreview = document.getElementById('imagePreview');
+        
+        previewContainer.classList.add('d-none');
+        fileInput.value = '';
+        imagePreview.src = '#';
+    }
+
+    // Open image modal function
+    function openImageModal() {
+        const imagePreview = document.getElementById('imagePreview');
+        const modalImage = document.getElementById('modalImage');
+        
+        // Set the modal image source to the preview image source
+        modalImage.src = imagePreview.src;
+        
+        // Reset zoom when opening modal
+        window.currentZoomLevel = 1;
+        applyZoom();
+        
+        // Open the modal using Bootstrap
+        const modal = document.getElementById('imageModal');
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+    }
+</script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{% static 'js/model_create.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

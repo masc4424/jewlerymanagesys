@@ -23,22 +23,30 @@ $(document).ready(function() {
                     return data === 'N/A' ? 'N/A' : data;
                 }
             },
+           
             {
                 data: 'model_no',
                 render: function(model_no, type, row) {
-                    const timestamp = new Date().getTime();
-                    // const imageSrc = `/static/model_img/${model_no}.png?t=${timestamp}`;
-                    // Add cache buster to image URL
-                    const imageSrc = `/static/model_img/${model_no}.png?t=${cacheBuster}`;
-                    
+                    const cacheBuster = new Date().getTime();
+                    // const imageSrc = `/static/model_img/${model_no}.png?t=${cacheBuster}`;
+                    const imageSrc = `/static/${row.model_img}?t=${cacheBuster}`;
+
+                    const length = row.length || 0;
+                    const breadth = row.breadth || 0;
+                    const weight = row.weight || 0;
+                   
+                
                     return `
                         <div class="text-center">
-                            <img src="${imageSrc}" alt="${model_no}" class="img-thumbnail preview-img mb-1 ms-3 rounded-circle"
-                                 style="width: 35px; height: 35px; object-fit: cover; cursor: pointer;" />
+                            <img src="${imageSrc}" alt="${model_no}" 
+                                 class="img-thumbnail preview-img mb-1 ms-3 rounded-circle"
+                                 style="width: 35px; height: 35px; object-fit: cover; cursor: pointer;"
+                                 onclick="openModelImageModal('${imageSrc}', '${model_no}', ${length}, ${breadth}, ${weight}, '${jewelry_type_name}')">
                             <div class="me-5">${model_no}</div>
                         </div>
                     `;
                 }
+                
             },
             
             

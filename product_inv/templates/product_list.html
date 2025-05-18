@@ -7,49 +7,25 @@
 {% endblock %}
 {% block content %}
 <style>
-  .modal {
-  display: none;
-  position: fixed;
-  z-index: 9999;
-  padding-top: 100px;
-  left: 0;
-  top: 0;
+
+#modelFullImage {
   width: 100%;
   height: 100%;
-  overflow: auto;
-  background-color: rgba(0,0,0,0.9);
-}
-
-.modal-content {
-  width: 95%;
-  max-width: 95vw;
-  height: auto;
+  object-fit: cover;
 }
 
 
-@keyframes zoom {
-  from { transform: scale(0) }
-  to { transform: scale(1) }
-}
-
-.close {
+/* Ensure zoom controls are visible */
+.zoom-controls {
   position: absolute;
-  top: 15px;
-  right: 35px;
-  color: white;
-  font-size: 40px;
-  font-weight: bold;
-  cursor: pointer;
-}
+   
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+   
 
-.close:hover {
-  color: #bbb;
-}
-
-#caption {
-  text-align: center;
-  color: #ccc;
-  padding: 10px;
 }
 
 </style>
@@ -108,118 +84,129 @@
 </div> -->
 
 <!-- Modal for image preview -->
-<div id="imageModal" class="modal">
+<!-- <div id="imageModal" class="modal">
   <span class="close">&times;</span>
   <img class="modal-content" id="modalImage">
   <div id="caption"></div>
-</div>
+</div> -->
 
-
-<!-- Edit Model Modal -->
-<!-- <div class="modal fade" id="editModelModal" tabindex="-1" aria-labelledby="editModelModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
+<div class="modal fade" id="modelImageModal" tabindex="-1" aria-labelledby="modelImageModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-fullscreen">
       <div class="modal-content">
-          <div class="modal-header">
-              <h5 class="modal-title" id="editModelModalLabel">Edit Model</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          <div class="px-4 pt-1 text-center">
+            <span id="modalDimensionRow">Dimensions | Jewelry Type | Weight</span>
           </div>
-          <div class="modal-body">
-              <form id="editModelForm" enctype="multipart/form-data">
-                  {% csrf_token %}
-                  <input type="hidden" id="edit_model_id" name="model_id">
-                  <div class="mb-3">
-                      <label for="edit_model_no" class="form-label">Model No</label>
-                      <input type="text" class="form-control" id="edit_model_no" name="model_no" required>
-                  </div>
-                  <div class="mb-3">
-                    <label for="edit_colors" class="form-label">Model Colors</label>
-                    <select class="form-select select2" id="edit_colors" name="colors[]" multiple="multiple" required>
-                      <option value="Black">Black</option>
-                      <option value="White">White</option>
-                      <option value="Gray">Gray</option>
-                      <option value="Silver">Silver</option>
-                      <option value="Gold">Gold</option>
-                      <option value="Rose Gold">Rose Gold</option>
-                      <option value="Platinum">Platinum</option>
-                      <option value="Bronze">Bronze</option>
-                      <option value="Copper">Copper</option>
-                      <option value="Red">Red</option>
-                      <option value="Crimson">Crimson</option>
-                      <option value="Maroon">Maroon</option>
-                      <option value="Burgundy">Burgundy</option>
-                      <option value="Pink">Pink</option>
-                      <option value="Hot Pink">Hot Pink</option>
-                      <option value="Magenta">Magenta</option>
-                      <option value="Salmon">Salmon</option>
-                      <option value="Peach">Peach</option>
-                      <option value="Orange">Orange</option>
-                      <option value="Amber">Amber</option>
-                      <option value="Coral">Coral</option>
-                      <option value="Yellow">Yellow</option>
-                      <option value="Mustard">Mustard</option>
-                      <option value="Beige">Beige</option>
-                      <option value="Ivory">Ivory</option>
-                      <option value="Lime">Lime</option>
-                      <option value="Olive">Olive</option>
-                      <option value="Green">Green</option>
-                      <option value="Emerald">Emerald</option>
-                      <option value="Jade">Jade</option>
-                      <option value="Mint">Mint</option>
-                      <option value="Teal">Teal</option>
-                      <option value="Turquoise">Turquoise</option>
-                      <option value="Blue">Blue</option>
-                      <option value="Sky Blue">Sky Blue</option>
-                      <option value="Azure">Azure</option>
-                      <option value="Cyan">Cyan</option>
-                      <option value="Navy Blue">Navy Blue</option>
-                      <option value="Royal Blue">Royal Blue</option>
-                      <option value="Indigo">Indigo</option>
-                      <option value="Purple">Purple</option>
-                      <option value="Violet">Violet</option>
-                      <option value="Lavender">Lavender</option>
-                      <option value="Lilac">Lilac</option>
-                      <option value="Brown">Brown</option>
-                      <option value="Chocolate">Chocolate</option>
-                      <option value="Tan">Tan</option>
-                      <option value="Mahogany">Mahogany</option>
-                      <option value="Bistre">Bistre</option>
-                      <option value="Charcoal">Charcoal</option>
-                    </select>
-                  </div>
-                  <div class="mb-3">
-                      <label for="edit_length" class="form-label">Length</label>
-                      <input type="number" step="0.01" class="form-control" id="edit_length" name="length" required>
-                  </div>
-                  <div class="mb-3">
-                      <label for="edit_breadth" class="form-label">Breadth</label>
-                      <input type="number" step="0.01" class="form-control" id="edit_breadth" name="breadth" required>
-                  </div>
-                  <div class="mb-3">
-                      <label for="edit_weight" class="form-label">Weight</label>
-                      <input type="number" step="0.01" class="form-control" id="edit_weight" name="weight" required>
-                  </div>
-                  <div class="mb-3">
-                      <label for="edit_model_img" class="form-label">Model Image</label>
-                      <input type="file" class="form-control" id="edit_model_img" name="model_img" accept="image/png">
-                  </div>
-                  <div class="mb-3 text-center" id="editPreviewContainer">
-                    <label class="form-label">Image Preview</label>
-                    <div id="editPreviewBox" class="border p-3 d-flex justify-content-center align-items-center" style="width: 150px; height: 150px; border: 2px dashed #ddd; background-color: #f8f9fa;">
-                        <img id="editImagePreview" src="#" alt="Image Preview" class="img-fluid" style="max-width: 100%; max-height: 100%;">
-                    </div>
-                </div>
-                  <div class="text-end">
-                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                      <button type="submit" class="btn btn-primary">Update Model</button>
-                  </div>
-              </form>
+          <div class="modal-header">
+              <!-- <h5 class="modal-title" id="modelImageModalLabel">Model Preview</h5> -->
+              <h6 class="modal-title mb-2" id="modelImageModalLabel"> <span id="modelNoDisplay"></span></h6>
+              <div class="zoom-controls">
+                <button class="btn btn-outline-secondary btn-sm me-2" id="zoomOut">
+                    <i class="fas fa-search-minus"></i> Zoom Out
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" id="zoomIn">
+                    <i class="fas fa-search-plus"></i> Zoom In
+                </button>
+                <button class="btn btn-outline-secondary btn-sm ms-2" id="resetZoom">
+                    <i class="fas fa-redo"></i> Reset
+                </button>
+            </div>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              
+          </div>
+          <div class="modal-body text-center d-flex flex-column">
+             
+              
+              <!-- Image container with zoom functionality -->
+              <div class="image-container fullscreen-container">
+                  <img id="modelFullImage" src="" alt="Model Image">
+              </div>
+              
+              <!-- <div class="mt-3">
+                  <h6>Model No: <span id="modelNoDisplay"></span></h6>
+              </div> -->
           </div>
       </div>
   </div>
-</div> -->
+</div>
+
+
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  function openModelImageModal(imageSrc, modelNo, length, breadth, weight, jewelryTypeName) {
+    const modal = document.getElementById('modelImageModal');
+    const modalImage = document.getElementById('modelFullImage');
+    const modelNoDisplay = document.getElementById('modelNoDisplay');
+    const dimensionRow = document.getElementById('modalDimensionRow');
+
+    // Format values
+    const formattedLength = length % 1 === 0 ? length.toFixed(0) : length.toFixed(2);
+    const formattedBreadth = breadth % 1 === 0 ? breadth.toFixed(0) : breadth.toFixed(2);
+    const formattedWeight = weight % 1 === 0 ? weight.toFixed(0) : weight.toFixed(2);
+
+    // Set image and model number
+    modalImage.src = imageSrc;
+    modelNoDisplay.textContent = modelNo;
+
+    // Set the Dimensions | Jewelry Type | Weight row
+    dimensionRow.textContent = `${formattedLength} × ${formattedBreadth}cm | ${jewelryTypeName} | ${formattedWeight}gm`;
+
+    // Reset zoom when opening modal
+    window.currentZoomLevel = 1;
+    applyZoom();
+
+    // Open the modal using Bootstrap
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+}
+
+  // Initialize zoom functionality when the DOM is loaded
+  document.addEventListener('DOMContentLoaded', function() {
+      // Initialize zoom level
+      window.currentZoomLevel = 1;
+      const zoomStep = 0.1;
+      const minZoom = 0.5;
+      const maxZoom = 3;
+      
+      // Get elements
+      const img = document.getElementById('modelFullImage');
+      const zoomIn = document.getElementById('zoomIn');
+      const zoomOut = document.getElementById('zoomOut');
+      const resetZoom = document.getElementById('resetZoom');
+      
+      // Zoom in function
+      zoomIn.addEventListener('click', function() {
+          if (window.currentZoomLevel < maxZoom) {
+              window.currentZoomLevel += zoomStep;
+              applyZoom();
+          }
+      });
+      
+      // Zoom out function
+      zoomOut.addEventListener('click', function() {
+          if (window.currentZoomLevel > minZoom) {
+              window.currentZoomLevel -= zoomStep;
+              applyZoom();
+          }
+      });
+      
+      // Reset zoom function
+      resetZoom.addEventListener('click', function() {
+          window.currentZoomLevel = 1;
+          applyZoom();
+      });
+  });
+  
+  // Apply zoom level to image
+  function applyZoom() {
+      const img = document.getElementById('modelFullImage');
+      if (img) {
+          img.style.transition = 'transform 0.2s ease';
+          img.style.transform = `scale(${window.currentZoomLevel})`;
+      }
+  }
+</script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script src="{% static 'js/product_list.js' %}"></script>

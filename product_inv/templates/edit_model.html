@@ -30,6 +30,17 @@ th {
 label.form-label {
     text-transform: none !important;
 }
+.zoom-controls {
+  position: absolute;
+   
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    display: flex;
+    gap: 10px;
+   
+
+}
 </style>
 
 <div class="content-wrapper">
@@ -153,40 +164,59 @@ label.form-label {
                                 <input type="number" step="0.01" class="form-control" id="weight" name="weight" value="{{ model.weight }}" required>
                             </div>
                         </div>
-                    </div>
-
-                    <div class="col-md-12">
-                        <div class="mb-3 col-lg-auto">
-                            <label for="model_img" class="form-label">Model Image</label>
-                            <div class="d-flex align-items-center">
-                                <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/png">
-                                <div id="previewContainer" class="border p-1 d-flex justify-content-center align-items-center {% if not model.model_img %}d-none{% endif %}"
-                                     style="height: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
-                                    <img id="imagePreview" src="{{ model.model_img|default:'#' }}" alt="Image Preview" class="img-fluid img-thumbnail"
-                                         style="max-width: 100%; max-height: 100%; cursor: pointer;"  data-bs-toggle="modal" data-bs-target="#imageModal">
+                        <div class="col-md-9">
+                            <div class="mb-3 col-lg-auto">
+                                <label for="model_img" class="form-label">Model Image</label>
+                                <div class="d-flex align-items-center">
+                                    <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/*">
                                 </div>
+                                <small class="text-muted">Leave empty to keep current image</small>
                             </div>
-                            <small class="text-muted">Leave empty to keep current image</small>
+                        </div>
+                        <div id="previewContainer" class="col-md-2 border p-1 d-flex justify-content-center align-items-center {% if not model.model_img %}d-none{% endif %}"
+                                style="height: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
+                            <img id="imagePreview" src="{{ model.model_img|default:'#' }}" alt="Image Preview" class="img-fluid img-thumbnail"
+                                    style="max-width: 100%; max-height: 100%; cursor: pointer;"  data-bs-toggle="modal" data-bs-target="#imageModal">
                         </div>
                     </div>
 
-                   <!-- Image Modal -->
+                    <!-- Image Modal -->
                     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-dialog modal-dialog-centered modal-fullscreen">
                         <div class="modal-content position-relative">
+                            <!-- <div class="px-4 pt-1 text-center">
+                                <span id="modalDimensionRow">Dimensions | Jewelry Type | Weight</span>
+                            </div> -->
                             
-                            <!-- Close Button -->
-                            <button type="button" class="btn-close position-absolute top-0 end-0" data-bs-dismiss="modal" aria-label="Close"></button>
-                            
-                            <div class="modal-body p-0">
-                            <img id="modalImage" src="#" alt="Large Preview" class="img-fluid w-100">
+                            <div class="modal-header">
+                                <h6 class="modal-title mb-2" id="modelImageModalLabel"> <span id="">{{ model.model_no }}</span></h6>
+                                <div class="zoom-controls mb-3 mt-4">
+                                <button class="btn btn-outline-secondary btn-sm me-2" id="zoomOut">
+                                    <i class="fas fa-search-minus"></i> Zoom Out
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="zoomIn">
+                                    <i class="fas fa-search-plus"></i> Zoom In
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm ms-2" id="resetZoom">
+                                    <i class="fas fa-redo"></i> Reset
+                                </button>
                             </div>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                
+                            </div>
+                            <!-- Close Button -->
+
+                            <div class="modal-body p-0">
+                            <div class="position-relative">
+                                <img id="modalImage" src="#" alt="Large Preview" class="img-fluid w-100" style="z-index: 1;">
+                            </div>
+                            </div>
+                            
                         </div>
+
                         </div>
                     </div>
-  
-  
-                    
+                 
                     <!-- Materials Tabs Section -->
                     <div class="card mb-4">
                         <div class="card-header">
@@ -388,6 +418,235 @@ label.form-label {
 {% endblock %}
 
 {% block extra_js %}
+<script>
+// Initialize zoom functionality when the DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize zoom level
+    window.currentZoomLevel = 1;
+    const zoomStep = 0.1;
+    
+    // Get elements
+    const img = document.getElementById('modalImage');
+    const zoomIn = document.getElementById('zoomIn');
+    const zoomOut = document.getElementById('zoomOut');
+    const resetZoom = document.getElementById('resetZoom');
+    const modal = document.getElementById('imageModal');
+
+    // Keep modal open - prevent it from closing unexpectedly
+    if (modal) {
+        // Prevent default behavior for keyboard events on modal
+        modal.addEventListener('keydown', function(e) {
+            e.stopPropagation();
+        });
+        
+        // Make sure the modal doesn't close on backdrop click
+        // This is for Bootstrap 5
+        if (typeof bootstrap !== 'undefined') {
+            modal.addEventListener('show.bs.modal', function() {
+                const modalInstance = bootstrap.Modal.getInstance(modal);
+                if (modalInstance) {
+                    modalInstance._config.backdrop = 'static';
+                    modalInstance._config.keyboard = false;
+                }
+            });
+        }
+    }
+
+    // Zoom in function
+    zoomIn.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent any default behavior
+        e.stopPropagation(); // Stop event from bubbling
+        
+        // Remove the maximum zoom check
+        window.currentZoomLevel += zoomStep;
+        applyZoom();
+    });
+
+    // Zoom out function
+    zoomOut.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent any default behavior
+        e.stopPropagation(); // Stop event from bubbling
+        
+        // Remove the minimum zoom check
+        window.currentZoomLevel -= zoomStep;
+        applyZoom();
+    });
+
+    // Reset zoom function
+    resetZoom.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent any default behavior
+        e.stopPropagation(); // Stop event from bubbling
+        
+        window.currentZoomLevel = 1;
+        applyZoom();
+    });
+
+    // Mouse wheel zoom - with additional event stopping
+    const modalBody = document.querySelector('#imageModal .modal-body');
+    modalBody.addEventListener('wheel', function(e) {
+        // Stop all default behavior and propagation
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        
+        if (e.deltaY < 0) {
+            // Zoom in - no maximum limit
+            window.currentZoomLevel += zoomStep;
+            applyZoom();
+        } else if (e.deltaY > 0) {
+            // Zoom out - no minimum limit
+            window.currentZoomLevel -= zoomStep;
+            applyZoom();
+        }
+        
+        // Return false to be extra safe
+        return false;
+    }, { passive: false });
+
+    // Add event listeners to form fields to update modal info in real-time
+    document.getElementById('length').addEventListener('input', updateModalInfo);
+    document.getElementById('breadth').addEventListener('input', updateModalInfo);
+    document.getElementById('weight').addEventListener('input', updateModalInfo);
+    document.getElementById('jewelry_type').addEventListener('change', updateModalInfo);
+    document.getElementById('model_no').addEventListener('input', updateModalInfo);
+});
+
+// Apply zoom level to image
+function applyZoom() {
+    const img = document.getElementById('modalImage');
+    if (img) {
+        img.style.transition = 'transform 0.2s ease';
+        img.style.transform = `scale(${window.currentZoomLevel})`;
+        
+        // Log zoom level to help with debugging
+        console.log('Current zoom level:', window.currentZoomLevel);
+        
+        // Prevent modal from closing by stopping any potential events
+        // that might be triggered by extreme zoom levels
+        event.stopPropagation();
+    }
+}
+
+// Preview image function
+function previewImage(input) {
+    const imagePreview = document.getElementById('imagePreview');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            imagePreview.src = e.target.result;
+        };
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Update modal info when form fields change
+function updateModalInfo() {
+    const length = document.getElementById('length').value || '0';
+    const breadth = document.getElementById('breadth').value || '0';
+    const weight = document.getElementById('weight').value || '0';
+    const jewelryType = document.getElementById('jewelry_type').options[document.getElementById('jewelry_type').selectedIndex].text || 'Unknown';
+    const modelNo = document.getElementById('model_no').value || 'Unknown';
+
+    // Format values
+    const formattedLength = parseFloat(length) % 1 === 0 ? parseFloat(length).toFixed(0) : parseFloat(length).toFixed(2);
+    const formattedBreadth = parseFloat(breadth) % 1 === 0 ? parseFloat(breadth).toFixed(0) : parseFloat(breadth).toFixed(2);
+    const formattedWeight = parseFloat(weight) % 1 === 0 ? parseFloat(weight).toFixed(0) : parseFloat(weight).toFixed(2);
+
+    // Update modal elements
+    document.getElementById('modalDimensionRow').textContent = `${formattedLength} × ${formattedBreadth}cm | ${jewelryType} | ${formattedWeight}gm`;
+    document.getElementById('modelNoDisplay').textContent = modelNo;
+}
+
+// Open image modal function
+function openImageModal() {
+    const imagePreview = document.getElementById('imagePreview');
+    const modalImage = document.getElementById('modalImage');
+    const modal = document.getElementById('imageModal');
+    
+    // Set the modal image source to the preview image source
+    modalImage.src = imagePreview.src;
+    
+    // Update modal info with current form values
+    updateModalInfo();
+    
+    // Reset zoom when opening modal
+    window.currentZoomLevel = 1;
+    applyZoom();
+    
+    // Configure modal options to prevent closing
+    if (typeof bootstrap !== 'undefined') {
+        const modalOptions = {
+            backdrop: 'static',  // Prevents closing when clicking outside
+            keyboard: false      // Prevents closing with keyboard
+        };
+        
+        // Open the modal using Bootstrap with the configured options
+        const bsModal = new bootstrap.Modal(modal, modalOptions);
+        bsModal.show();
+        
+        // Add click event listener to the close button specifically to control closing
+        const closeButtons = modal.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                bsModal.hide();
+            });
+        });
+    } else {
+        // Fallback if bootstrap is not defined
+        modal.style.display = 'block';
+    }
+}
+
+// Alternative function matching your original naming convention
+function openModelImageModal(imageSrc, modelNo, length, breadth, weight, jewelryTypeName) {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const modelNoDisplay = document.getElementById('modelNoDisplay');
+    const dimensionRow = document.getElementById('modalDimensionRow');
+    
+    // Format values
+    const formattedLength = length % 1 === 0 ? length.toFixed(0) : length.toFixed(2);
+    const formattedBreadth = breadth % 1 === 0 ? breadth.toFixed(0) : breadth.toFixed(2);
+    const formattedWeight = weight % 1 === 0 ? weight.toFixed(0) : weight.toFixed(2);
+    
+    // Set image and model number
+    modalImage.src = imageSrc;
+    modelNoDisplay.textContent = modelNo;
+    
+    // Set the Dimensions | Jewelry Type | Weight row
+    dimensionRow.textContent = `${formattedLength} × ${formattedBreadth}cm | ${jewelryTypeName} | ${formattedWeight}gm`;
+    
+    // Reset zoom when opening modal
+    window.currentZoomLevel = 1;
+    applyZoom();
+    
+    // Configure modal options to prevent closing
+    if (typeof bootstrap !== 'undefined') {
+        const modalOptions = {
+            backdrop: 'static',  // Prevents closing when clicking outside
+            keyboard: false      // Prevents closing with keyboard
+        };
+        
+        // Open the modal using Bootstrap with the configured options
+        const bsModal = new bootstrap.Modal(modal, modalOptions);
+        bsModal.show();
+        
+        // Add click event listener to the close button specifically to control closing
+        const closeButtons = modal.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                bsModal.hide();
+            });
+        });
+    } else {
+        // Fallback if bootstrap is not defined
+        modal.style.display = 'block';
+    }
+}
+</script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{% static 'js/model_edit.js' %}"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>

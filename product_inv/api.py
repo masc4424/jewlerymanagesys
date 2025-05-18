@@ -211,6 +211,7 @@ def get_models_by_jewelry_type(request, jewelry_type_name=None):
         for model in models:
             client_list = model_clients.get(model['id'], [])
             model['clients'] = ', '.join(client_list) if client_list else 'N/A'
+            
 
         return JsonResponse({'data': list(models)}, safe=False)
         

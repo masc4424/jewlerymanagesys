@@ -261,8 +261,8 @@ function renderStoneCard(stone) {
     let stoneCard = `
         <div class="stone-card">
             <div class="card shadow-sm h-100">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">${stone.stone_name}</h5>
+                <div class="card-header bg-white justify-content-between align-items-center">
+                    <h5 class="mb-2">${stone.stone_name}</h5>
                     <div>
                         <span class="badge bg-label-primary">${stone.percentage_in_model}%</span>
                         <span class="badge bg-label-secondary">${stone.total_rate}&#8377;</span>
@@ -286,8 +286,8 @@ function renderStoneCard(stone) {
     stone.stone_distribution.forEach(function(type) {
         stoneCard += `
                 <div class="p-2 mb-2 bg-light rounded">
-                    <div class="d-flex justify-content-between mb-2">
-                        <div>${type.type_name}</div>
+                    <div class="justify-content-between mb-2">
+                        <div class="mb-2">${type.type_name}</div>
                         <div>
                             <span class="badge bg-secondary">${type.percentage_in_stone}%</span>
                             <span class="badge bg-secondary">${type.type_stone_total_rate}&#8377;</span>
@@ -321,8 +321,8 @@ function renderMaterialCard(material) {
     let materialCard = `
         <div class="col-12 col-md-6 mb-3">
             <div class="card shadow-sm material-card">
-                <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">${material.metal_name}</h5>
+                <div class="card-header bg-white justify-content-between align-items-center">
+                    <h5 class="mb-2">${material.metal_name}</h5>
                     <div>
                         <span class="badge bg-label-primary">${material.percentage_in_model}%</span>
                         <span class="badge bg-label-secondary">${material.total_weight}gm</span>
