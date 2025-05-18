@@ -2,6 +2,10 @@ from django.shortcuts import render
 from product_inv.models import *
 from user_role_management.models import *
 import logging
+
+from django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404
+from django.contrib.auth.models import User
 # Initialize logger
 log = logging.getLogger(__name__)
 
@@ -53,3 +57,15 @@ def client_order_list(request):
         'role_unique_id': role_u_id,
         'user': user_with_role
     })
+
+def add_to_cart_side_view(request, client_id):
+    if request.method == "GET" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        client = get_object_or_404(User, id=client_id)
+
+        html = render(request, 'add_to_cart_side.html', {
+            'client': client,
+        }).content.decode('utf-8')
+
+        return JsonResponse({'status': 'success', 'html': html})
+
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
