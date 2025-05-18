@@ -150,7 +150,7 @@ function generateModelCard(model) {
                                 </button>
                             ` : `
                                 <button class="btn btn-secondary btn-sm" disabled id="add-btn-${model.id}">
-                                    ${model.order ? 'Order Pending Delivery' : 'No Order Available'}
+                                    ${model.order ? 'In Progress' : 'No Order Available'}
                                 </button>
                             `}
                         </div>
@@ -224,7 +224,7 @@ function checkOrderForColor(modelId, selectedColor) {
                 // Order exists but not delivered
                 $(`#add-btn-${modelId}`).prop('disabled', true);
                 $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
-                $(`#add-btn-${modelId}`).text('Order Pending Delivery');
+                $(`#add-btn-${modelId}`).text('In Progress');
             } else {
                 // No order exists
                 $(`#add-btn-${modelId}`).prop('disabled', true);
