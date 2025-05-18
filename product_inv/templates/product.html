@@ -115,8 +115,12 @@
        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-fullscreen">
         <div class="modal-content position-relative">
-            
+            <div class="px-4 pt-1 text-center">
+                <span id="modalDimensionRow">{{ product.length }} x {{ product.breadth }}cm | {{ jewelry_type }} | {{ product.weight }}gm</span>
+              </div>
             <div class="modal-header mb-3 mt-3">
+                <h6 class="modal-title mb-2" id="modelImageModalLabel"> <span id="modelNoDisplay">{{ product.model_no }}</span></h6>
+
                 <div class="zoom-controls mb-3 mt-4">
                   <button class="btn btn-outline-secondary btn-sm me-2" id="zoomOut">
                       <i class="fas fa-search-minus"></i> Zoom Out

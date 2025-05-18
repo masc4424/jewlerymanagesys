@@ -184,9 +184,9 @@ label.form-label {
                     <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-centered modal-fullscreen">
                         <div class="modal-content position-relative">
-                            <!-- <div class="px-4 pt-1 text-center">
-                                <span id="modalDimensionRow">Dimensions | Jewelry Type | Weight</span>
-                            </div> -->
+                            <div class="px-4 pt-1 text-center">
+                                <span id="modalDimensionRow">{{ model.length }} x {{ model.breadth }}cm | {{ jewelry_type_name }} | {{ model.weight }}gm</span>
+                            </div>
                             
                             <div class="modal-header">
                                 <h6 class="modal-title mb-2" id="modelImageModalLabel"> <span id="">{{ model.model_no }}</span></h6>

@@ -41,7 +41,7 @@ $(document).ready(function() {
                                 <a class="dropdown-item" href="javascript:void(0);">
                                     <i class="bx bx-upload me-1"></i> Bulk Upload
                                 </a>
-                                <a class="dropdown-item" href="javascript:void(0);">
+                                <a class="dropdown-item view_model" href="javascript:void(0);" data-id="${data.id}" data-name="${data.name}">
                                     <i class="bx bx-show me-1"></i> View Models
                                 </a>
                             </div>
@@ -185,6 +185,11 @@ $(document).ready(function() {
 
     // Redirect to product_list on model click
     $(document).on('click', '.model-link', function(e) {
+        e.preventDefault();
+        const jewelryTypeName = $(this).data('name');
+        window.location.href = `/product_list/${jewelryTypeName}/`;
+    });
+    $(document).on('click', '.view_model', function(e) {
         e.preventDefault();
         const jewelryTypeName = $(this).data('name');
         window.location.href = `/product_list/${jewelryTypeName}/`;

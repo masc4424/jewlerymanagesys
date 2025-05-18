@@ -7,8 +7,14 @@ import logging
 log = logging.getLogger(__name__)
 
 def product(request, model_no):
-    product_obj = get_object_or_404(Model, model_no=model_no) 
-    return render(request, 'product.html', {'product': product_obj})
+    product_obj = get_object_or_404(Model, model_no=model_no)
+    jewelry_type = product_obj.jewelry_type  # Access the related JewelryType object
+
+    return render(request, 'product.html', {
+        'product': product_obj,
+        'jewelry_type': jewelry_type
+    })
+
 
 
 def product_type(request):
@@ -35,9 +41,13 @@ def create_new_model(request, jewelry_type_name):
 def edit_model_view(request, jewelry_type_name):
     jewelry_type = get_object_or_404(JewelryType, name=jewelry_type_name)
     model_id = request.GET.get('model_id')
+    model = get_object_or_404(Model, id=model_id, jewelry_type=jewelry_type)
+
     log.info(f"Edit model view accessed for jewelry_type_name: {jewelry_type_name}, model_id: {model_id}")
+
     return render(request, 'edit_model.html', {
         'jewelry_type_id': jewelry_type.id,
-        'jewelry_type_name': jewelry_type_name,
-        'model_id': model_id
+        'jewelry_type_name': jewelry_type.name,
+        'model_id': model_id,
+        'model': model  # passing model instance
     })

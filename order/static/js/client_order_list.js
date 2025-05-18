@@ -243,21 +243,45 @@ $(document).ready(function() {
     });
 
     // Add image modal HTML to the document
-    $('body').append(`
-        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="imageModalLabel">Model Image</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                    </div>
-                    <div class="modal-body text-center">
-                        <img id="modalImage" src="" alt="Model" class="img-fluid">
+    if ($('#imageModal').length === 0) {
+        $('body').append(`
+            <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="imageModalLabel">Model Image</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center position-relative">
+                            <!-- Display model details: Dimension, Jewelry Type, Weight -->
+                            <div id="model-details" class="mb-3">
+                                <p id="model-info" class="mb-0"></p>
+                            </div>
+                            <!-- Moved zoom controls to the top -->
+                            <div class="zoom-controls mt-3">
+                                <button class="btn btn-outline-secondary btn-sm me-2" id="zoomOut">
+                                    <i class="fa-solid fa-search-minus"></i> Zoom Out
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" id="zoomIn">
+                                    <i class="fa-solid fa-search-plus"></i> Zoom In
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm ms-2" id="resetZoom">
+                                    <i class="fa-solid fa-arrows-rotate"></i> Reset
+                                </button>
+                            </div>
+                            <div class="zoom-container" style="overflow: hidden; position: relative; height: 70vh; border: 1px solid #ddd;">
+                                <div class="image-wrapper" style="position: relative; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+                                    <img id="modalImage" src="" alt="Model Preview" 
+                                        style="max-width: 100%; max-height: 100%; transform-origin: center; transition: transform 0.2s; display: block;">
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    `);
+        `);
+        initializeImageZoom();
+    }
 
     // Style for clickable images
     $('<style>')
@@ -667,5 +691,205 @@ $(document).ready(function() {
             delay: 5000
         });
         bsToast.show();
+    }
+
+    function openImageModal(imageUrl, modelName, jewelryType, weight, length, breadth) {
+        $('#imageModalLabel').text(modelName);
+        $('#modalImage').attr('src', imageUrl);
+        $('#modalImage').css('transform', 'scale(1)');
+    
+        // Set all info in one line
+        $('#model-info').text(`${length}x${breadth} cm | ${jewelryType} | ${weight} gm`);
+    
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+        modal.show();
+    }
+    
+    // Initialize zoom functionality for the image modal
+    function initializeImageZoom() {
+        let scale = 1;
+        const scaleStep = 0.25;
+        const maxScale = 3;
+        const minScale = 0.5;
+    
+        const $modalImage = $('#modalImage');
+        const $zoomContainer = $('.zoom-container');
+        const $imageWrapper = $('.image-wrapper');
+    
+        // Disable default image dragging
+        $modalImage.on('dragstart', function (e) {
+            e.preventDefault();
+        });
+    
+        // Zoom in
+        $('#zoomIn').on('click', function () {
+            console.log('Zoom in clicked, current scale:', scale);
+            if (scale < maxScale) {
+                scale += scaleStep;
+                updateZoom();
+            }
+        });
+    
+        // Zoom out
+        $('#zoomOut').on('click', function () {
+            console.log('Zoom out clicked, current scale:', scale);
+            if (scale > minScale) {
+                scale -= scaleStep;
+                updateZoom();
+            }
+        });
+    
+        // Reset zoom
+        function resetZoom() {
+            console.log('Reset zoom called');
+            scale = 1;
+            updateZoom();
+            $imageWrapper.css({
+                'transform': 'translate(0px, 0px)'
+            });
+        }
+    
+        $('#resetZoom').on('click', resetZoom);
+        $('#imageModal').on('hidden.bs.modal', resetZoom);
+    
+        // Update image zoom scale
+        function updateZoom() {
+            console.log('Updating zoom to scale:', scale);
+            $modalImage.css('transform', `scale(${scale})`);
+            
+            // Update cursor based on zoom level
+            if (scale > 1) {
+                $zoomContainer.css('cursor', 'grab');
+            } else {
+                $zoomContainer.css('cursor', 'default');
+            }
+        }
+    
+        // Improved drag-to-move logic
+        let isDragging = false;
+        let startX = 0, startY = 0;
+        let currentX = 0, currentY = 0;
+    
+        $zoomContainer.on('mousedown', function (e) {
+            if (scale > 1) {
+                isDragging = true;
+                $zoomContainer.css('cursor', 'grabbing');
+                
+                // Get current transform values
+                const transform = $imageWrapper.css('transform');
+                const matrix = transform.match(/matrix\([^)]+\)/);
+                if (matrix) {
+                    const values = matrix[0].slice(7, -1).split(',');
+                    currentX = parseFloat(values[4]) || 0;
+                    currentY = parseFloat(values[5]) || 0;
+                }
+                
+                startX = e.clientX - currentX;
+                startY = e.clientY - currentY;
+                e.preventDefault();
+            }
+        });
+    
+        $(document).on('mousemove', function (e) {
+            if (!isDragging || scale <= 1) return;
+            e.preventDefault();
+            
+            currentX = e.clientX - startX;
+            currentY = e.clientY - startY;
+            
+            // Apply boundaries to prevent dragging too far
+            const containerWidth = $zoomContainer.width();
+            const containerHeight = $zoomContainer.height();
+            const imageWidth = $modalImage.width() * scale;
+            const imageHeight = $modalImage.height() * scale;
+            
+            const maxX = Math.max(0, (imageWidth - containerWidth) / 2);
+            const maxY = Math.max(0, (imageHeight - containerHeight) / 2);
+            
+            currentX = Math.min(maxX, Math.max(-maxX, currentX));
+            currentY = Math.min(maxY, Math.max(-maxY, currentY));
+            
+            $imageWrapper.css('transform', `translate(${currentX}px, ${currentY}px)`);
+        });
+    
+        $(document).on('mouseup', function () {
+            if (isDragging) {
+                isDragging = false;
+                $zoomContainer.css('cursor', scale > 1 ? 'grab' : 'default');
+            }
+        });
+    
+        // Optional: double-click to toggle zoom
+        $modalImage.on('dblclick', function () {
+            if (scale === 1) {
+                scale = 2;
+            } else {
+                resetZoom();
+                return;
+            }
+            updateZoom();
+        });
+    
+        // Mouse wheel zoom (optional enhancement)
+        $zoomContainer.on('wheel', function(e) {
+            e.preventDefault();
+            const delta = e.originalEvent.deltaY;
+            
+            if (delta > 0 && scale > minScale) {
+                // Scroll down - zoom out
+                scale -= scaleStep;
+                updateZoom();
+            } else if (delta < 0 && scale < maxScale) {
+                // Scroll up - zoom in
+                scale += scaleStep;
+                updateZoom();
+            }
+        });
+    
+        // Touch support for mobile
+        let touchStartX = 0, touchStartY = 0;
+        
+        $zoomContainer.on('touchstart', function(e) {
+            if (scale > 1) {
+                const touch = e.originalEvent.touches[0];
+                
+                // Get current transform values
+                const transform = $imageWrapper.css('transform');
+                const matrix = transform.match(/matrix\([^)]+\)/);
+                if (matrix) {
+                    const values = matrix[0].slice(7, -1).split(',');
+                    currentX = parseFloat(values[4]) || 0;
+                    currentY = parseFloat(values[5]) || 0;
+                }
+                
+                touchStartX = touch.clientX - currentX;
+                touchStartY = touch.clientY - currentY;
+            }
+        });
+        
+        $zoomContainer.on('touchmove', function(e) {
+            if (scale > 1) {
+                e.preventDefault();
+                const touch = e.originalEvent.touches[0];
+                
+                currentX = touch.clientX - touchStartX;
+                currentY = touch.clientY - touchStartY;
+                
+                // Apply boundaries
+                const containerWidth = $zoomContainer.width();
+                const containerHeight = $zoomContainer.height();
+                const imageWidth = $modalImage.width() * scale;
+                const imageHeight = $modalImage.height() * scale;
+                
+                const maxX = Math.max(0, (imageWidth - containerWidth) / 2);
+                const maxY = Math.max(0, (imageHeight - containerHeight) / 2);
+                
+                currentX = Math.min(maxX, Math.max(-maxX, currentX));
+                currentY = Math.min(maxY, Math.max(-maxY, currentY));
+                
+                $imageWrapper.css('transform', `translate(${currentX}px, ${currentY}px)`);
+            }
+        });
     }
 });
