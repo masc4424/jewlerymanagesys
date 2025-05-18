@@ -351,15 +351,28 @@ $(document).ready(function () {
                     if (cartData.items && cartData.items.length > 0) {
                         cartData.items.forEach(item => {
                             cartHtml += `
-                                <div class="border rounded p-2 mb-2" data-item-id="${item.id}">
-                                    <strong>${item.model_no}</strong><br>
-                                    Color: ${item.color}<br>
-                                    <div class="d-flex align-items-center mt-2">
-                                        <button class="btn btn-sm btn-secondary me-2 quantity-btn" data-id="${item.id}" data-action="decrease">-</button>
-                                        <span class="quantity-value me-2" id="quantity-${item.id}">${item.quantity}</span>
-                                        <button class="btn btn-sm btn-secondary quantity-btn" data-id="${item.id}" data-action="increase">+</button>
+                                <div class="list-group-item py-3 mb-3 shadow-sm rounded">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <img src="${item.image}" alt="${item.model_no}" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
+                                        <div class="flex-grow-1">
+                                            <h6 class="mb-1">${item.model_no}</h6>
+                                            <small class="text-muted d-block">${item.jewelry_type_name} • ${item.weight}gm</small>
+                                            <small class="text-secondary d-block">Color: ${item.color || 'N/A'}</small>
+                                            <small class="text-secondary d-none">Order ID: ${item.order_id}</small>
+                                        </div>
+                                        <div class="d-flex align-items-center">
+                                            <div class="input-group input-group-sm me-2" style="width: 100px;">
+                                                <button class="btn btn-outline-secondary" type="button" 
+                                                        onclick="updateCartItemQty(${item.id}, ${item.quantity - 1})">-</button>
+                                                <span class="input-group-text bg-light">${item.quantity}</span>
+                                                <button class="btn btn-outline-secondary" type="button"
+                                                        onclick="updateCartItemQty(${item.id}, ${item.quantity + 1})">+</button>
+                                            </div>
+                                            <button class="btn btn-outline-danger btn-sm" onclick="removeCartItem(${item.id})">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
-                                    <button class="btn btn-sm btn-danger mt-2 delete-btn" data-id="${item.id}">Delete</button>
                                 </div>
                             `;
                         });
