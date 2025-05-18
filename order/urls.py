@@ -24,7 +24,7 @@ urlpatterns += [
     path('orders/create_repeat_order/', create_repeat_order, name='create_repeat_order'),
     path('orders/update_order/', update_order, name='update_order'),
     path('orders/get_order/<int:order_id>/', get_order, name='get_order'),
-    path('api/repeated-orders/', repeated_orders_data, name='repeated_orders_data'),
+    path('api/repeated-orders/', repeated_orders_data, name='repeated_orders_data'), 
     path('cart/add/', add_to_cart_ajax, name='add_to_cart_ajax'),
     path('cart/count/<int:client_id>/', cart_item_count, name='cart_item_count'),
     path('api/cart/<int:client_id>/', get_cart_items, name='get_cart_items'),
@@ -35,7 +35,7 @@ urlpatterns += [
     path('update_model_status/', update_model_status, name='update_model_status'),
 
         # API endpoints for repeated orders
-    path('api/repeated-orders/', get_repeated_orders_api, name='api_repeated_orders'),
+    # path('api/repeated-orders/', get_repeated_orders_api, name='api_repeated_orders'),
     path('api/repeated-orders/<int:order_id>/', get_repeated_order_details, name='api_repeated_order_details'),
     path('api/update-repeated-order-status/', update_repeated_order_status, name='api_update_repeated_order_status'),
     path('api/model-statuses/', get_model_statuses, name='api_model_statuses'),
