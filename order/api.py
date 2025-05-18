@@ -814,7 +814,6 @@ def proceed_to_order(request):
             client=item.client,
             model=item.model,
             color=item.color,
-            status=item.status,
             quantity=item.quantity,
             date_of_order=date.today(),
             est_delivery_date=date.today() + timedelta(days=7),
