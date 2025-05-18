@@ -454,8 +454,7 @@ function updateCartCount() {
         type: 'GET',
         success: function(response) {
             if (response.status === 'success') {
-                // Update the div with class fs-tiny instead of the badge
-                $('#go-to-cart .fs-tiny').text(response.total_quantity + ' items');
+                $('#cart-count').text(response.total_quantity + ' items');
             }
         },
         error: function(xhr, status, error) {
