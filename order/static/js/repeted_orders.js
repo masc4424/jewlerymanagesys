@@ -109,7 +109,7 @@ $(document).ready(function() {
                     $.each(response.data, function(i, status) {
                         dropdown.append($('<option></option>')
                             .attr('value', status.id)
-                            .text(status.status));
+                            .text(status.name));
                     });
                     
                     if (selectedStatusId) {
