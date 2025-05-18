@@ -150,7 +150,7 @@ function generateModelCard(model) {
                                 </button>
                             ` : `
                                 <button class="btn btn-secondary btn-sm" disabled id="add-btn-${model.id}">
-                                    ${model.order ? 'Order Pending Delivery' : 'No Order Available'}
+                                    ${model.order ? 'In Progress' : 'No Order Available'}
                                 </button>
                             `}
                         </div>
@@ -224,7 +224,7 @@ function checkOrderForColor(modelId, selectedColor) {
                 // Order exists but not delivered
                 $(`#add-btn-${modelId}`).prop('disabled', true);
                 $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
-                $(`#add-btn-${modelId}`).text('Order Pending Delivery');
+                $(`#add-btn-${modelId}`).text('In Progress');
             } else {
                 // No order exists
                 $(`#add-btn-${modelId}`).prop('disabled', true);
@@ -454,8 +454,7 @@ function updateCartCount() {
         type: 'GET',
         success: function(response) {
             if (response.status === 'success') {
-                // Update the div with class fs-tiny instead of the badge
-                $('#go-to-cart .fs-tiny').text(response.total_quantity + ' items');
+                $('#cart-count').text(response.total_quantity + ' items');
             }
         },
         error: function(xhr, status, error) {
