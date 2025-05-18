@@ -114,6 +114,7 @@ def get_orders_json(request):
         client_name = f"{order.client.first_name} {order.client.last_name}" if order.client else "No Client"
         date_of_order = order.date_of_order.strftime("%Y-%m-%d")
         model_no = order.model.model_no if order.model else "N/A"
+        model_id = order.model.id if order.model else "N/A"
         
         # Create a unique key for grouping
         group_key = f"{client_id}_{date_of_order}_{model_no}"
@@ -123,6 +124,7 @@ def get_orders_json(request):
                 'client': client_name,
                 'client_id': client_id,
                 'date_of_order': date_of_order,
+                'model_id':model_id,
                 'model_no': model_no,
                 'orders': [],
                 'total_quantity': 0,
@@ -174,6 +176,7 @@ def get_orders_json(request):
             'client': group['client'],
             'client_id': group['client_id'],
             'date_of_order': group['date_of_order'],
+            'model_id': group['model_id'],
             'model_no': group['model_no'],
             'model_image': group['model_image'],
             'quantity': group['total_quantity'],

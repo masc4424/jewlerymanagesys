@@ -301,7 +301,7 @@ $(document).ready(function() {
                                         </a>
                                     </li>
                                     <li>
-                                        <a class="dropdown-item change-group-status" href="#" data-group-id="${row.sl_no}">
+                                        <a class="dropdown-item change-group-status" href="#" data-group-id="${row.sl_no}" data-model_id ="${row.model_id}">
                                             <i class="fa-solid fa-toggle-on me-2"></i>Change Status
                                         </a>
                                     </li>
@@ -769,7 +769,8 @@ $(document).ready(function() {
             if (modelStatusId) {
                 // First look for model_id in rowData, then in sl_no if no model_id exists
                 // In your case, it seems the model_id might be stored in a different property
-                const modelId = rowData.model_id || rowData.id || rowData.sl_no || $('#hiddenModelId').val();
+                // const modelId = rowData.model_id || rowData.id || rowData.sl_no || $('#hiddenModelId').val();
+                const modelId = rowData.model_id;
                 
                 console.log('Updating model status:', {
                     model_id: modelId,
