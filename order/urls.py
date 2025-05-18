@@ -35,7 +35,7 @@ urlpatterns += [
     path('update_model_status/', update_model_status, name='update_model_status'),
 
         # API endpoints for repeated orders
-    # path('api/repeated-orders/', get_repeated_orders_api, name='api_repeated_orders'),
+    path('api/repeated-orders/', get_repeated_orders_api, name='api_repeated_orders'),
     path('api/repeated-orders/<int:order_id>/', get_repeated_order_details, name='api_repeated_order_details'),
     path('api/update-repeated-order-status/', update_repeated_order_status, name='api_update_repeated_order_status'),
     path('api/model-statuses/', get_model_statuses, name='api_model_statuses'),
