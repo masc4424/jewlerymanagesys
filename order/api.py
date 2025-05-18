@@ -1,14 +1,18 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 from django.views.decorators.http import require_http_methods
 from django.shortcuts import get_object_or_404
 from django.templatetags.static import static
+from django.contrib.auth.decorators import login_required
+from django.utils.timezone import now
 from django.http import JsonResponse
-from order.models import Order, RepeatedOrder
+from order.models import *
 from product_inv.models import *
 import json
 from datetime import date, timedelta, datetime
+from django.db.models import Sum
+from django.contrib.auth import get_user_model
 
 # @csrf_exempt
 # @require_http_methods(["GET", "POST"])
@@ -145,8 +149,9 @@ def get_orders_json(request):
         grouped_orders[group_key]['total_in_progress'] += in_progress
         
         # Add individual order details to the group
-        status_text = order.status.status if order.status else "N/A"
-        status_id = order.status.id if order.status else None
+        # Make sure to get status from the model properly
+        status_text = order.model.status.status if order.model and hasattr(order.model, 'status') and order.model.status else "N/A"
+        status_id = order.model.status.id if order.model and hasattr(order.model, 'status') and order.model.status else None
         
         grouped_orders[group_key]['orders'].append({
             'order_id': order.id,
@@ -378,3 +383,201 @@ def repeated_orders_data(request):
         })
 
     return JsonResponse({'data': data})
+
+@login_required
+@require_POST
+def add_to_cart_ajax(request):
+    """
+    Add an item to a client's cart via AJAX request.
+    
+    The request.user (admin/staff) can add items to any client's cart.
+    The client_id is passed in the JSON data to identify which client's cart to update.
+    """
+    try:
+        data = json.loads(request.body)
+        model_id = data.get('model_id')
+        color_id = data.get('color_id')
+        quantity = int(data.get('quantity', 1))
+        client_id = data.get('client_id')  # Get client_id from the request data
+        
+        if not client_id:
+            return JsonResponse({'status': 'error', 'message': 'Client ID is required'}, status=400)
+            
+    except (ValueError, KeyError, json.JSONDecodeError):
+        return JsonResponse({'status': 'error', 'message': 'Invalid data'}, status=400)
+
+    # Get the client user
+    client = get_object_or_404(User, id=client_id)
+    
+    # Check if the requesting user has permission to add to this client's cart
+    # (This is optional - depends on your permission model)
+    # if not request.user.has_perm('edit_cart', client):
+    #     return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+    
+    # Get the model and color
+    model_obj = get_object_or_404(Model, id=model_id)
+    color_obj = None
+    if color_id:
+        color_obj = get_object_or_404(ModelColor, id=color_id)
+
+    # Check if item already in cart for this client/model/color and update quantity or create new
+    cart_item, created = ClientAddToCart.objects.get_or_create(
+        client=client,
+        model=model_obj,
+        color=color_obj,
+        defaults={'quantity': quantity}
+    )
+
+    if not created:
+        cart_item.quantity += quantity
+        cart_item.save()
+
+    # Get updated cart counts
+    item_count = ClientAddToCart.objects.filter(client=client).count()
+    total_quantity = ClientAddToCart.objects.filter(client=client).aggregate(
+        total=Sum('quantity'))['total'] or 0
+
+    return JsonResponse({
+        'status': 'success', 
+        'message': 'Added to cart',
+        'count': item_count,
+        'total_quantity': total_quantity
+    })
+
+@login_required
+@require_GET
+def cart_item_count(request, client_id):
+    """
+    Fetches information about a client's cart including:
+    - Count of unique items (different model/color combinations)
+    - Total quantity of all pieces
+    
+    Args:
+        request: The HTTP request
+        client_id: The ID of the client whose cart to check
+        
+    Returns:
+        JsonResponse with cart counts and totals
+    """
+    # Ensure request is AJAX
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        User = get_user_model()
+        # Get the client or return 404
+        client = get_object_or_404(User, id=client_id)
+        
+        # Check if the requesting user has permission to view this client's cart
+        # (This is optional - depends on your permission model)
+        # if not request.user.has_perm('view_cart', client):
+        #     return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
+        
+        # Get count of unique items
+        item_count = ClientAddToCart.objects.filter(client=client).count()
+        
+        # Get total quantity of all items
+        total_quantity = ClientAddToCart.objects.filter(client=client).aggregate(
+            total=Sum('quantity'))['total'] or 0
+        
+        # Return both counts as JSON
+        return JsonResponse({
+            'status': 'success', 
+            'count': item_count,
+            'total_quantity': total_quantity
+        })
+    
+    # Return error for non-AJAX requests
+    return JsonResponse({'status': 'error', 'message': 'Invalid request'}, status=400)
+
+
+@csrf_exempt
+def get_cart_items(request, client_id):
+    """Get all items in the client's cart"""
+    cart_items = ClientAddToCart.objects.filter(client_id=client_id).select_related('model', 'color', 'model__jewelry_type')
+
+    items = []
+    for item in cart_items:
+        # Image
+        image_url = static(str(item.model.model_img)) if getattr(item.model, 'model_img', None) else static('img/default_image.png')
+
+        # Order ID logic
+        order_id = None
+        if hasattr(item.model, 'orders'):
+            order = item.model.orders.first()
+            if order:
+                order_id = order.id
+        if not order_id and item.color and hasattr(item.color, 'orders'):
+            order = item.color.orders.first()
+            if order:
+                order_id = order.id
+
+        # Append clean dict
+        items.append({
+            'id': item.id,
+            'model_id': item.model.id,
+            'model_no': item.model.model_no,
+            'jewelry_type_name': item.model.jewelry_type.name if item.model.jewelry_type else '',
+            'weight': item.model.weight,
+            'quantity': item.quantity,
+            'color': item.color.color if item.color else '',
+            'image': image_url,
+            'order_id': order_id
+        })
+
+    return JsonResponse({'status': 'success', 'items': items})
+
+@csrf_exempt
+def update_cart_quantity(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            item_id = data.get('item_id')
+            action = data.get('action')
+
+            cart_item = ClientAddToCart.objects.get(id=item_id)
+
+            if action == 'increase':
+                cart_item.quantity += 1
+            elif action == 'decrease':
+                if cart_item.quantity > 1:
+                    cart_item.quantity -= 1
+                else:
+                    return JsonResponse({'success': False, 'message': 'Minimum quantity is 1.'})
+            else:
+                return JsonResponse({'success': False, 'message': 'Invalid action.'})
+
+            cart_item.save()
+            return JsonResponse({'success': True, 'quantity': cart_item.quantity})
+
+        except ClientAddToCart.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Item not found.'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': str(e)})
+
+    return JsonResponse({'success': False, 'message': 'Invalid request method.'})
+
+
+@csrf_exempt
+def delete_cart_item(request, item_id):
+    ClientAddToCart.objects.filter(id=item_id).delete()
+    return JsonResponse({"success": True})
+
+
+@csrf_exempt
+def proceed_to_order(request):
+    import json
+    data = json.loads(request.body)
+    client_id = data.get('client_id')
+    cart_items = ClientAddToCart.objects.filter(client_id=client_id)
+    
+    for item in cart_items:
+        Order.objects.create(
+            client=item.client,
+            model=item.model,
+            color=item.color,
+            status=item.status,
+            quantity=item.quantity,
+            date_of_order=date.today(),
+            est_delivery_date=date.today() + timedelta(days=7),
+        )
+    cart_items.delete()
+    return JsonResponse({"success": True})
+

@@ -87,7 +87,9 @@ $(document).ready(function() {
                             'width="40" height="40" alt="Model ' + row.model_no + '" ' +
                             'data-bs-toggle="modal" data-bs-target="#modelImageModal" ' +
                             'data-model-no="' + row.model_no + '" ' +
-                            'data-img-src="' + row.model_image + '">' +
+                            'data-img-src="' + row.model_image + '" ' +
+                            'data-bs-toggle="tooltip" title="Click to view" ' +
+                            'data-bs-placement="top">' +
                             '</div>';
                     }
                     html += '<span>' + (row.model_no || 'N/A') + '</span></div>';
@@ -321,39 +323,22 @@ $(document).ready(function() {
                             `;
                         });
                         
-                        // Add a group action option
                         html += `
-                                <li class="dropdown-header">Group Actions</li>
-                                <li>
-                                    <button class="dropdown-item d-flex align-items-center create-similar-order" 
-                                        data-client-id="${row.client_id || ''}" 
-                                        data-model-no="${row.model_no || ''}">
-                                        <i class="fa-solid fa-plus me-2 text-primary"></i>
-                                        <span>Create Similar Order</span>
-                                    </button>
-                                </li>
-                            </ul>
-                        </div>
+                                </ul>
+                            </div>
                         `;
                         
                         return html;
                     }
                     
-                    // For rows without orders, provide a simplified action menu
+                    // For rows without orders, provide a minimal action menu
                     return `
                         <div class="action-menu">
                             <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="fa-solid fa-ellipsis-vertical"></i>
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                <li>
-                                    <button class="dropdown-item d-flex align-items-center create-similar-order" 
-                                        data-client-id="${row.client_id || ''}" 
-                                        data-model-no="${row.model_no || ''}">
-                                        <i class="fa-solid fa-plus me-2 text-primary"></i>
-                                        <span>Create New Order</span>
-                                    </button>
-                                </li>
+                                <li class="dropdown-header">No Orders Available</li>
                             </ul>
                         </div>
                     `;

@@ -17,7 +17,7 @@ $(document).ready(function() {
                 render: function(data, type, row) {
                     return `<div class="d-flex align-items-center">
                         ${row.model_img ? 
-                          `<img src="${row.model_img}" alt="Model" class="me-2 rounded table-img">` : 
+                          `<img src="${row.model_img}" alt="Model" class="me-2 rounded table-img model-image-clickable" data-img-src="${row.model_img}">` : 
                           '<span class="badge bg-secondary me-2">No Image</span>'}
                         <strong>${row.model_no}</strong>
                     </div>`;
@@ -155,7 +155,7 @@ $(document).ready(function() {
                 render: function(data, type, row) {
                     return `<div class="d-flex align-items-center">
                         ${row.model_img ? 
-                          `<img src="${row.model_img}" alt="Model" class="me-2 rounded table-img">` : 
+                          `<img src="${row.model_img}" alt="Model" class="me-2 rounded table-img model-image-clickable" data-img-src="${row.model_img}">` : 
                           '<span class="badge bg-secondary me-2">No Image</span>'}
                         <strong>${row.model_no}</strong>
                     </div>`;
@@ -196,6 +196,42 @@ $(document).ready(function() {
                 }
             }
         ]
+    });
+
+    // Add image modal HTML to the document
+    $('body').append(`
+        <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="imageModalLabel">Model Image</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img id="modalImage" src="" alt="Model" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
+
+    // Style for clickable images
+    $('<style>')
+        .text('.model-image-clickable { cursor: pointer; transition: transform 0.2s; } .model-image-clickable:hover { transform: scale(1.1); }')
+        .appendTo('head');
+
+    // Handle click on model images in any table
+    $(document).on('click', '.model-image-clickable', function(e) {
+        e.stopPropagation(); // Prevent row click events
+        const imgSrc = $(this).data('img-src');
+        $('#modalImage').attr('src', imgSrc);
+        
+        // Get model number from the table cell
+        const modelNo = $(this).closest('div').find('strong').text();
+        $('#imageModalLabel').text(`Model: ${modelNo}`);
+        
+        const imageModal = new bootstrap.Modal(document.getElementById('imageModal'));
+        imageModal.show();
     });
 
     // My Orders Tab Filters

@@ -12,6 +12,7 @@ urlpatterns = [
     path('invoices', invoice_list, name='invoices'),
     path('invoice_add', invoice_add, name='invoices'),
     path('client_order_list', client_order_list, name='client_order_list'),
+    path('ajax/cart/<int:client_id>/', add_to_cart_side_view, name='ajax_add_to_cart_side'),
 ]
 
 #api
@@ -24,6 +25,12 @@ urlpatterns += [
     path('orders/update_order/', update_order, name='update_order'),
     path('orders/get_order/<int:order_id>/', get_order, name='get_order'),
     path('api/repeated-orders/', repeated_orders_data, name='repeated_orders_data'),
+    path('cart/add/', add_to_cart_ajax, name='add_to_cart_ajax'),
+    path('cart/count/<int:client_id>/', cart_item_count, name='cart_item_count'),
+    path('api/cart/<int:client_id>/', get_cart_items, name='get_cart_items'),
+    path('api/cart/delete/<int:item_id>/', delete_cart_item, name='delete_cart_item'),
+    path('api/cart/proceed/', proceed_to_order, name='proceed_to_order'),
+    path('api/cart/update_quantity/', update_cart_quantity, name='update_cart_quantity'),
 ]
 
 urlpatterns += [

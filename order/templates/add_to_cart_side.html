@@ -1,0 +1,25 @@
+<div class="offcanvas offcanvas-end" tabindex="-1" id="clientSideModal" aria-labelledby="clientSideModalLabel">
+  <div class="offcanvas-header">
+    <h5 id="clientSideModalLabel">Your Cart</h5>
+    <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body" id="modal-content-body">
+    <input type="hidden" name="client_id" id="clientIdHidden" value="{{ client.id }}">
+    <!-- Content will be injected by AJAX -->
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">Loading your cart...</p>
+    </div>
+
+      <!-- Cart content will be injected here -->
+    <div id="cartItemsContainer">
+        <!-- Injected via AJAX -->
+    </div>
+
+    <div class="mt-4 text-center">
+        <button class="btn btn-success w-100" id="proceedToOrderBtn">Proceed to Order</button>
+    </div>
+  </div>
+</div>
