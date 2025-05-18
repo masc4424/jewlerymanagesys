@@ -4,9 +4,17 @@
 {% block title %}Re Orders{% endblock %}
 
 {% block extra_css %}
+    <!-- Base CSS -->
     <link rel="stylesheet" href="{% static 'css/order_list.css' %}">
+    
+    <!-- DataTables Core CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
+    
+    <!-- DataTables Buttons CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.2.2/css/buttons.bootstrap5.min.css">
+    
+    <!-- DataTables Responsive CSS - Add this -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/responsive/2.2.9/css/responsive.bootstrap5.min.css">
 {% endblock %}
 
 {% block content %}
@@ -17,19 +25,73 @@
         <div class="card">
             <div class="card-body">
                 <div class="table-responsive">
-                    <table id="repeatedOrdersTable" class="table table-striped align-middle w-100">
+                    <!-- Add data-bs-spy attribute to monitor rendering -->
+                    <table id="repeatedOrdersTable" class="table table-striped table-bordered" width="100%" data-bs-spy="scroll">
                         <thead>
                             <tr>
                                 <th>Sr. No.</th>
                                 <th>Client</th>
                                 <th>Model</th>
                                 <th>Delivery Status</th>
+                                <th>New Model Status</th>
                                 <th>Qty / Colour</th>
-                                <th>Weight (g)</th>
-                                <th>Action</th>
+                                <th>Weight</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
+                        <tbody>
+                            <!-- Empty placeholder row to ensure tbody exists -->
+                            <tr class="placeholder-row">
+                                <td colspan="8">Loading data...</td>
+                            </tr>
+                        </tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Update Status Modal -->
+    <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="updateStatusModalLabel">Update Order Status</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="statusForm">
+                        <input type="hidden" id="order_id" name="order_id">
+                        <!-- CSRF Token - required for Django -->
+                        <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                        
+                        <div class="mb-3">
+                            <label for="status_id" class="form-label">Status</label>
+                            <select class="form-select" id="status_id" name="status_id" required>
+                                <!-- Options will be loaded dynamically -->
+                                <option value="">Loading statuses...</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="quantity_delivered" class="form-label">Quantity Delivered</label>
+                            <input type="number" class="form-control" id="quantity_delivered" name="quantity_delivered">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="est_delivery_date" class="form-label">Estimated Delivery Date</label>
+                            <input type="date" class="form-control" id="est_delivery_date" name="est_delivery_date">
+                        </div>
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="delivered" name="delivered">
+                            <label class="form-check-label" for="delivered">Marked as Delivered</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveStatusBtn">Save changes</button>
                 </div>
             </div>
         </div>
@@ -39,11 +101,33 @@
 {% endblock %}
 
 {% block extra_js %}
+    <!-- Make sure jQuery is loaded in base.html before these scripts -->
+    
+    <!-- DataTables Core -->
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    
+    <!-- DataTables Buttons -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/dataTables.buttons.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.bootstrap5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.html5.min.js"></script>
     <script src="https://cdn.datatables.net/buttons/2.2.2/js/buttons.print.min.js"></script>
+    
+    <!-- DataTables Responsive -->
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/dataTables.responsive.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/2.2.9/js/responsive.bootstrap5.min.js"></script>
+    
+    <!-- Add a small script to check if jQuery and DataTables are properly loaded -->
+    <script>
+        console.log("Checking dependencies:");
+        console.log("jQuery loaded:", typeof jQuery !== 'undefined' ? "Yes" : "No");
+        console.log("jQuery version:", jQuery.fn.jquery);
+        console.log("DataTables loaded:", typeof $.fn.DataTable !== 'undefined' ? "Yes" : "No");
+    </script>
+    
+    <!-- Your custom script -->
     <script src="{% static 'js/repeted_orders.js' %}"></script>
 {% endblock %}

@@ -5,7 +5,51 @@ from django.contrib.auth.decorators import login_required
 from .models import *
 import json
 import os
+import re
+import random
+import string
 from django.conf import settings
+
+def generate_username(full_name, email):
+    """Generate a unique username from full name or email"""
+    # First try using full name (first name + first letter of last name)
+    if full_name:
+        # Split the full name and get components
+        name_parts = full_name.split(' ', 1)
+        first_name = name_parts[0].lower()
+        
+        # Get first letter of last name if available
+        last_initial = ''
+        if len(name_parts) > 1 and name_parts[1]:
+            last_initial = name_parts[1][0].lower()
+        
+        # Generate base username
+        base_username = f"{first_name}{last_initial}"
+        
+        # Remove special characters
+        base_username = re.sub(r'[^a-z0-9]', '', base_username)
+    else:
+        # Use email prefix as fallback
+        base_username = email.split('@')[0].lower()
+        base_username = re.sub(r'[^a-z0-9]', '', base_username)
+    
+    # Make sure username is at least 3 characters
+    if len(base_username) < 3:
+        base_username += ''.join(random.choices(string.ascii_lowercase, k=3-len(base_username)))
+    
+    # Try the base username first
+    if not User.objects.filter(username=base_username).exists():
+        return base_username
+    
+    # Try adding random digits if base username is taken
+    for i in range(1, 100):
+        new_username = f"{base_username}{i}"
+        if not User.objects.filter(username=new_username).exists():
+            return new_username
+    
+    # If all else fails, add random string
+    random_suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+    return f"{base_username}_{random_suffix}"
 
 @login_required
 def get_client_users(request):
@@ -64,7 +108,6 @@ def add_client_user(request):
     """API endpoint to add a new client user"""
     if request.method == 'POST':
         try:
-            username = request.POST.get('username')
             email = request.POST.get('email')
             password = request.POST.get('password')
             full_name = request.POST.get('full_name', '').strip()
@@ -72,10 +115,10 @@ def add_client_user(request):
             address = request.POST.get('address')
             role_id = request.POST.get('role')
 
-            # Check if username or email already exists
-            if User.objects.filter(username=username).exists():
-                return JsonResponse({'status': 'error', 'message': 'Username already exists'})
+            # Generate a unique username
+            username = generate_username(full_name, email)
 
+            # Check if email already exists
             if User.objects.filter(email=email).exists():
                 return JsonResponse({'status': 'error', 'message': 'Email already exists'})
 
@@ -130,7 +173,11 @@ def add_client_user(request):
                 profile.profile_image = profile_image
                 profile.save()
 
-            return JsonResponse({'status': 'success', 'message': 'User added successfully'})
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'User added successfully',
+                'username': username
+            })
 
         except Exception as e:
             return JsonResponse({'status': 'error', 'message': str(e)})

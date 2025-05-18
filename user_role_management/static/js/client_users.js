@@ -109,7 +109,7 @@ $(document).ready(function() {
                     Swal.fire({
                         icon: 'success',
                         title: 'Success',
-                        text: response.message
+                        text: `${response.message} (Username: ${response.username})`
                     });
                     $('#addUserForm')[0].reset();
                     $('#add_image_preview').attr('src', '/static/user_image/default.png');

@@ -95,7 +95,7 @@ def get_client_models(request):
                 if order:
                     order_data = {
                         'order_id': order.id,
-                        'order_color': order.color.color if order.color else None
+                        'is_delivered': order.delivered  # Add delivery status
                     }
                 else:
                     order_data = None
@@ -179,15 +179,20 @@ def check_order_for_color(request, model_id):
         model = Model.objects.get(id=model_id)
         
         # Check if there's an order for the given model and color
-        order_exists = Order.objects.filter(
+        order = Order.objects.filter(
             client=request.user,
-            model=model,
-            color=color
-        ).exists()
+            model=model
+        ).first()
+        
+        order_exists = order is not None
+        is_delivered = order.delivered if order else False
         
         return JsonResponse({
             'status': 'success',
-            'data': {'order_exists': order_exists}
+            'data': {
+                'order_exists': order_exists,
+                'is_delivered': is_delivered
+            }
         })
     
     except Model.DoesNotExist:
@@ -202,7 +207,7 @@ def check_order_for_color(request, model_id):
             'status': 'error',
             'message': str(e)
         }, status=500)
-
+    
 @login_required
 @require_POST
 def add_to_cart(request):

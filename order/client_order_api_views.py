@@ -35,16 +35,17 @@ def client_orders_api(request):
         # Check if this order has a defective/return record
         order_issue = defective_returns.filter(order=order).first()
         
-        # Determine status based on DefectiveOrder record
+        # Get status from model.status table
+        # Get status from the model (order.model.status)
+        status = order.model.status.status if order.model and order.model.status else 'NA'
+
+        
+        # Determine if there's a defective/return status that should override
         if order_issue:
             if order_issue.is_defective:
                 status = "DEFECTIVE"
             elif order_issue.is_return:
                 status = "RETURNED"
-            else:
-                status = order.status.status if order.status else 'Pending'
-        else:
-            status = order.status.status if order.status else 'Pending'
         
         data.append({
             'id': order.id,
@@ -58,7 +59,7 @@ def client_orders_api(request):
             'est_delivery_date': order.est_delivery_date.isoformat() if order.est_delivery_date else None,
             'weight': str(order.model.weight) + ' g',
             'is_approved': order.is_approved,
-            'delivered': order.delivered,
+            'delivered': order.delivered,  # Delivery status from Order table
             'is_repeated': False,
             'return_reason': order_issue.issue_description if order_issue else None,
             'return_date': order_issue.reported_date.isoformat() if order_issue else None,
@@ -72,16 +73,15 @@ def client_orders_api(request):
         # Check if this repeated order has a defective/return record
         repeated_issue = defective_returns.filter(repeated_order_id=repeated_order.repeat_order_id).first()
         
-        # Determine status based on DefectiveOrder record
+        # Get status from model.status table
+        status = repeated_order.original_order.model.status.status if repeated_order.original_order.model.status else 'Pending'
+        
+        # Determine if there's a defective/return status that should override
         if repeated_issue:
             if repeated_issue.is_defective:
                 status = "DEFECTIVE"
             elif repeated_issue.is_return:
                 status = "RETURNED"
-            else:
-                status = repeated_order.status.status if repeated_order.status else 'Pending'
-        else:
-            status = repeated_order.status.status if repeated_order.status else 'Pending'
         
         data.append({
             'id': repeated_order.id,
@@ -95,7 +95,7 @@ def client_orders_api(request):
             'est_delivery_date': repeated_order.est_delivery_date.isoformat() if repeated_order.est_delivery_date else None,
             'weight': str(repeated_order.original_order.model.weight) + ' g',
             'is_approved': True,  # Repeated orders are auto-approved
-            'delivered': repeated_order.delivered,
+            'delivered': repeated_order.delivered,  # Delivery status from RepeatedOrder table
             'is_repeated': True,
             'repeat_order_id': repeated_order.repeat_order_id,
             'return_reason': repeated_issue.issue_description if repeated_issue else None,
@@ -104,7 +104,6 @@ def client_orders_api(request):
         })
     
     return JsonResponse({'data': data})
-
 
 @login_required
 @require_POST

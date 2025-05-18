@@ -1,4 +1,19 @@
 $(document).ready(function () {
+    // Fix for tab highlighting
+    $('.nav-link').on('click', function (e) {
+        // Remove active class from all tabs
+        $('.nav-link').removeClass('active');
+        // Add active class to clicked tab
+        $(this).addClass('active');
+    });
+    
+    // Bootstrap 5 tab event handler (alternative approach)
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        // Remove active class from all tabs
+        $('.nav-link').removeClass('active');
+        // Add active class to the active tab
+        $(e.target).addClass('active');
+    });
     loadModels();
     updateCartCount();
 });
@@ -12,73 +27,44 @@ function loadModels() {
         success: function (response) {
             if (response.status === 'success') {
                 const models = response.data;
-                let cardsHtml = '';
+                let readyToDeliverHtml = '';
+                let othersHtml = '';
+                let readyToDeliverCount = 0;
+                let othersCount = 0;
 
                 models.forEach((model, index) => {
-                    // Check if order exists to show Add to Cart button
-                    const hasOrder = model.order && model.order.order_id;
-
-                    cardsHtml += `
-                        <div class="col-md-3 mb-3">
-                            <div class="card h-100 shadow-sm" id="model-${model.id}">
-                                <div class="position-relative">
-                                    <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
-                                    <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}x${model.breadth}cm</span>
-                                    <img src="${model.model_img}" class="card-img-top cursor-pointer" alt="${model.model_no}" 
-                                         style="height: 180px; object-fit: cover;" 
-                                         onclick="openImageModal('${model.model_img}', '${model.model_no}', '${model.jewelry_type_name}', '${model.weight}', '${model.length}', '${model.breadth}')">
-                                </div>
-                                <div class="card-body p-2">
-                                    <div class="row align-items-center">
-                                        <!-- Left side: Model info -->
-                                        <div class="col-6">
-                                            <h6 class="card-title mb-0">${model.model_no}</h6>
-                                            <small class="text-muted">${model.jewelry_type_name} &bull; </small>
-                                            <small class="text-muted">${model.weight}gm</small>
-                                        </div>
-                                        
-                                        <!-- Right side: Color dropdown with label -->
-                                        <div class="col-6">
-                                            <label for="color-select-${model.id}" class="form-label mb-1 small">Color:</label>
-                                            <select id="color-select-${model.id}" class="form-select form-select-sm color-select" data-model-id="${model.id}" data-order-id="${model.order ? model.order.order_id : ''}">
-                                                ${model.colors.map(color => `<option value="${color.id}">${color.color}</option>`).join('')}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Center: Add button and controls -->
-                                    <div class="row mt-2">
-                                        <div class="col-12 text-center">
-                                            <div id="cart-controls-${model.id}" class="d-none">
-                                                <div class="d-flex justify-content-center align-items-center gap-2">
-                                                    <button class="btn btn-outline-secondary btn-sm" onclick="decrementQty(${model.id})">-</button>
-                                                    <span id="qty-${model.id}">1</span>
-                                                    <button class="btn btn-outline-secondary btn-sm" onclick="incrementQty(${model.id})">+</button>
-                                                    <button class="btn btn-success btn-sm ms-2" onclick="addToCart(${model.id})" title="Add to Cart">
-                                                        <i class="fa-solid fa-cart-shopping"></i>
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Add button: Will be visible only if there's an order -->
-                                            ${hasOrder ? `
-                                                <button class="btn btn-success btn-sm" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
-                                                    Re-order <i class="fa-solid fa-rotate-right"></i>
-                                                </button>
-                                            ` : `
-                                                <button class="btn btn-secondary btn-sm" disabled>
-                                                    No Order Available
-                                                </button>
-                                            `}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    // Check if model has a delivered order
+                    const isReadyToDeliver = model.order && model.order.is_delivered;
+                    
+                    // Generate the card HTML
+                    const cardHtml = generateModelCard(model);
+                    
+                    // Add to the appropriate tab
+                    if (isReadyToDeliver) {
+                        readyToDeliverHtml += cardHtml;
+                        readyToDeliverCount++;
+                    } else {
+                        othersHtml += cardHtml;
+                        othersCount++;
+                    }
                 });
 
-                $('#model-cards').html(cardsHtml);
+                // Update the DOM with generated HTML
+                $('#ready-to-deliver-cards').html(readyToDeliverHtml);
+                $('#others-cards').html(othersHtml);
+                
+                // Show/hide empty states
+                if (readyToDeliverCount === 0) {
+                    $('#ready-to-deliver-empty').removeClass('d-none');
+                } else {
+                    $('#ready-to-deliver-empty').addClass('d-none');
+                }
+                
+                if (othersCount === 0) {
+                    $('#others-empty').removeClass('d-none');
+                } else {
+                    $('#others-empty').addClass('d-none');
+                }
                 
                 // Attach event listeners AFTER adding the HTML to the DOM
                 $('.color-select').on('change', function() {
@@ -97,54 +83,120 @@ function loadModels() {
                 
                 // Add the image modal to the page if it doesn't exist
                 if ($('#imageZoomModal').length === 0) {
-                    $('body').append(`
-                        <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-fullscreen">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h5 class="modal-title" id="imageModalTitle">Image Preview</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body text-center position-relative">
-                                        <!-- Display model details: Dimension, Jewelry Type, Weight -->
-                                        <div id="model-details" class="mb-3">
-                                            <p id="model-info" class="mb-0"></p>
-                                        </div>
-                                        <!-- Moved zoom controls to the top -->
-                                        <div class="zoom-controls mt-3">
-                                            <button class="btn btn-outline-secondary btn-sm me-2" id="zoomOut">
-                                                <i class="fa-solid fa-search-minus"></i> Zoom Out
-                                            </button>
-                                            <button class="btn btn-outline-secondary btn-sm" id="zoomIn">
-                                                <i class="fa-solid fa-search-plus"></i> Zoom In
-                                            </button>
-                                            <button class="btn btn-outline-secondary btn-sm ms-2" id="resetZoom">
-                                                <i class="fa-solid fa-arrows-rotate"></i> Reset
-                                            </button>
-                                        </div>
-
-                                        <div class="zoom-container" style="overflow: hidden; position: relative;">
-                                            <img id="zoomImage" src="" alt="Model Preview" 
-                                                style="max-width: 100%; transform-origin: center; transition: transform 0.2s;">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `);
-                    
-                    // Initialize zoom functionality
+                    addImageZoomModal();
                     initializeImageZoom();
                 }
             } else {
-                $('#response-container').html(`<div class="alert alert-warning">${response.message}</div>`);
+                showAlert('warning', response.message);
             }
         },
         error: function (xhr, status, error) {
             console.error('Error:', error);
-            $('#response-container').html(`<div class="alert alert-danger">Error: ${error}</div>`);
+            showAlert('danger', `Error: ${error}`);
         }
     });
+}
+
+function generateModelCard(model) {
+    // Check if order exists AND is delivered to show Re-order button
+    const hasDeliveredOrder = model.order && model.order.order_id && model.order.is_delivered;
+    
+    return `
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 shadow-sm" id="model-${model.id}">
+                <div class="position-relative">
+                    <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
+                    <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}x${model.breadth}cm</span>
+                    <img src="${model.model_img}" class="card-img-top cursor-pointer" alt="${model.model_no}" 
+                         style="height: 180px; object-fit: cover;" 
+                         onclick="openImageModal('${model.model_img}', '${model.model_no}', '${model.jewelry_type_name}', '${model.weight}', '${model.length}', '${model.breadth}')">
+                </div>
+                <div class="card-body p-2">
+                    <div class="row align-items-center">
+                        <!-- Left side: Model info -->
+                        <div class="col-6">
+                            <h6 class="card-title mb-0">${model.model_no}</h6>
+                            <small class="text-muted">${model.jewelry_type_name} &bull; </small>
+                            <small class="text-muted">${model.weight}gm</small>
+                        </div>
+                        
+                        <!-- Right side: Color dropdown with label -->
+                        <div class="col-6">
+                            <label for="color-select-${model.id}" class="form-label mb-1 small">Color:</label>
+                            <select id="color-select-${model.id}" class="form-select form-select-sm color-select" data-model-id="${model.id}" data-order-id="${model.order ? model.order.order_id : ''}">
+                                ${model.colors.map(color => `<option value="${color.id}">${color.color}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Center: Add button and controls -->
+                    <div class="row mt-2">
+                        <div class="col-12 text-center">
+                            <div id="cart-controls-${model.id}" class="d-none">
+                                <div class="d-flex justify-content-center align-items-center gap-2">
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="decrementQty(${model.id})">-</button>
+                                    <span id="qty-${model.id}">1</span>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="incrementQty(${model.id})">+</button>
+                                    <button class="btn btn-success btn-sm ms-2" onclick="addToCart(${model.id})" title="Add to Cart">
+                                        <i class="fa-solid fa-cart-shopping"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Re-order button: Will be visible only if there's a delivered order -->
+                            ${hasDeliveredOrder ? `
+                                <button class="btn btn-success btn-sm" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
+                                    Re-order <i class="fa-solid fa-rotate-right"></i>
+                                </button>
+                            ` : `
+                                <button class="btn btn-secondary btn-sm" disabled id="add-btn-${model.id}">
+                                    ${model.order ? 'Order Pending Delivery' : 'No Order Available'}
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function addImageZoomModal() {
+    $('body').append(`
+        <div class="modal fade" id="imageZoomModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-fullscreen">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="imageModalTitle">Image Preview</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body text-center position-relative">
+                        <!-- Display model details: Dimension, Jewelry Type, Weight -->
+                        <div id="model-details" class="mb-3">
+                            <p id="model-info" class="mb-0"></p>
+                        </div>
+                        <!-- Moved zoom controls to the top -->
+                        <div class="zoom-controls mt-3">
+                            <button class="btn btn-outline-secondary btn-sm me-2" id="zoomOut">
+                                <i class="fa-solid fa-search-minus"></i> Zoom Out
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" id="zoomIn">
+                                <i class="fa-solid fa-search-plus"></i> Zoom In
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm ms-2" id="resetZoom">
+                                <i class="fa-solid fa-arrows-rotate"></i> Reset
+                            </button>
+                        </div>
+
+                        <div class="zoom-container" style="overflow: hidden; position: relative;">
+                            <img id="zoomImage" src="" alt="Model Preview" 
+                                style="max-width: 100%; transform-origin: center; transition: transform 0.2s;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `);
 }
 
 function checkOrderForColor(modelId, selectedColor) {
@@ -163,11 +215,18 @@ function checkOrderForColor(modelId, selectedColor) {
         dataType: 'json',
         success: function (response) {
             console.log('Response:', response);
-            if (response.status === 'success' && response.data && response.data.order_exists) {
+            if (response.status === 'success' && response.data && response.data.order_exists && response.data.is_delivered) {
+                // Order exists AND is delivered
                 $(`#add-btn-${modelId}`).prop('disabled', false);
                 $(`#add-btn-${modelId}`).removeClass('btn-secondary').addClass('btn-success');
                 $(`#add-btn-${modelId}`).html('Re-order <i class="fa-solid fa-rotate-right"></i>');
+            } else if (response.status === 'success' && response.data && response.data.order_exists) {
+                // Order exists but not delivered
+                $(`#add-btn-${modelId}`).prop('disabled', true);
+                $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
+                $(`#add-btn-${modelId}`).text('Order Pending Delivery');
             } else {
+                // No order exists
                 $(`#add-btn-${modelId}`).prop('disabled', true);
                 $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
                 $(`#add-btn-${modelId}`).text('No Order for this Color');
@@ -181,7 +240,6 @@ function checkOrderForColor(modelId, selectedColor) {
         }
     });
 }
-
 // Function to open the image modal
 function openImageModal(imageUrl, modelName, jewelryType, weight, length, breadth) {
     $('#imageModalTitle').text(modelName);

@@ -11,8 +11,15 @@ $(document).ready(function() {
         autoWidth: false,
         order: [[5, 'desc']], // Order by date descending
         columns: [
+            {
+                title: 'Sr. No',
+                data: null,
+                render: function (data, type, row, meta) {
+                    return meta.row + 1;
+                }
+            },
             { 
-                title: 'Model', 
+                title: 'Model Name', 
                 data: null,
                 render: function(data, type, row) {
                     return `<div class="d-flex align-items-center">
@@ -24,7 +31,7 @@ $(document).ready(function() {
                 }
             },
             { 
-                title: 'Delivery Status', 
+                title: 'Model Status', 
                 data: 'status',
                 render: function(data) {
                     const statusMap = {
@@ -53,21 +60,36 @@ $(document).ready(function() {
                     return `<span class="badge bg-${badgeClass}">${data}</span>`;
                 }
             },
-            { title: 'Jewelry Type', data: 'jewelry_type' },
-            { title: 'Quantity', data: 'quantity' },
-            { title: 'Color', data: 'color' },
+            { 
+                title: 'Delivery Status', 
+                data: 'delivered',
+                render: function(data) {
+                    return data ? 
+                        `<span class="badge bg-success">Delivered</span>` : 
+                        `<span class="badge bg-secondary">Not Delivered</span>`;
+                }
+            },
+            { title: 'Type', data: 'jewelry_type' },
+            { 
+                title: 'Quantity with color', 
+                data: null,
+                render: function(data, type, row) {
+                    return `${row.quantity} (${row.color})`;
+                }
+            },
             { 
                 title: 'Order Date', 
                 data: 'order_date',
                 render: data => new Date(data).toLocaleDateString()
             },
             { 
-                title: 'Est. Delivery', 
+                title: 'Est. Delivery Date', 
                 data: 'est_delivery_date',
                 render: data => data ? new Date(data).toLocaleDateString() : 'Not set'
             },
-            { title: 'Weight/Set', data: 'weight' },
-            {
+            { title: 'Weight/Set(gm)', data: 'weight' }
+            /* Actions column commented out for client view
+            ,{
                 title: 'Actions',
                 data: null,
                 orderable: false,
@@ -108,6 +130,7 @@ $(document).ready(function() {
                     }
                 }
             }
+            */
         ]
     };
 
@@ -137,7 +160,7 @@ $(document).ready(function() {
         }
     });
 
-    // Initialize Returns DataTable
+    // Initialize Returns DataTable with modified columns for returns
     const returnsTable = $('#returnsTable').DataTable({
         ...commonSettings,
         ajax: {
@@ -149,8 +172,15 @@ $(document).ready(function() {
             }
         },
         columns: [
+            {
+                title: 'Sr. No',
+                data: null,
+                render: function (data, type, row, meta) {
+                    return meta.row + 1;
+                }
+            },
             { 
-                title: 'Model', 
+                title: 'Model Name', 
                 data: null,
                 render: function(data, type, row) {
                     return `<div class="d-flex align-items-center">
@@ -169,9 +199,23 @@ $(document).ready(function() {
                     return `<span class="badge bg-${badgeClass}">${data}</span>`;
                 }
             },
-            { title: 'Jewelry Type', data: 'jewelry_type' },
-            { title: 'Quantity', data: 'quantity' },
-            { title: 'Color', data: 'color' },
+            { 
+                title: 'Delivery Status', 
+                data: 'delivered',
+                render: function(data) {
+                    return data ? 
+                        `<span class="badge bg-success">Delivered</span>` : 
+                        `<span class="badge bg-secondary">Not Delivered</span>`;
+                }
+            },
+            { title: 'Type', data: 'jewelry_type' },
+            { 
+                title: 'Quantity with color', 
+                data: null,
+                render: function(data, type, row) {
+                    return `${row.quantity} (${row.color})`;
+                }
+            },
             { 
                 title: 'Order Date', 
                 data: 'order_date',
@@ -234,7 +278,7 @@ $(document).ready(function() {
         imageModal.show();
     });
 
-    // My Orders Tab Filters
+    // My Orders Tab Filters - Changed to "All", "Delivered", "Not Delivered"
     $('#my-orders .filter-btn').on('click', function() {
         const filterValue = $(this).data('filter');
         
@@ -244,18 +288,18 @@ $(document).ready(function() {
         
         $.fn.dataTable.ext.search.pop();
         
-        if (filterValue === 'approved') {
+        if (filterValue === 'delivered') {
             $.fn.dataTable.ext.search.push(
                 function(settings, data, dataIndex) {
                     const order = myOrdersTable.row(dataIndex).data();
-                    return order.is_approved === true;
+                    return order.delivered === true;
                 }
             );
-        } else if (filterValue === 'not-approved') {
+        } else if (filterValue === 'not-delivered') {
             $.fn.dataTable.ext.search.push(
                 function(settings, data, dataIndex) {
                     const order = myOrdersTable.row(dataIndex).data();
-                    return order.is_approved === false;
+                    return order.delivered === false;
                 }
             );
         }
@@ -263,17 +307,38 @@ $(document).ready(function() {
         myOrdersTable.draw();
     });
 
-    // Reorders Tab Filters
+    // Handle reorder filter dropdown change
     $('#reorders .filter-btn').on('click', function() {
         const filterValue = $(this).data('filter');
         
-        // Update active button
+        // Update active button in dropdown
         $('#reorders .filter-btn').removeClass('active');
         $(this).addClass('active');
         
+        // Update dropdown button text
+        let buttonText = 'All Reorders';
+        if (filterValue !== 'all-reorders') {
+            buttonText = $(this).text();
+        }
+        $('#reorderFilterDropdown').text(buttonText);
+        
         $.fn.dataTable.ext.search.pop();
         
-        if (filterValue !== 'all-reorders') {
+        if (filterValue === 'delivered') {
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    const order = reordersTable.row(dataIndex).data();
+                    return order.delivered === true;
+                }
+            );
+        } else if (filterValue === 'not-delivered') {
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    const order = reordersTable.row(dataIndex).data();
+                    return order.delivered === false;
+                }
+            );
+        } else if (filterValue !== 'all-reorders') {
             const status = filterValue.replace('status-', '').replace(/-/g, ' ').toUpperCase();
             
             $.fn.dataTable.ext.search.push(
@@ -311,12 +376,26 @@ $(document).ready(function() {
                     return order.status === 'RETURNED' && !order.status.includes('DEFECTIVE');
                 }
             );
+        } else if (filterValue === 'delivered') {
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    const order = returnsTable.row(dataIndex).data();
+                    return order.delivered === true;
+                }
+            );
+        } else if (filterValue === 'not-delivered') {
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    const order = returnsTable.row(dataIndex).data();
+                    return order.delivered === false;
+                }
+            );
         }
         
         returnsTable.draw();
     });
 
-    // Add new column for return info in returns table
+    // Add return information to rows
     returnsTable.on('draw', function() {
         // Add return information to rows
         $('#returnsTable tbody tr').each(function() {
@@ -324,7 +403,7 @@ $(document).ready(function() {
             if (rowData.return_reason) {
                 const returnInfo = $(`
                     <tr class="return-details bg-light">
-                        <td colspan="9">
+                        <td colspan="10">
                             <div class="p-2">
                                 <h6 class="mb-1">Return Information</h6>
                                 <p class="mb-1"><strong>Reason:</strong> ${rowData.return_reason}</p>
@@ -351,6 +430,7 @@ $(document).ready(function() {
             html: `
                 <div class="text-start">
                     <p><strong>Status:</strong> ${data.status}</p>
+                    <p><strong>Delivery Status:</strong> ${data.delivered ? 'Delivered' : 'Not Delivered'}</p>
                     <p><strong>Return Reason:</strong> ${data.return_reason || 'Not specified'}</p>
                     <p><strong>Return Date:</strong> ${data.return_date ? new Date(data.return_date).toLocaleDateString() : 'N/A'}</p>
                     <p><strong>Affected Pieces:</strong> ${data.return_pieces || 'Not specified'}</p>
@@ -386,6 +466,7 @@ $(document).ready(function() {
         }
     });
     
+    /* Comment out order approval functionality for client view
     // Order Approval with Swal confirmation
     $(document).on('click', '.allow-order', function() {
         const orderId = $(this).data('id');
@@ -513,6 +594,7 @@ $(document).ready(function() {
             }
         });
     });
+    */
 
     // Function to update order statistics
     function updateOrderStats(data) {
@@ -528,10 +610,13 @@ $(document).ready(function() {
         const pendingApproval = data.filter(order => 
             !order.is_approved && !order.is_repeated).length;
         
+        const deliveredOrders = data.filter(order => order.delivered).length;
+        
         $('#activeOrdersCount').text(activeOrders);
         $('#reordersCount').text(reorders);
         $('#returnsCount').text(returns);
         $('#pendingApprovalCount').text(pendingApproval);
+        $('#deliveredOrdersCount').text(deliveredOrders);
     }
 
     // Update statistics on initial load and table reload

@@ -11,6 +11,7 @@
         -webkit-user-drag: none;
         -webkit-user-select: none;
     }
+    
     .zoom-container {
         overflow: auto;
         position: relative;
@@ -30,21 +31,77 @@
     .zoom-container:active {
         cursor: grabbing;
     }
+    
+    .nav-tabs .nav-link {
+        font-weight: 500;
+    }
+    
+    .nav-tabs .nav-link.active {
+        border-bottom: 3px solid #007bff;
+        color: #007bff;
+    }
+    
+    .empty-state {
+        padding: 40px;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        margin: 20px 0;
+    }
+    
+    .empty-state i {
+        font-size: 48px;
+        color: #adb5bd;
+        margin-bottom: 16px;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="d-flex justify-content-end mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">My Models</h4>
         <button id="go-to-cart" class="btn btn-primary" onclick="openClientSideModal()">
-            <div>
-                Go to Cart 
-            </div>
-            <div class="fs-tiny">0</div>
+            <i class="fa-solid fa-cart-shopping me-2"></i>
+            <span>Go to Cart</span>
+            <span id="cart-count" class="badge bg-light text-dark ms-2">0</span>
         </button>
     </div>
     
-    <div class="row" id="model-cards"></div>
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-3" id="modelsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="ready-to-deliver-tab" data-bs-toggle="tab" data-bs-target="#ready-to-deliver" type="button" role="tab" aria-controls="ready-to-deliver" aria-selected="true">
+                Ready to Deliver
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="others-tab" data-bs-toggle="tab" data-bs-target="#others" type="button" role="tab" aria-controls="others" aria-selected="false">
+                Others
+            </button>
+        </li>
+    </ul>
+    
+    <!-- Tabs Content -->
+    <div class="tab-content" id="modelsTabsContent">
+        <div class="tab-pane fade show active" id="ready-to-deliver" role="tabpanel" aria-labelledby="ready-to-deliver-tab">
+            <div class="row" id="ready-to-deliver-cards"></div>
+            <div id="ready-to-deliver-empty" class="empty-state d-none">
+                <i class="fa-solid fa-box-open"></i>
+                <h5>No Models Ready to Deliver</h5>
+                <p class="text-muted">When your models are ready for delivery, they will appear here.</p>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="others" role="tabpanel" aria-labelledby="others-tab">
+            <div class="row" id="others-cards"></div>
+            <div id="others-empty" class="empty-state d-none">
+                <i class="fa-solid fa-clipboard-list"></i>
+                <h5>No Other Models Found</h5>
+                <p class="text-muted">Models that are not ready for delivery will appear here.</p>
+            </div>
+        </div>
+    </div>
+    
     <div id="response-container" class="mt-3" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
     <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 </div>
