@@ -172,6 +172,14 @@ def add_client_user(request):
             if profile_image:
                 profile.profile_image = profile_image
                 profile.save()
+            
+            # Send welcome email to the new client
+            try:
+                send_welcome_email(email, full_name)
+            except Exception as email_error:
+                # Log the error but don't fail the user creation
+                print(f"Failed to send welcome email: {str(email_error)}")
+                # Continue with the user creation process
 
             return JsonResponse({
                 'status': 'success', 
@@ -184,6 +192,33 @@ def add_client_user(request):
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
+
+def send_welcome_email(recipient_email, recipient_name):
+    """Send a welcome email to newly added client"""
+    from django.core.mail import send_mail
+    
+    subject = "Welcome to Vanee Jewelers"
+    message = f"""
+    Hi {recipient_name},
+    
+    Welcome to Vanee Jewelers! You have been added to our system.
+    
+    Thank you for joining us. If you have any questions, please feel free to contact us.
+    
+    Best regards,
+    Vanee Jewelers Team
+    """
+    
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [recipient_email]
+    
+    send_mail(
+        subject=subject,
+        message=message,
+        from_email=from_email,
+        recipient_list=recipient_list,
+        fail_silently=False,
+    )
 
 @csrf_exempt
 @login_required
