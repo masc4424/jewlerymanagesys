@@ -557,6 +557,8 @@ def repeated_orders_data(request):
             'model_img': model_img_url,
             'status_name': ro.status.status if ro.status else (model.status.status if model.status else 'N/A'),
             'status_id': ro.status.id if ro.status else None,
+            'lenght': model.length,
+            'breadth': model.breadth,
             'jewelry_type': model.jewelry_type.name,
             'quantity': ro.quantity,
             'quantity_delivered': ro.quantity_delivered,
@@ -674,6 +676,8 @@ def get_repeated_orders_api(request):
             'quantity_delivered': order.quantity_delivered,
             'color_name': order.color.color if order.color else 'N/A',
             'weight': model.weight if model else None,
+            'lenght': model.length,
+            'breadth': model.breadth,
             'est_delivery_date': order.est_delivery_date.strftime('%Y-%m-%d') if order.est_delivery_date else None,
             'delivered': order.delivered
         }
