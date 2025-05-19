@@ -145,7 +145,7 @@ function generateModelCard(model) {
                             
                             <!-- Re-order button: Will be visible only if there's a delivered order -->
                             ${hasDeliveredOrder ? `
-                                <button class="btn btn-success btn-sm" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
+                                <button class="btn btn-success btn-md" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
                                     Re-order <i class="fa-solid fa-rotate-right"></i>
                                 </button>
                             ` : `

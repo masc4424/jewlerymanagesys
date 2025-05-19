@@ -256,11 +256,19 @@ $(document).ready(function () {
         });
     });
 
-    // Delete cart item - Fixed version
+    // Delete cart item - Improved version
     $(document).on('click', '.delete-btn', function () {
-        const itemId = $(this).data('id');
+        const itemId = $(this).data('item-id');
         const clientId = $('#clientIdHidden').val();
-        const itemElement = $(this).closest('[data-item-id]');
+        
+        // Find the correct parent element to remove
+        // We're using the closest div with class list-group-item which contains this button
+        const itemElement = $(this).closest('.list-group-item');
+        
+        if (itemElement.length === 0) {
+            console.error('Could not find parent element to remove');
+            return;
+        }
         
         // Optimistic UI removal
         itemElement.fadeOut(300);
@@ -273,9 +281,15 @@ $(document).ready(function () {
                 // Complete the removal
                 itemElement.remove();
                 
-                // Check if cart is now empty
-                if ($('#cartItemsContainer').children().length <= 1) { // Only "Proceed to Order" button left
+                // More reliable empty check - directly count visible list-group-items
+                const remainingItems = $('#cartItemsContainer .list-group-item:visible').length;
+                
+                if (remainingItems === 0) {
+                    // No items left, show empty cart message
                     $('#cartItemsContainer').html('<p class="text-center">Your cart is empty.</p>');
+                    
+                    // Also remove the proceed to order button if it exists
+                    $('#proceedToOrderBtn').remove();
                 }
                 
                 // Update the cart badge count
@@ -285,6 +299,71 @@ $(document).ready(function () {
                 // Show the item again if there was an error
                 itemElement.fadeIn(300);
                 Swal.fire('Error', 'Failed to remove item from cart.', 'error');
+            }
+        });
+    });
+
+    // Cart increment/decrement buttons handler
+    $(document).on('click', '.increment-btn, .decrement-btn', function() {
+        // Determine if this is increment or decrement
+        const isIncrement = $(this).hasClass('increment-btn');
+        const action = isIncrement ? 'increase' : 'decrease';
+        
+        // Get the item ID from data attribute
+        const modelId = $(this).data('model-id');
+        
+        // Find the quantity display element (the span between the buttons)
+        const quantityElement = $(this).closest('.input-group').find('.input-group-text');
+        let currentQuantity = parseInt(quantityElement.text()) || 1;
+        
+        // Get client ID from hidden input
+        const clientId = $('#clientIdHidden').val();
+        
+        // Optimistic UI update
+        if (isIncrement) {
+            currentQuantity++;
+            quantityElement.text(currentQuantity);
+        } else if (currentQuantity > 1) {
+            currentQuantity--;
+            quantityElement.text(currentQuantity);
+        } else if (currentQuantity <= 1 && !isIncrement) {
+            // If trying to decrease below 1, handle as delete
+            const deleteBtn = $(this).closest('.d-flex').find('.delete-btn');
+            if (deleteBtn.length > 0) {
+                deleteBtn.trigger('click');
+            }
+            return;
+        }
+        
+        // Send AJAX request to update quantity
+        $.ajax({
+            url: '/api/cart/update_quantity/',
+            method: 'POST',
+            headers: { 'X-CSRFToken': getCookie('csrftoken') },
+            contentType: 'application/json',
+            data: JSON.stringify({
+                item_id: modelId,
+                action: action
+            }),
+            success: function(response) {
+                if (response.success) {
+                    // Update UI with the returned quantity from server (more accurate)
+                    if (response.new_quantity) {
+                        quantityElement.text(response.new_quantity);
+                    }
+                    
+                    // Update the cart badge count
+                    updateCartCount(clientId);
+                } else {
+                    // Revert the optimistic UI update on error
+                    quantityElement.text(isIncrement ? currentQuantity - 1 : currentQuantity + 1);
+                    Swal.fire('Error', response.message || 'Could not update quantity.', 'error');
+                }
+            },
+            error: function() {
+                // Revert the optimistic UI update on error
+                quantityElement.text(isIncrement ? currentQuantity - 1 : currentQuantity + 1);
+                Swal.fire('Error', 'Server error while updating quantity.', 'error');
             }
         });
     });
@@ -362,13 +441,11 @@ $(document).ready(function () {
                                         </div>
                                         <div class="d-flex align-items-center">
                                             <div class="input-group input-group-sm me-2" style="width: 100px;">
-                                                <button class="btn btn-outline-secondary" type="button" 
-                                                        onclick="updateCartItemQty(${item.id}, ${item.quantity - 1})">-</button>
+                                                <button class="btn btn-outline-secondary decrement-btn" type="button" data-model-id="${item.id}">-</button>
                                                 <span class="input-group-text bg-light">${item.quantity}</span>
-                                                <button class="btn btn-outline-secondary" type="button"
-                                                        onclick="updateCartItemQty(${item.id}, ${item.quantity + 1})">+</button>
+                                                <button class="btn btn-outline-secondary increment-btn" type="button" data-model-id="${item.id}">+</button>
                                             </div>
-                                            <button class="btn btn-outline-danger btn-sm" onclick="removeCartItem(${item.id})">
+                                            <button class="btn btn-outline-danger btn-sm delete-btn" data-item-id="${item.id}">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </div>
