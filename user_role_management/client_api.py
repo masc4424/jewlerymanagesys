@@ -111,7 +111,7 @@ def add_client_user(request):
             email = request.POST.get('email')
             password = request.POST.get('password')
             full_name = request.POST.get('full_name', '').strip()
-            phone_number = request.POST.get('phone_number')
+            phone_number = request.POST.get('phone_number', '').strip()
             address = request.POST.get('address')
             role_id = request.POST.get('role')
 
@@ -121,6 +121,10 @@ def add_client_user(request):
             # Check if email already exists
             if User.objects.filter(email=email).exists():
                 return JsonResponse({'status': 'error', 'message': 'Email already exists'})
+            
+            # Check if phone number exists (only if provided)
+            if phone_number and UserProfile.objects.filter(phone_number=phone_number).exists():
+                return JsonResponse({'status': 'error', 'message': 'Phone number already exists'})
 
             # Split full name into first and last name
             name_parts = full_name.split(' ', 1)
@@ -164,7 +168,7 @@ def add_client_user(request):
             profile = UserProfile.objects.create(
                 user=user,
                 full_name=full_name,
-                phone_number=phone_number,
+                phone_number=phone_number if phone_number else None,
                 address=address,
                 created_by=request.user
             )

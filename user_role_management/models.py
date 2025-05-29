@@ -12,7 +12,7 @@ def user_image_path(instance, filename):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     full_name = models.CharField(max_length=255, null=True, blank=True)
-    phone_number = models.CharField(max_length=15, unique=True)
+    phone_number = models.CharField(max_length=15, unique=True, null=True, blank=True)
     address = models.TextField()
     profile_image = models.ImageField(upload_to=user_image_path, 
                                     default='user_image/default.png')
