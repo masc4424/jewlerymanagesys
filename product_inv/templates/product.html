@@ -93,6 +93,15 @@
                 <div class="mb-4">
                     <div>
                         <h3 class="mb-3">Stones <span id="stones-count" class="badge bg-secondary">0</span></h3>
+                        {% if not raw_materials %}
+                            <div class="col">
+                                <div class="card text-center p-3">
+                                    <div class="card-body">
+                                        <p class="text-muted">No raw materials assigned</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
                         <!-- Only this container is scrollable horizontally -->
                         <div id="stones-container" class="custom-scrollbar">
                             <!-- Stone cards will be inserted here by JavaScript -->
@@ -104,6 +113,15 @@
                 <div>
                     <div>
                         <h3 class="mb-3">Raw Materials</h3>
+                        {% if not raw_stones %}
+                            <div class="col">
+                                <div class="card text-center p-3">
+                                    <div class="card-body">
+                                        <p class="text-muted">No stones added</p>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
                         <div id="materials-container" class="row g-3">
                             <!-- Material cards will be inserted here by JavaScript -->
                         </div>

@@ -10,9 +10,14 @@ def product(request, model_no):
     product_obj = get_object_or_404(Model, model_no=model_no)
     jewelry_type = product_obj.jewelry_type  # Access the related JewelryType object
 
+    raw_materials = product_obj.raw_materials.all()
+    raw_stones = product_obj.raw_stones.all()
+
     return render(request, 'product.html', {
         'product': product_obj,
-        'jewelry_type': jewelry_type
+        'jewelry_type': jewelry_type,
+        'raw_materials': raw_materials,
+        'raw_stones': raw_stones,
     })
 
 
