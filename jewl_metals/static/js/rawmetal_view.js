@@ -19,13 +19,13 @@ $(document).ready(function () {
                 render: function (data, type, row) {
                     return `
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-info add-rate-btn" data-id="${row.id}" data-name="${row.name}">
+                            <button class="btn btn-sm btn-outline-info add-rate-btn" data-id="${row.id}" data-name="${row.name}">
                                 <i class="bx bx-rupee"></i>
                             </button>
-                            <button class="btn btn-sm btn-primary edit-btn" data-id="${row.id}">
+                            <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${row.id}">
                                 <i class="bx bx-edit"></i>
                             </button>
-                            <button class="btn btn-sm btn-danger delete-btn" data-id="${row.id}" data-name="${row.name}">
+                            <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${row.id}" data-name="${row.name}">
                                 <i class="bx bx-trash"></i>
                             </button>
                         </div>
