@@ -26,9 +26,14 @@
                 </a>
                 Stone Type Details - {{ type_name }}
             </h4>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDetailModal">
-                <i class="bx bx-plus me-1"></i> Add New Detail
-            </button>
+            <div class="d-flex gap-2">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#bulkUploadDetailModal">
+                    <i class="bx bx-upload me-1"></i> Bulk Upload
+                </button>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createDetailModal">
+                    <i class="bx bx-plus me-1"></i> Add New Detail
+                </button>
+            </div>
         </div>
 
         <div class="card">
@@ -125,6 +130,87 @@
                         <button type="submit" class="btn btn-primary">Update</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Upload Detail Modal -->
+<div class="modal fade" id="bulkUploadDetailModal" tabindex="-1" aria-labelledby="bulkUploadDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkUploadDetailModalLabel">
+                    <i class="bx bx-upload me-2"></i>Bulk Upload Stone Type Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <h6><i class="bx bx-info-circle me-2"></i>Instructions:</h6>
+                    <ul class="mb-0">
+                        <li><strong>Length (mm)</strong> is mandatory - numeric value for stone length</li>
+                        <li><strong>Breadth (mm)</strong> is mandatory - numeric value for stone breadth</li>
+                        <li><strong>Weight (gm)</strong> is mandatory - numeric value with up to 2 decimal places</li>
+                        <li><strong>Rate (₹)</strong> is mandatory - numeric value with up to 2 decimal places</li>
+                        <li>All fields are required for each row</li>
+                        <li>Download the sample file to see the correct format</li>
+                        <li><strong>File Formats:</strong> Excel (.xlsx, .xls) or CSV (.csv)</li>
+                    </ul>
+                </div>
+
+                <!-- Sample File Download -->
+                <div class="mb-4">
+                    <h6>Sample File:</h6>
+                    <a href="{% url 'download_sample_stone_detail_file' %}" class="btn btn-outline-success">
+                        <i class="bx bx-download me-2"></i>Download Sample Excel File
+                    </a>
+                </div>
+
+                <!-- File Upload Form -->
+                <form id="bulkUploadDetailForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="stone_name" id="bulkStoneName">
+                    <input type="hidden" name="type_name" id="bulkTypeName">
+                    
+                    <div class="mb-3">
+                        <label for="bulkUploadDetailFile" class="form-label">Upload File</label>
+                        <input type="file" class="form-control" id="bulkUploadDetailFile" name="bulk_detail_file" 
+                               accept=".xlsx,.xls,.csv" required>
+                        <div class="form-text">Supported formats: Excel (.xlsx, .xls) and CSV (.csv)</div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="uploadDetailProgress" class="progress mb-3" style="display: none;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+
+                    <!-- Results Section -->
+                    <div id="uploadDetailResults" style="display: none;">
+                        <div class="alert" id="uploadDetailAlert"></div>
+                        <div id="errorDetailDetails" style="display: none;">
+                            <h6>Errors Found:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Row</th>
+                                            <th>Error</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="errorDetailTableBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="uploadDetailButton">
+                    <i class="bx bx-upload me-2"></i>Upload Details
+                </button>
             </div>
         </div>
     </div>

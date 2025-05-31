@@ -16,6 +16,13 @@ $(document).ready(function() {
         const src = $(this).attr('src');
         $('#modalImage').attr('src', src);
     });
+    $('#is_active').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#active_status_text').text('Active');
+        } else {
+            $('#active_status_text').text('Inactive');
+        }
+    });
 
     
     // Initialize arrays and counters

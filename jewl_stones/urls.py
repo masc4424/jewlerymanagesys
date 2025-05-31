@@ -21,6 +21,8 @@ urlpatterns = [
     path('get-stone-type-detail/<int:detail_id>/', get_stone_type_detail, name='get_stone_type_detail'),
     path('update-stone-type-detail/<int:detail_id>/', update_stone_type_detail, name='update_stone_type_detail'),
     path('delete-stone-type-detail/<int:detail_id>/', delete_stone_type_detail, name='delete_stone_type_detail'),
+     path('bulk-upload-stone-type-details/', bulk_upload_stone_type_details, name='bulk_upload_stone_type_details'),
+    path('download-sample-stone-detail-file/', download_sample_stone_detail_file, name='download_sample_stone_detail_file'),
 ]
 
 

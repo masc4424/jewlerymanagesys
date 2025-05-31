@@ -39,6 +39,7 @@ class Model(models.Model):
     model_img = models.ImageField(upload_to='model_img/', null=True, blank=True)
     jewelry_type = models.ForeignKey(JewelryType, on_delete=models.CASCADE, related_name='models')
     status = models.ForeignKey(ModelStatus, on_delete=models.SET_NULL, null=True, blank=True) 
+    is_active = models.CharField(max_length=1, choices=[('Y', 'Yes'), ('N', 'No')], default='Y')
 
     def __str__(self):
         return self.model_no

@@ -6,8 +6,15 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 from django.db.models import Sum
 from django.http import JsonResponse
-
-
+import pandas as pd
+import json
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill
+from io import BytesIO
+import logging
+from django.http import JsonResponse, HttpResponse
 # def get_complete_stone_data(request):
 #     stones = Stone.objects.all().prefetch_related('types__details')
 #     data = []
@@ -660,3 +667,221 @@ def delete_stone_type_detail(request, detail_id):
             return JsonResponse({"error": str(e)}, status=400)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+@csrf_exempt
+@login_required
+def bulk_upload_stone_type_details(request):
+    """Handle bulk upload of stone type details from Excel/CSV files"""
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=405)
+    
+    try:
+        # Get parameters
+        stone_name = request.POST.get('stone_name')
+        type_name = request.POST.get('type_name')
+        file = request.FILES.get('bulk_detail_file')
+        
+        if not all([stone_name, type_name, file]):
+            return JsonResponse({
+                "success": False,
+                "message": "Missing required parameters: stone_name, type_name, or file"
+            }, status=400)
+        
+        # Get Stone and StoneType objects
+        try:
+            stone = Stone.objects.get(name=stone_name)
+            stone_type = StoneType.objects.get(stone=stone, type_name=type_name)
+        except Stone.DoesNotExist:
+            return JsonResponse({
+                "success": False,
+                "message": f"Stone '{stone_name}' not found"
+            }, status=404)
+        except StoneType.DoesNotExist:
+            return JsonResponse({
+                "success": False,
+                "message": f"Stone type '{type_name}' not found for stone '{stone_name}'"
+            }, status=404)
+        
+        # Read the file
+        try:
+            file_extension = file.name.split('.')[-1].lower()
+            
+            if file_extension == 'csv':
+                df = pd.read_csv(file)
+            elif file_extension in ['xlsx', 'xls']:
+                df = pd.read_excel(file)
+            else:
+                return JsonResponse({
+                    "success": False,
+                    "message": "Unsupported file format. Please use CSV, XLSX, or XLS files."
+                }, status=400)
+        
+        except Exception as e:
+            return JsonResponse({
+                "success": False,
+                "message": f"Error reading file: {str(e)}"
+            }, status=400)
+        
+        # Validate and clean column names
+        expected_columns = {
+            'length (mm)': 'length',
+            'breadth (mm)': 'breadth', 
+            'weight (gm)': 'weight',
+            'rate (₹)': 'rate'
+        }
+        
+        # Normalize column names (lowercase, strip whitespace)
+        df.columns = df.columns.str.lower().str.strip()
+        
+        # Check for required columns
+        missing_columns = []
+        for expected_col in expected_columns.keys():
+            if expected_col not in df.columns:
+                missing_columns.append(expected_col)
+        
+        if missing_columns:
+            return JsonResponse({
+                "success": False,
+                "message": f"Missing required columns: {', '.join(missing_columns)}"
+            }, status=400)
+        
+        # Rename columns to match model fields
+        df = df.rename(columns=expected_columns)
+        
+        # Remove empty rows
+        df = df.dropna(how='all')
+        
+        # Initialize counters and error tracking
+        total_processed = len(df)
+        success_count = 0
+        error_count = 0
+        errors = []
+        
+        # Process each row
+        for index, row in df.iterrows():
+            row_number = index + 2  # +2 because index starts at 0 and we have header row
+            
+            try:
+                # Convert fields to float, use 0 if blank/empty
+                try:
+                    length = float(str(row['length']).strip()) if pd.notna(row['length']) and str(row['length']).strip() != '' else 0.0
+                    breadth = float(str(row['breadth']).strip()) if pd.notna(row['breadth']) and str(row['breadth']).strip() != '' else 0.0
+                    weight = float(str(row['weight']).strip()) if pd.notna(row['weight']) and str(row['weight']).strip() != '' else 0.0
+                    rate = float(str(row['rate']).strip()) if pd.notna(row['rate']) and str(row['rate']).strip() != '' else 0.0
+                        
+                except (ValueError, TypeError) as e:
+                    errors.append({
+                        "row": row_number,
+                        "message": f"Invalid numeric values: {str(e)}"
+                    })
+                    error_count += 1
+                    continue
+                
+                # Create the stone type detail (duplicates allowed)
+                detail = StoneTypeDetail.objects.create(
+                    stone=stone,
+                    stone_type=stone_type,
+                    length=length,
+                    breadth=breadth,
+                    weight=weight,
+                    rate=rate
+                )
+                
+                # Set created_by and updated_by if user is not superuser
+                if not request.user.is_superuser:
+                    detail.created_by = request.user
+                    detail.updated_by = request.user
+                    detail.save()
+                
+                success_count += 1
+                
+            except Exception as e:
+                errors.append({
+                    "row": row_number,
+                    "message": f"Unexpected error: {str(e)}"
+                })
+                error_count += 1
+        
+        # Prepare response
+        if success_count > 0:
+            message = f"Successfully processed {success_count} out of {total_processed} records"
+            if error_count > 0:
+                message += f" ({error_count} errors)"
+        else:
+            message = f"No records were processed successfully ({error_count} errors)"
+        
+        return JsonResponse({
+            "success": success_count > 0,
+            "message": message,
+            "total_processed": total_processed,
+            "success_count": success_count,
+            "error_count": error_count,
+            "errors": errors[:50]  # Limit to first 50 errors to avoid large response
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "message": f"An unexpected error occurred: {str(e)}"
+        }, status=500)
+
+
+@login_required
+def download_sample_stone_detail_file(request):
+    """Generate and download a sample Excel file for stone type details"""
+    try:
+        # Create a new workbook and select the active worksheet
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Stone Type Details Sample"
+        
+        # Define headers
+        headers = ['Length (mm)', 'Breadth (mm)', 'Weight (gm)', 'Rate (₹)']
+        
+        # Style for headers
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        
+        # Add headers
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=1, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+        
+        # Add only one sample data row
+        sample_data = [300, 200, 150.5, 1200]
+        
+        for col_idx, value in enumerate(sample_data, 1):
+            ws.cell(row=2, column=col_idx, value=value)
+        
+        # Auto-adjust column widths
+        for column in ws.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 20)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        # Save to BytesIO
+        excel_buffer = BytesIO()
+        wb.save(excel_buffer)
+        excel_buffer.seek(0)
+        
+        # Create response
+        response = HttpResponse(
+            excel_buffer.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = 'attachment; filename="stone_type_details_sample.xlsx"'
+        
+        return response
+        
+    except Exception as e:
+        return JsonResponse({
+            "error": f"Error generating sample file: {str(e)}"
+        }, status=500)

@@ -138,7 +138,7 @@ label.form-label {
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="status" class="form-label">Status</label>
+                                <label for="status" class="form-label">Model Status</label>
                                 <select class="form-select" id="status" name="status" >
                                     <option value="" selected disabled>Select Status</option>
                                     <!-- Status options will be populated via JavaScript -->
@@ -171,6 +171,21 @@ label.form-label {
                         
                                 </div>
                             </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="is_active" class="form-label">Is Active</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                    <label class="form-check-label" for="is_active">
+                                        <span id="active_status_text">Active</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <!-- Empty column for spacing -->
                         </div>
     
                         <div id="previewContainer" class="col-md-2 position-relative border p-1 d-none"
