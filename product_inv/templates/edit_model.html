@@ -142,7 +142,7 @@ label.form-label {
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="status" class="form-label">Status</label>
+                                <label for="status" class="form-label">Model Status</label>
                                 <select class="form-select" id="status" name="status" >
                                     <option value="" selected disabled>Select Status</option>
                                     <!-- Status options will be populated via JavaScript -->
@@ -182,6 +182,24 @@ label.form-label {
                                 style="height: 183px; border: 2px dashed #ddd; background-color: #f8f9fa;">
                             <img id="imagePreview" src="{{ model.model_img|default:'#' }}" alt="Image Preview" class="img-fluid img-thumbnail"
                                     style="max-width: 100%; max-height: 100%; cursor: pointer;"  data-bs-toggle="modal" data-bs-target="#imageModal">
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="is_active" class="form-label">Is Active</label>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                           {% if model.is_active == 'Y' %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        <span id="active_status_text">
+                                            {% if model.is_active == 'Y' %}Active{% else %}Inactive{% endif %}
+                                        </span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <!-- Empty column for spacing -->
                         </div>
                     </div>
 

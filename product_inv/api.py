@@ -192,7 +192,7 @@ def get_models_by_jewelry_type(request, jewelry_type_name=None):
                 return JsonResponse({'error': 'Jewelry type not found'}, status=404)
 
         models = Model.objects.filter(jewelry_type=jewelry_type).values(
-            'id', 'model_no', 'length', 'breadth', 'weight', 'model_img'
+            'id', 'model_no', 'length', 'breadth', 'weight', 'model_img', 'is_active'
         ).annotate(
             no_of_pieces=Count('model_no'),
             status_name=F('status__status')
@@ -495,6 +495,7 @@ def create_model(request):
             selected_colors = request.POST.getlist('colors[]')
             selected_clients = request.POST.getlist('clients[]')
             status_id = request.POST.get('status')
+            is_active = request.POST.get('is_active')
             
             # Validate only model_no is required
             if not model_no or model_no.strip() == '':
@@ -518,6 +519,7 @@ def create_model(request):
             length = float(length) if length and length.strip() != '' else None
             breadth = float(breadth) if breadth and breadth.strip() != '' else None
             weight = float(weight) if weight and weight.strip() != '' else None
+            is_active_value = 'Y' if is_active == 'on' else 'N'
             
             # Handle image upload (optional)
             relative_path = None
@@ -545,7 +547,8 @@ def create_model(request):
             model_data = {
                 'model_no': model_no,
                 'jewelry_type': jewelry_type,
-                'status': model_status
+                'status': model_status,
+                'is_active': is_active_value
             }
             
             # Add optional fields only if they have values
@@ -632,7 +635,8 @@ def create_model(request):
                     'image_path': relative_path,
                     'color': selected_colors,
                     'jewelry_type_name': jewelry_type.name if jewelry_type else None,
-                    'status': model_status.status if model_status else None
+                    'status': model_status.status if model_status else None,
+                    'is_active': is_active_value
                 }
             })
             
@@ -877,6 +881,130 @@ def delete_jewelry_type(request, id):
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+# @csrf_exempt
+# def edit_model(request, model_id):
+#     if request.method == 'POST':
+#         try:
+#             model = get_object_or_404(Model, id=model_id)
+
+#             # Get form data
+#             model_no = request.POST.get('model_no')
+#             length = request.POST.get('length')
+#             breadth = request.POST.get('breadth')
+#             weight = request.POST.get('weight')
+#             jewelry_type_id = request.POST.get('jewelry_type')
+#             jewelry_type = get_object_or_404(JewelryType, id=jewelry_type_id)
+#             model_img = request.FILES.get('model_img')
+#             selected_colors = request.POST.getlist('colors[]')
+#             selected_clients = request.POST.getlist('clients[]')  # Get selected clients
+#             status_id = request.POST.get('status')
+
+#             model_status = None
+#             if status_id:
+#                 model_status = get_object_or_404(ModelStatus, id=status_id)
+
+#             stones_json = request.POST.get('stones', '[]')
+#             stones_data = json.loads(stones_json)
+
+#             raw_materials_json = request.POST.get('raw_materials', '[]')
+#             raw_materials_data = json.loads(raw_materials_json)
+
+#             if not model_no or model_no.strip() == '':
+#                 return JsonResponse({'error': 'Model number is required'}, status=400)
+
+
+#             # Update image if new one is uploaded
+#             if model_img:
+#                 target_directory = os.path.join(settings.BASE_DIR, 'product_inv/static/model_img/')
+#                 os.makedirs(target_directory, exist_ok=True)
+#                 file_extension = os.path.splitext(model_img.name)[1]
+#                 new_filename = f"{model_no}{file_extension}"
+#                 file_path = os.path.join(target_directory, new_filename)
+
+#                 with open(file_path, 'wb+') as destination:
+#                     for chunk in model_img.chunks():
+#                         destination.write(chunk)
+
+#                 model.model_img = f"model_img/{new_filename}"
+
+#             # Update basic fields
+#             model.model_no = model_no
+#             model.length = length
+#             model.breadth = breadth
+#             model.weight = weight
+#             model.jewelry_type = jewelry_type
+#             model.status = model_status  # Add status update
+#             model.save()
+
+#             # Clear and re-create model colors
+#             ModelColor.objects.filter(model=model).delete()
+#             for color in selected_colors:
+#                 ModelColor.objects.create(model=model, color=color)
+                
+#             # Clear and re-create model clients
+#             ModelClient.objects.filter(model=model).delete()
+#             current_user = request.user
+#             for client_id in selected_clients:
+#                 try:
+#                     client_user = User.objects.get(id=client_id)
+#                     ModelClient.objects.create(
+#                         model=model,
+#                         client=client_user,
+#                         created_by=current_user,
+#                         updated_by=current_user
+#                     )
+#                 except User.DoesNotExist:
+#                     print(f"User with ID {client_id} does not exist")
+#                 except Exception as e:
+#                     print(f"Error creating ModelClient: {e}")
+
+#             # Clear and recreate RawStones and StoneCount
+#             RawStones.objects.filter(model=model).delete()
+#             StoneCount.objects.filter(model=model).delete()
+#             for stone_data in stones_data:
+#                 stone_type = get_object_or_404(StoneType, id=stone_data['stone_type_id'])
+#                 RawStones.objects.create(model=model, stone_type=stone_type)
+
+#                 if 'stone_type_detail_id' in stone_data and stone_data['stone_type_detail_id'] not in [None, '', 'undefined']:
+#                     try:
+#                         detail_id = int(stone_data['stone_type_detail_id'])
+#                         stone_type_detail = StoneTypeDetail.objects.get(id=detail_id)
+#                         StoneCount.objects.create(
+#                             model=model,
+#                             stone_type_details=stone_type_detail,
+#                             count=stone_data['count']
+#                         )
+#                     except (ValueError, StoneTypeDetail.DoesNotExist):
+#                         pass
+
+#             # Clear and recreate RawMaterials
+#             RawMaterial.objects.filter(model=model).delete()
+#             for material_data in raw_materials_data:
+#                 metal = get_object_or_404(Metal, id=material_data['material_id'])
+#                 RawMaterial.objects.create(
+#                     model=model,
+#                     metal=metal,
+#                     weight=material_data['weight'],
+#                     unit='g'
+#                 )
+
+#             return JsonResponse({
+#                 'success': True,
+#                 'message': 'Model updated successfully',
+#                 'model': {
+#                     'id': model.id,
+#                     'model_no': model.model_no,
+#                     'jewelry_type_name': jewelry_type.name,
+#                     'status': model_status.status if model_status else None
+#                 }
+#             })
+
+#         except Exception as e:
+#             import traceback
+#             print(traceback.format_exc())
+#             return JsonResponse({'error': str(e)}, status=500)
+
+#     return JsonResponse({'error': 'Invalid request method'}, status=405)
 @csrf_exempt
 def edit_model(request, model_id):
     if request.method == 'POST':
@@ -894,6 +1022,7 @@ def edit_model(request, model_id):
             selected_colors = request.POST.getlist('colors[]')
             selected_clients = request.POST.getlist('clients[]')  # Get selected clients
             status_id = request.POST.get('status')
+            is_active = request.POST.get('is_active')  # Get is_active value
 
             model_status = None
             if status_id:
@@ -908,6 +1037,11 @@ def edit_model(request, model_id):
             if not model_no or model_no.strip() == '':
                 return JsonResponse({'error': 'Model number is required'}, status=400)
 
+            # Convert empty strings to None for decimal fields and handle is_active
+            length = float(length) if length and length.strip() != '' else None
+            breadth = float(breadth) if breadth and breadth.strip() != '' else None
+            weight = float(weight) if weight and weight.strip() != '' else None
+            is_active_value = 'Y' if is_active == 'on' else 'N'  # Handle is_active like in create_model
 
             # Update image if new one is uploaded
             if model_img:
@@ -930,6 +1064,7 @@ def edit_model(request, model_id):
             model.weight = weight
             model.jewelry_type = jewelry_type
             model.status = model_status  # Add status update
+            model.is_active = is_active_value  # Update is_active field
             model.save()
 
             # Clear and re-create model colors
@@ -990,8 +1125,12 @@ def edit_model(request, model_id):
                 'model': {
                     'id': model.id,
                     'model_no': model.model_no,
+                    'length': float(model.length) if model.length else None,
+                    'breadth': float(model.breadth) if model.breadth else None,
+                    'weight': float(model.weight) if model.weight else None,
                     'jewelry_type_name': jewelry_type.name,
-                    'status': model_status.status if model_status else None
+                    'status': model_status.status if model_status else None,
+                    'is_active': is_active_value  # Include is_active in response
                 }
             })
 
@@ -1001,7 +1140,6 @@ def edit_model(request, model_id):
             return JsonResponse({'error': str(e)}, status=500)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
-
 
 # def get_model_details(request, model_id):
 #     model = get_object_or_404(Model, id=model_id)

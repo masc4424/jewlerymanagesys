@@ -2,7 +2,9 @@ $(document).ready(function() {
     // Fetch stone name and type name from data attributes
     var stoneName = $("#detail-data").data("stone-name");
     var typeName = $("#detail-data").data("type-name");
-
+    $('#bulkStoneName').val(stoneName);
+    $('#bulkTypeName').val(typeName);
+    
     console.log("Stone Name:", stoneName);
     console.log("Type Name:", typeName);
 
@@ -255,7 +257,158 @@ $(document).ready(function() {
             }
         });
     });
+   // Bulk upload functionality
+$('#uploadDetailButton').click(function() {
+    var fileInput = $('#bulkUploadDetailFile')[0];
+    var file = fileInput.files[0];
+    
+    if (!file) {
+        showToast('error', 'Please select a file to upload.');
+        return;
+    }
+    
+    // Validate file type
+    var allowedTypes = ['.xlsx', '.xls', '.csv'];
+    var fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+    
+    if (!allowedTypes.includes(fileExtension)) {
+        showToast('error', 'Please select a valid file format (.xlsx, .xls, .csv)');
+        return;
+    }
+    
+    // Show progress bar
+    $('#uploadDetailProgress').show();
+    $('#uploadDetailResults').hide();
+    
+    // Create FormData
+    var formData = new FormData();
+    formData.append('bulk_detail_file', file);
+    formData.append('stone_name', stoneName);
+    formData.append('type_name', typeName);
+    
+    // Get CSRF token
+    var csrfToken = $('[name=csrfmiddlewaretoken]').val();
+    
+    // Simulate progress
+    var progress = 0;
+    var progressInterval = setInterval(function() {
+        progress += 10;
+        $('#uploadDetailProgress .progress-bar').css('width', progress + '%');
+        if (progress >= 90) {
+            clearInterval(progressInterval);
+        }
+    }, 200);
+    
+    // AJAX call to upload file
+    $.ajax({
+        url: '/bulk-upload-stone-type-details/',
+        type: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        success: function(response) {
+            clearInterval(progressInterval);
+            $('#uploadDetailProgress .progress-bar').css('width', '100%');
+            
+            setTimeout(function() {
+                $('#uploadDetailProgress').hide();
+                
+                if (response.success) {
+                    // Show success message in results area
+                    $('#uploadDetailResults').show();
+                    $('#uploadDetailAlert').removeClass('alert-danger').addClass('alert-success');
+                    $('#uploadDetailAlert').html(`
+                        <strong>Success!</strong> ${response.message}<br>
+                        <small>Processed: ${response.total_processed} records | 
+                        Success: ${response.success_count} | 
+                        Errors: ${response.error_count}</small>
+                    `);
+                    
+                    // Show errors if any (but still successful)
+                    if (response.errors && response.errors.length > 0) {
+                        $('#errorDetailDetails').show();
+                        var errorTableBody = $('#errorDetailTableBody');
+                        errorTableBody.empty();
+                        
+                        response.errors.forEach(function(error) {
+                            errorTableBody.append(`
+                                <tr>
+                                    <td>${error.row}</td>
+                                    <td>${error.message}</td>
+                                </tr>
+                            `);
+                        });
+                    }
+                    
+                    // Auto-close modal after showing success for 2 seconds
+                    setTimeout(function() {
+                        $('#bulkUploadDetailModal').modal('hide');
+                        
+                        // Reload the DataTable
+                        dataTable.ajax.reload();
+                        
+                        // Show success toast
+                        showToast('success', 'Bulk upload completed successfully!');
+                    }, 2000);
+                    
+                } else {
+                    // Show error message and don't close modal
+                    $('#uploadDetailResults').show();
+                    $('#uploadDetailAlert').removeClass('alert-success').addClass('alert-danger');
+                    $('#uploadDetailAlert').html(`<strong>Error!</strong> ${response.message}`);
+                    
+                    // Show errors if any
+                    if (response.errors && response.errors.length > 0) {
+                        $('#errorDetailDetails').show();
+                        var errorTableBody = $('#errorDetailTableBody');
+                        errorTableBody.empty();
+                        
+                        response.errors.forEach(function(error) {
+                            errorTableBody.append(`
+                                <tr>
+                                    <td>${error.row}</td>
+                                    <td>${error.message}</td>
+                                </tr>
+                            `);
+                        });
+                    }
+                }
+                
+                // Clear file input
+                $('#bulkUploadDetailFile').val('');
+                
+            }, 500);
+        },
+        error: function(xhr, status, error) {
+            clearInterval(progressInterval);
+            $('#uploadDetailProgress').hide();
+            $('#uploadDetailResults').show();
+            
+            var errorMessage = 'Failed to upload file. Please try again.';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMessage = xhr.responseJSON.message;
+            }
+            
+            $('#uploadDetailAlert').removeClass('alert-success').addClass('alert-danger');
+            $('#uploadDetailAlert').html(`<strong>Error!</strong> ${errorMessage}`);
+            
+            showToast('error', 'Upload failed. Please try again.');
+            
+            console.error('Upload error:', error);
+        }
+    });
 });
+
+// Reset modal when closed
+$('#bulkUploadDetailModal').on('hidden.bs.modal', function() {
+    $('#bulkUploadDetailFile').val('');
+    $('#uploadDetailProgress').hide();
+    $('#uploadDetailResults').hide();
+    $('#errorDetailDetails').hide();
+});});
 
 // Function to create modals
 function createModals() {

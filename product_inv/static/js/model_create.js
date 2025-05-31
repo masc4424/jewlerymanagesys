@@ -8,6 +8,13 @@ $(document).ready(function() {
         placeholder: "",
         allowClear: true
     });
+    $('#is_active').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#active_status_text').text('Active');
+        } else {
+            $('#active_status_text').text('Inactive');
+        }
+    });
     $('#colors.select22').select2({
         placeholder: "Select colors...",
         allowClear: true
@@ -778,6 +785,12 @@ $(document).ready(function() {
         clientSelections.forEach(clientId => {
             formData.append('clients[]', clientId);
         });
+
+        const isActiveChecked = $('#is_active').is(':checked');
+        formData.delete('is_active'); // Remove the default form value
+        if (isActiveChecked) {
+            formData.append('is_active', 'on');
+        }
         
         // Add the stones data as JSON
         formData.append('stones', JSON.stringify(addedStones));
@@ -796,6 +809,8 @@ $(document).ready(function() {
                 $('#createModelForm')[0].reset();
                 $('#savedStonesTable tbody').empty();
                 addedStones = [];
+                $('#is_active').prop('checked', true);
+                $('#active_status_text').text('Active');
                 
                 // Show success message first
                 Swal.fire({

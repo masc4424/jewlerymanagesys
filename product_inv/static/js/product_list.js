@@ -79,6 +79,16 @@ $(document).ready(function() {
                     return weight % 1 === 0 ? weight.toFixed(0) : weight.toFixed(2);
                 }
             },
+            {
+                data: 'is_active',
+                render: function(data) {
+                    if (data === 'Y') {
+                        return '<span class="badge bg-label-success">Active</span>';
+                    } else {
+                        return '<span class="badge bg-label-danger">Inactive</span>';
+                    }
+                }
+            },
             // {
             //     data: 'model_no',
             //     render: function(model_no, type, row) {
