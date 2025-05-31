@@ -188,9 +188,9 @@ function addImageZoomModal() {
                             </button>
                         </div>
 
-                        <div class="zoom-container" style="overflow: hidden; position: relative;">
-                            <img id="zoomImage" src="" alt="Model Preview" 
-                                style="max-width: 100%; transform-origin: center; transition: transform 0.2s;">
+                        <div class="zoom-container" style="overflow: auto; width: 100%; height: 80vh; display: flex; justify-content: center; align-items: center;">
+                           <img id="zoomImage" src="" alt="Model Preview"
+                                style="max-width: 100%; max-height: 75vh; object-fit: contain; transform: scale(1); transition: transform 0.2s;">
                         </div>
                     </div>
                 </div>
