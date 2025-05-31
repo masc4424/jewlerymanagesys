@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from user_role_management.models import *
 from django.contrib.auth.decorators import login_required
+from jewl_metals.models import Metal 
 
 @login_required(login_url='login')
 def dashboard_render(request):
@@ -11,11 +12,14 @@ def dashboard_render(request):
         user_role = UserRole.objects.get(user=request.user)
         role_name = user_role.role.role_name
     except UserRole.DoesNotExist:
-        role_name = "Guest"  # or some default like 'Guest'
+        role_name = "Guest"
+
+    metals = Metal.objects.all()
 
     return render(request, 'dashboard.html', {
         'userprofile': userprofile,
-        'role_name': role_name
+        'role_name': role_name,
+        'metals': metals,  
     })
 
 @login_required(login_url='login')

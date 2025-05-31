@@ -108,21 +108,22 @@
               </div>
         </div>
 
-        <div class="col-md-4 mb-4">
-          <a href="{% url 'metal_list' %}" style="text-decoration: none; color: inherit;">
-            <div class="card">
+        {% for metal in metals %}
+          <div class="col-md-4 mb-4">
+            <a href="{% url 'metal_list' %}" style="text-decoration: none; color: inherit;">
+              <div class="card shadow-sm border-0">
                 <div class="card-body">
                   <div class="card-title float-end">
-                    <div class="">
-                      <img src="{% static 'dash_img/Revenue.svg' %}" alt="Revenue Icon" class="h-8 w-8">
-                    </div>
+                    <img src="{% static 'dash_img/Revenue.svg' %}" alt="Metal Icon" class="h-8 w-8">
                   </div>
-                  <span class="fw-semibold d-block mb-1">Raw Materials</span>
-                  <h2 class="card-title mb-2">0</h2>
+                  <span class="fw-semibold d-block mb-1">{{ metal.name }}</span>
+                  <h2 class="card-title mb-2">
+                    {{ metal.total_available_weight|floatformat:2 }} {{ metal.unit }}
+                  </h2>
                 </div>
-            </div>
-          </a>
-        </div>
-    </div>
+              </div>
+            </a>
+          </div>
+        {% endfor %}
 </div>
 {% endblock %}
