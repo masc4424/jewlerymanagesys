@@ -14,6 +14,7 @@ import json
 from datetime import date, timedelta, datetime
 from django.db.models import Sum
 from django.contrib.auth import get_user_model
+from django.db import transaction
 
 # @csrf_exempt
 # @require_http_methods(["GET", "POST"])
@@ -187,8 +188,60 @@ def get_orders_json(request):
             'orders': group['orders']
         }
         data.append(group_data)
+
+    statuses = list(ModelStatus.objects.all().values('id', 'status'))
     
-    return JsonResponse({'data': data})
+    return JsonResponse({'data': data, 'statuses': statuses})
+
+@require_POST
+@csrf_exempt  # Note: It's better to handle CSRF properly in production
+def delete_order(request):
+    """
+    View function to delete an order.
+    Expects a JSON payload with order_id.
+    """
+    try:
+        # Parse the JSON data from the request
+        data = json.loads(request.body)
+        order_id = data.get('order_id')
+        
+        if not order_id:
+            return JsonResponse({'status': 'error', 'message': 'Order ID is required'}, status=400)
+        
+        # Try to find the order
+        try:
+            order = Order.objects.get(id=order_id)
+        except Order.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Order not found'}, status=404)
+        
+        # Store order details for logging
+        order_model = order.model.model_no if hasattr(order, 'model') and order.model else 'N/A'
+        order_color = order.color if hasattr(order, 'color') else 'N/A'
+        
+        # Delete the order with transaction to ensure atomicity
+        with transaction.atomic():
+            # Optional: Add any additional cleanup logic here
+            # For example, you might want to update model status or inventory
+            
+            # Delete the order
+            order.delete()
+        
+        # Log the deletion (optional)
+        # You can replace this with your logging system
+        print(f"Order #{order_id} (Model: {order_model}, Color: {order_color}) was deleted by user {request.user.username}")
+        
+        return JsonResponse({
+            'status': 'success',
+            'message': f'Order #{order_id} has been deleted successfully'
+        })
+    
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'}, status=400)
+    
+    except Exception as e:
+        # Log the error
+        print(f"Error deleting order: {str(e)}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 def client_models(request, client_id):
     model_clients = ModelClient.objects.filter(client_id=client_id).select_related('model__status')
@@ -504,6 +557,8 @@ def repeated_orders_data(request):
             'model_img': model_img_url,
             'status_name': ro.status.status if ro.status else (model.status.status if model.status else 'N/A'),
             'status_id': ro.status.id if ro.status else None,
+            'lenght': model.length,
+            'breadth': model.breadth,
             'jewelry_type': model.jewelry_type.name,
             'quantity': ro.quantity,
             'quantity_delivered': ro.quantity_delivered,
@@ -621,6 +676,8 @@ def get_repeated_orders_api(request):
             'quantity_delivered': order.quantity_delivered,
             'color_name': order.color.color if order.color else 'N/A',
             'weight': model.weight if model else None,
+            'lenght': model.length,
+            'breadth': model.breadth,
             'est_delivery_date': order.est_delivery_date.strftime('%Y-%m-%d') if order.est_delivery_date else None,
             'delivered': order.delivered
         }

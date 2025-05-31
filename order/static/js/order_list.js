@@ -209,18 +209,32 @@ $(document).ready(function() {
                     // Create tooltip content with quantity distribution
                     let tooltipContent = '<div>Quantity Distribution:</div>';
                     
-                    if (row._quantityDistribution && row._quantityDistribution.group) {
-                        // Sort quantities for better readability
-                        let sortedQuantities = Object.keys(row._quantityDistribution.group).sort((a, b) => Number(a) - Number(b));
+                    // Create a map of colors to quantities
+                    let colorQuantityMap = {};
+                    
+                    // Populate the map with color-quantity data from orders
+                    if (row.orders && row.orders.length > 0) {
+                        row.orders.forEach(function(order) {
+                            let qty = order.quantity;
+                            let color = order.color || 'N/A';
+                            
+                            if (!colorQuantityMap[color]) {
+                                colorQuantityMap[color] = 0;
+                            }
+                            
+                            // Sum quantities by color
+                            colorQuantityMap[color] += qty;
+                        });
                         
-                        for (const quantity of sortedQuantities) {
-                            tooltipContent += `<div>${quantity}: ${row._quantityDistribution.group[quantity]}</div>`;
+                        // Add color and quantities to tooltip
+                        for (const [color, quantity] of Object.entries(colorQuantityMap)) {
+                            tooltipContent += `<div>${color}: ${quantity}</div>`;
                         }
                     }
                     
                     return `<span data-bs-toggle="tooltip" 
-                                 data-bs-html="true" 
-                                 title="${tooltipContent}">${data}</span>`;
+                                data-bs-html="true" 
+                                title="${tooltipContent}">${data}</span>`;
                 }
             },
             { 
@@ -236,14 +250,10 @@ $(document).ready(function() {
                     tooltipContent += `<div>Total Repeats: ${data || 0}</div>`;
                     tooltipContent += `<div>In Progress: ${inProgress}</div>`;
                     
-                    // Add badge styling based on repeat count
-                    let badgeClass = 'bg-secondary';
-                    if (data > 0) badgeClass = 'bg-info';
-                    
-                    return `<span class="badge ${badgeClass}" 
-                              data-bs-toggle="tooltip" 
-                              data-bs-html="true" 
-                              title="${tooltipContent}">${data || 0}</span>`;
+                    // Badge removed, just showing the number with tooltip
+                    return `<span data-bs-toggle="tooltip" 
+                                data-bs-html="true" 
+                                title="${tooltipContent}">${data || 0}</span>`;
                 }
             },
             { 
@@ -310,35 +320,12 @@ $(document).ready(function() {
                                             <i class="fa-solid fa-rotate me-2"></i>Repeat Order
                                         </a>
                                     </li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li class="dropdown-header">Individual Orders</li>
-                                `;
-                        
-                                // Add a collapsible section for individual order details
-                                html += `
                                     <li>
-                                        <a class="dropdown-item" data-bs-toggle="collapse" href="#orderDetails${row.sl_no}" role="button" aria-expanded="false">
-                                            <i class="fa-solid fa-list me-2"></i>View All Orders (${row.orders.length})
+                                        <a class="dropdown-item delete-group-order text-danger" href="#" data-group-id="${row.sl_no}">
+                                            <i class="fa-solid fa-trash-can me-2"></i>Delete Order
                                         </a>
-                                        <div class="collapse p-2" id="orderDetails${row.sl_no}">
-                                            <div class="card card-body p-2">
+                                    </li>
                                 `;
-                                
-                                // List all orders in the group
-                                row.orders.forEach(order => {
-                                    html += `
-                                        <div class="d-flex justify-content-between align-items-center mb-2">
-                                            <div>
-                                                <div>Order #${order.order_id}</div>
-                                                <small>Color: ${order.color || 'N/A'}</small>
-                                                <small>Qty: ${order.quantity}</small>
-                                            </div>
-                                            <span class="badge ${order.delivered === 'Yes' ? 'bg-success' : 'bg-warning'}">
-                                                ${order.delivered === 'Yes' ? 'Delivered' : 'Not Delivered'}
-                                            </span>
-                                        </div>
-                                    `;
-                                });
                                 
                                 html += `
                                             </div>
@@ -628,215 +615,244 @@ $(document).ready(function() {
             return;
         }
         
-        // Create a modal to update statuses
-        let modalContent = `
-            <div class="modal fade" id="changeGroupStatusModal" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Change Status - Model: ${rowData.model_no}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            <form id="changeGroupStatusForm">
-                                <!-- Store the model_id as a hidden input -->
-                                <input type="hidden" id="hiddenModelId" value="${rowData.model_id || ''}">
-                                
-                                <div class="row mb-4">
-                                    <div class="col">
-                                        <h6>Model Settings</h6>
-                                        <div class="mb-3">
-                                            <label class="form-label">Model Status</label>
-                                            <select class="form-select" id="modelStatusSelect">
-                                                <option value="">No Change</option>
-                                                <!-- These will be populated from your backend -->
-                                                <option value="1">Setting</option>
-                                                <option value="2">Pending</option>
-                                                <option value="3">Processing</option>
-                                                <option value="4">Completed</option>
-                                                <option value="5">Cancelled</option>
-                                            </select>
+        // First fetch the statuses from the server if we don't have them cached
+        let fetchStatusesPromise;
+        
+        if (!window.modelStatuses) {
+            fetchStatusesPromise = $.ajax({
+                url: '/orders/json/',
+                method: 'GET',
+                dataType: 'json'
+            }).then(response => {
+                // Cache the statuses for future use
+                window.modelStatuses = response.statuses || [];
+                return window.modelStatuses;
+            });
+        } else {
+            // Use the cached statuses
+            fetchStatusesPromise = Promise.resolve(window.modelStatuses);
+        }
+        
+        fetchStatusesPromise.then(statuses => {
+            // Create a modal to update statuses
+            let modalContent = `
+                <div class="modal fade" id="changeGroupStatusModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Change Status - Model: ${rowData.model_no}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="changeGroupStatusForm">
+                                    <!-- Store the model_id as a hidden input -->
+                                    <input type="hidden" id="hiddenModelId" value="${rowData.model_id || ''}">
+                                    
+                                    <div class="row mb-4">
+                                        <div class="col">
+                                            <h6>Model Settings</h6>
+                                            <div class="mb-3">
+                                                <label class="form-label">Model Status</label>
+                                                <select class="form-select" id="modelStatusSelect">
+                                                    <option value="">No Change</option>
+                                                    ${statuses.map(status => 
+                                                        `<option value="${status.id}" ${rowData.orders[0].status_id === status.id ? 'selected' : ''}>${status.status}</option>`
+                                                    ).join('')}
+                                                </select>
+                                            </div>
+                                            
+                                            <div class="mb-3 mt-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="sendStatusNotification">
+                                                    <label class="form-check-label" for="sendStatusNotification">
+                                                        Send notification to customer
+                                                    </label>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                                
-                                <h6>Order Delivery Status</h6>
-                                <div class="table-responsive">
-                                    <table class="table table-sm">
-                                        <thead>
-                                            <tr>
-                                                <th>Order ID</th>
-                                                <th>Color</th>
-                                                <th>Current Status</th>
-                                                <th>Mark as Delivered</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-        `;
-        
-        // Group orders by color
-        const ordersByColor = {};
-        
-        rowData.orders.forEach(order => {
-            const color = order.color || 'N/A';
-            if (!ordersByColor[color]) {
-                ordersByColor[color] = [];
-            }
-            ordersByColor[color].push(order);
-        });
-        
-        // Add a row for each color group
-        Object.entries(ordersByColor).forEach(([color, orders]) => {
-            orders.forEach((order, index) => {
-                const isDelivered = order.delivered === 'Yes';
-                modalContent += `
-                    <tr>
-                        <td>${order.order_id}</td>
-                        <td>${color}</td>
-                        <td>${order.status || 'N/A'}</td>
-                        <td>
-                            <div class="form-check form-switch">
-                                <input class="form-check-input order-delivered" type="checkbox" 
-                                    data-order-id="${order.order_id}" ${isDelivered ? 'checked' : ''}>
-                                <label class="form-check-label">${isDelivered ? 'Delivered' : 'Not Delivered'}</label>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                                    
+                                    <h6>Order Delivery Status</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Order ID</th>
+                                                    <th>Color</th>
+                                                    <th>Current Status</th>
+                                                    <th>Mark as Delivered</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+            `;
+            
+            // Group orders by color
+            const ordersByColor = {};
+            
+            rowData.orders.forEach(order => {
+                const color = order.color || 'N/A';
+                if (!ordersByColor[color]) {
+                    ordersByColor[color] = [];
+                }
+                ordersByColor[color].push(order);
             });
-        });
-        
-        modalContent += `
-                                        </tbody>
-                                    </table>
+            
+            // Add a row for each color group
+            Object.entries(ordersByColor).forEach(([color, orders]) => {
+                orders.forEach((order, index) => {
+                    const isDelivered = order.delivered === 'Yes';
+                    modalContent += `
+                        <tr>
+                            <td>${order.order_id}</td>
+                            <td>${color}</td>
+                            <td>${order.status || 'N/A'}</td>
+                            <td>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input order-delivered" type="checkbox" 
+                                        data-order-id="${order.order_id}" ${isDelivered ? 'checked' : ''}>
+                                    <label class="form-check-label">${isDelivered ? 'Delivered' : 'Not Delivered'}</label>
                                 </div>
-                                
-                                <div class="form-check mt-3">
-                                    <input class="form-check-input" type="checkbox" id="markAllDelivered">
-                                    <label class="form-check-label" for="markAllDelivered">
-                                        Mark all orders as delivered
-                                    </label>
-                                </div>
-                            </form>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" id="saveGroupStatusChanges">Save All Changes</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            });
+            
+            modalContent += `
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    
+                                    <div class="form-check mt-3">
+                                        <input class="form-check-input" type="checkbox" id="markAllDelivered">
+                                        <label class="form-check-label" for="markAllDelivered">
+                                            Mark all orders as delivered
+                                        </label>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-primary" id="saveGroupStatusChanges">Save All Changes</button>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
-        
-        // Remove any existing modals with the same ID and append the new one
-        $('#changeGroupStatusModal').remove();
-        $('body').append(modalContent);
-        
-        // Show the modal
-        const modal = new bootstrap.Modal(document.getElementById('changeGroupStatusModal'));
-        modal.show();
-        
-        // Handle mark all delivered checkbox
-        $('#markAllDelivered').on('change', function() {
-            const isChecked = $(this).prop('checked');
-            $('.order-delivered').prop('checked', isChecked);
-        });
-        
-        // Handle saving all updates
-        $('#saveGroupStatusChanges').on('click', function() {
-            const modelStatusId = $('#modelStatusSelect').val();
+            `;
             
-            // Collect all the delivery status updates
-            const deliveryUpdates = [];
+            // Remove any existing modals with the same ID and append the new one
+            $('#changeGroupStatusModal').remove();
+            $('body').append(modalContent);
             
-            rowData.orders.forEach(order => {
-                const orderId = order.order_id;
-                const isDelivered = $(`.order-delivered[data-order-id="${orderId}"]`).prop('checked');
-                const currentDelivered = order.delivered === 'Yes';
-                
-                // Only add to updates if delivery status changed
-                if (isDelivered !== currentDelivered) {
-                    deliveryUpdates.push({
-                        order_id: orderId,
-                        delivered: isDelivered
-                    });
-                }
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('changeGroupStatusModal'));
+            modal.show();
+            
+            // Handle mark all delivered checkbox
+            $('#markAllDelivered').on('change', function() {
+                const isChecked = $(this).prop('checked');
+                $('.order-delivered').prop('checked', isChecked);
             });
             
-            // Create a promise for model status update if needed
-            let modelUpdatePromise = Promise.resolve();
-            
-            if (modelStatusId) {
-                // First look for model_id in rowData, then in sl_no if no model_id exists
-                // In your case, it seems the model_id might be stored in a different property
-                // const modelId = rowData.model_id || rowData.id || rowData.sl_no || $('#hiddenModelId').val();
-                const modelId = rowData.model_id;
+            // Handle saving all updates
+            $('#saveGroupStatusChanges').on('click', function() {
+                const modelStatusId = $('#modelStatusSelect').val();
+                const sendNotification = $('#sendStatusNotification').prop('checked');
                 
-                console.log('Updating model status:', {
-                    model_id: modelId,
-                    status_id: modelStatusId,
-                    rowData: rowData
-                });
+                // Collect all the delivery status updates
+                const deliveryUpdates = [];
                 
-                if (!modelId) {
-                    console.error('No model_id available!');
-                    toastr.error('Cannot update status: model ID is missing');
-                    return;
-                }
-                
-                modelUpdatePromise = new Promise((resolve, reject) => {
-                    $.ajax({
-                        url: '/update_model_status/',
-                        type: 'POST',
-                        data: JSON.stringify({
-                            model_id: modelId,
-                            status_id: modelStatusId
-                        }),
-                        contentType: 'application/json',
-                        headers: {
-                            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
-                        },
-                        success: function(response) {
-                            console.log('Model update success:', response);
-                            resolve(response);
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('Model update error:', xhr.responseText);
-                            reject(error);
-                        }
-                    });
-                });
-            }
-            
-            // Create promises for all delivery updates
-            const deliveryPromises = deliveryUpdates.map(update => {
-                return new Promise((resolve, reject) => {
-                    $.ajax({
-                        url: '/update_delivered/',
-                        type: 'POST',
-                        data: JSON.stringify(update),
-                        contentType: 'application/json',
-                        headers: {
-                            'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
-                        },
-                        success: resolve,
-                        error: reject
-                    });
-                });
-            });
-            
-            // Process all updates
-            Promise.all([modelUpdatePromise, ...deliveryPromises])
-                .then(() => {
-                    toastr.success('All statuses updated successfully');
-                    modal.hide();
+                rowData.orders.forEach(order => {
+                    const orderId = order.order_id;
+                    const isDelivered = $(`.order-delivered[data-order-id="${orderId}"]`).prop('checked');
+                    const currentDelivered = order.delivered === 'Yes';
                     
-                    // Refresh the table
-                    $('#usersTable').DataTable().ajax.reload();
-                })
-                .catch(error => {
-                    toastr.error('Error updating statuses: ' + error);
+                    // Only add to updates if delivery status changed
+                    if (isDelivered !== currentDelivered) {
+                        deliveryUpdates.push({
+                            order_id: orderId,
+                            delivered: isDelivered
+                        });
+                    }
                 });
+                
+                // Create a promise for model status update if needed
+                let modelUpdatePromise = Promise.resolve();
+                
+                if (modelStatusId) {
+                    const modelId = rowData.model_id;
+                    
+                    console.log('Updating model status:', {
+                        model_id: modelId,
+                        status_id: modelStatusId,
+                        send_notification: sendNotification,
+                        rowData: rowData
+                    });
+                    
+                    if (!modelId) {
+                        console.error('No model_id available!');
+                        toastr.error('Cannot update status: model ID is missing');
+                        return;
+                    }
+                    
+                    modelUpdatePromise = new Promise((resolve, reject) => {
+                        $.ajax({
+                            url: '/update_model_status/',
+                            type: 'POST',
+                            data: JSON.stringify({
+                                model_id: modelId,
+                                status_id: modelStatusId,
+                                send_notification: sendNotification
+                            }),
+                            contentType: 'application/json',
+                            headers: {
+                                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                            },
+                            success: function(response) {
+                                console.log('Model update success:', response);
+                                resolve(response);
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Model update error:', xhr.responseText);
+                                reject(error);
+                            }
+                        });
+                    });
+                }
+                
+                // Create promises for all delivery updates
+                const deliveryPromises = deliveryUpdates.map(update => {
+                    return new Promise((resolve, reject) => {
+                        $.ajax({
+                            url: '/update_delivered/',
+                            type: 'POST',
+                            data: JSON.stringify(update),
+                            contentType: 'application/json',
+                            headers: {
+                                'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                            },
+                            success: resolve,
+                            error: reject
+                        });
+                    });
+                });
+                
+                // Process all updates
+                Promise.all([modelUpdatePromise, ...deliveryPromises])
+                    .then(() => {
+                        toastr.success('All statuses updated successfully');
+                        modal.hide();
+                        
+                        // Refresh the table
+                        $('#usersTable').DataTable().ajax.reload();
+                    })
+                    .catch(error => {
+                        toastr.error('Error updating statuses: ' + error);
+                    });
+            });
+        }).catch(error => {
+            console.error('Error fetching statuses:', error);
+            toastr.error('Could not load status options. Please try again.');
         });
     });
 
@@ -1035,6 +1051,254 @@ $(document).ready(function() {
             
             // Start processing repeat orders
             processNextRepeat(0);
+        });
+    });
+
+    // 4. DELETE GROUP ORDER
+    // Event handler for deleting a group of orders
+    $(document).on('click', '.delete-group-order', function(e) {
+        e.preventDefault();
+        
+        const groupId = $(this).data('group-id');
+        
+        // Get the corresponding row data from DataTable
+        const table = $('#usersTable').DataTable();
+        const rowData = table.row(function(idx, data) {
+            return data.sl_no === groupId;
+        }).data();
+        
+        if (!rowData || !rowData.orders || rowData.orders.length === 0) {
+            toastr.error('No orders found in this group');
+            return;
+        }
+        
+        // Create a modal to confirm order deletion
+        let modalContent = `
+            <div class="modal fade" id="deleteGroupOrderModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">Delete Orders - Model: ${rowData.model_no}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                Warning: This action cannot be undone. Please confirm which orders you want to delete.
+                            </div>
+                            
+                            <form id="deleteGroupOrderForm">
+                                <h6 class="mt-4">Select Orders to Delete</h6>
+                                <div class="table-responsive">
+                                    <table class="table table-sm">
+                                        <thead>
+                                            <tr>
+                                                <th>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="selectAllOrdersDelete">
+                                                    </div>
+                                                </th>
+                                                <th>Order ID</th>
+                                                <th>Color</th>
+                                                <th>Quantity</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+        `;
+        
+        // Group orders by color
+        const ordersByColor = {};
+        
+        rowData.orders.forEach(order => {
+            const color = order.color || 'N/A';
+            if (!ordersByColor[color]) {
+                ordersByColor[color] = [];
+            }
+            ordersByColor[color].push(order);
+        });
+        
+        // Add a row for each color group
+        Object.entries(ordersByColor).forEach(([color, orders]) => {
+            orders.forEach((order, index) => {
+                const deliveryStatus = order.delivered === 'Yes' ? 'Delivered' : 'Not Delivered';
+                modalContent += `
+                    <tr>
+                        <td>
+                            <div class="form-check">
+                                <input class="form-check-input delete-order-select" type="checkbox" 
+                                    data-order-id="${order.order_id}">
+                            </div>
+                        </td>
+                        <td>${order.order_id}</td>
+                        <td>${color}</td>
+                        <td>${order.quantity}</td>
+                        <td>
+                            <span class="badge ${order.delivered === 'Yes' ? 'bg-success' : 'bg-warning'}">
+                                ${deliveryStatus}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            });
+        });
+        
+        modalContent += `
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input" type="checkbox" id="confirmDeleteAll">
+                                    <label class="form-check-label" for="confirmDeleteAll">
+                                        Delete all orders in this group
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mt-3 mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                                    <label class="form-check-label" for="confirmDelete">
+                                        I understand this action cannot be undone
+                                    </label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" id="executeGroupDelete" disabled>Delete Selected Orders</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove any existing modals with the same ID and append the new one
+        $('#deleteGroupOrderModal').remove();
+        $('body').append(modalContent);
+        
+        // Show the modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteGroupOrderModal'));
+        modal.show();
+        
+        // Handle select all checkbox
+        $('#selectAllOrdersDelete').on('change', function() {
+            const isChecked = $(this).prop('checked');
+            $('.delete-order-select').prop('checked', isChecked);
+            updateDeleteButton();
+        });
+        
+        // Handle delete all checkbox
+        $('#confirmDeleteAll').on('change', function() {
+            const isChecked = $(this).prop('checked');
+            if (isChecked) {
+                $('.delete-order-select').prop('checked', true);
+                $('#selectAllOrdersDelete').prop('checked', true);
+            }
+            updateDeleteButton();
+        });
+        
+        // Handle confirm checkbox
+        $('#confirmDelete').on('change', function() {
+            updateDeleteButton();
+        });
+        
+        // Handle individual order selection
+        $('.delete-order-select').on('change', function() {
+            const allChecked = $('.delete-order-select:checked').length === $('.delete-order-select').length;
+            $('#selectAllOrdersDelete').prop('checked', allChecked);
+            
+            // If none is checked, uncheck the delete all checkbox
+            if ($('.delete-order-select:checked').length === 0) {
+                $('#confirmDeleteAll').prop('checked', false);
+            }
+            
+            updateDeleteButton();
+        });
+        
+        // Function to update delete button state
+        function updateDeleteButton() {
+            const ordersSelected = $('.delete-order-select:checked').length > 0 || $('#confirmDeleteAll').prop('checked');
+            const confirmChecked = $('#confirmDelete').prop('checked');
+            
+            $('#executeGroupDelete').prop('disabled', !(ordersSelected && confirmChecked));
+            
+            // Update button text based on selection
+            if ($('#confirmDeleteAll').prop('checked')) {
+                $('#executeGroupDelete').text('Delete All Orders');
+            } else {
+                const count = $('.delete-order-select:checked').length;
+                $('#executeGroupDelete').text(`Delete ${count} Selected Order${count !== 1 ? 's' : ''}`);
+            }
+        }
+        
+        // Handle executing the delete operation
+        $('#executeGroupDelete').on('click', function() {
+            const deleteAll = $('#confirmDeleteAll').prop('checked');
+            const orderIds = [];
+            
+            if (deleteAll) {
+                // Add all order IDs in the group
+                rowData.orders.forEach(order => {
+                    orderIds.push(order.order_id);
+                });
+            } else {
+                // Only add selected order IDs
+                $('.delete-order-select:checked').each(function() {
+                    orderIds.push($(this).data('order-id'));
+                });
+            }
+            
+            if (orderIds.length === 0) {
+                toastr.error('No orders selected for deletion');
+                return;
+            }
+            
+            // Process all deletions sequentially
+            let completedDeletes = 0;
+            let errors = 0;
+            
+            function processNextDelete(index) {
+                if (index >= orderIds.length) {
+                    // All deletions complete
+                    if (errors === 0) {
+                        toastr.success(`Successfully deleted ${completedDeletes} order${completedDeletes !== 1 ? 's' : ''}`);
+                        modal.hide();
+                        
+                        // Refresh the table
+                        $('#usersTable').DataTable().ajax.reload();
+                    } else {
+                        toastr.warning(`Completed with ${errors} errors. Please try again.`);
+                    }
+                    return;
+                }
+                
+                const orderId = orderIds[index];
+                
+                // Send the delete request
+                $.ajax({
+                    url: '/delete_order/',
+                    type: 'POST',
+                    data: JSON.stringify({
+                        order_id: orderId
+                    }),
+                    contentType: 'application/json',
+                    headers: {
+                        'X-CSRFToken': $('[name=csrfmiddlewaretoken]').val()
+                    },
+                    success: function() {
+                        completedDeletes++;
+                        processNextDelete(index + 1);
+                    },
+                    error: function(xhr) {
+                        errors++;
+                        console.error('Error deleting order:', xhr.responseText);
+                        processNextDelete(index + 1);
+                    }
+                });
+            }
+            
+            // Start processing deletions
+            processNextDelete(0);
         });
     });
 

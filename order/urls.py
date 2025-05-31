@@ -33,6 +33,7 @@ urlpatterns += [
     path('api/cart/update_quantity/', update_cart_quantity, name='update_cart_quantity'),
     path('update_delivered/',   update_delivered, name='update_delivered'),
     path('update_model_status/', update_model_status, name='update_model_status'),
+    path('delete_order/', delete_order, name='delete_order'),
 
         # API endpoints for repeated orders
     path('api/repeated-orders/', get_repeated_orders_api, name='api_repeated_orders'),
