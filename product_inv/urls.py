@@ -37,7 +37,8 @@ urlpatterns += [
     path('get_model_status/', get_model_status, name='get_model_status'),
     # Add this to your urls.py
     path('get_model_clients/<int:model_id>/', get_model_clients, name='get_model_clients'),
-
+    path('download-sample-model-file/', download_sample_model_file, name='download_sample_model_file'),
+    path('bulk-upload-models/', bulk_upload_models, name='bulk_upload_models'),
 
 ]
 

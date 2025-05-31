@@ -38,15 +38,23 @@
     <div class="container-xxl flex-grow-1 container-p-y p-0">
       
       <div class="d-flex justify-content-between align-items-center mb-3">
+        <span>
           <h4 class="fw-bold mb-1">
               <a href="{% url 'product_type' %}" class="text-dark text-decoration-none">
                   <i class="bx bx-arrow-back me-2"></i>
               </a>
               Models
           </h4>
-          <a href="{% url 'create_new_model' jewelry_type_name=jewelry_type_name %}" class="btn btn-primary">
-            <i class="bx bx-plus"></i> Create Model
-          </a>
+        </span>
+         <span>
+            <button type="button" class="btn btn-primary me-3" data-bs-toggle="modal" data-bs-target="#bulkUploadModal">
+              <i class="bx bx-upload"></i> Bulk Upload Models
+            </button>
+            <a href="{% url 'create_new_model' jewelry_type_name=jewelry_type_name %}" class="btn btn-primary">
+              <i class="bx bx-plus"></i> Create Model
+            </a>
+         </span>
+         
       </div>
       <div class="card">
         <div class="table-responsive text-nowrap p-3">
@@ -72,6 +80,89 @@
       </div>
     </div>
 </div>
+
+
+<!-- Bulk Upload Modal -->
+<div class="modal fade" id="bulkUploadModal" tabindex="-1" aria-labelledby="bulkUploadModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="bulkUploadModalLabel">
+                  <i class="bx bx-upload me-2"></i>Bulk Upload Models
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              <div class="alert alert-info">
+                  <h6><i class="bx bx-info-circle me-2"></i>Instructions:</h6>
+                  <ul class="mb-0">
+                      <li><strong>Model No</strong> is mandatory and must be unique</li>
+                      <li><strong>Model Colors</strong>: Click cell to see dropdown - for multiple colors type comma-separated (e.g., "Gold,Silver,Rose Gold")</li>
+                      <li><strong>Status</strong>: Click cell to see dropdown with available status options</li>
+                      <li><strong>Length, Breadth, Weight</strong>: Numeric values (optional)</li>
+                      <li>Download the sample file to see dropdown functionality</li>
+                      <li><strong>Excel Tip:</strong> You'll see dropdown arrows when clicking on color/status columns</li>
+                  </ul>
+              </div>
+
+              <!-- Sample File Download -->
+              <div class="mb-4">
+                  <h6>Sample File:</h6>
+                  <a href="{% url 'download_sample_model_file' %}" class="btn btn-outline-success">
+                      <i class="bx bx-download me-2"></i>Download Sample Excel File
+                  </a>
+              </div>
+
+              <!-- File Upload Form -->
+              <form id="bulkUploadForm" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  <input type="hidden" name="jewelry_type" value="{{ jewelry_type_id }}">
+                  
+                  <div class="mb-3">
+                      <label for="bulkUploadFile" class="form-label">Upload File</label>
+                      <input type="file" class="form-control" id="bulkUploadFile" name="bulk_file" 
+                             accept=".xlsx,.xls,.csv" required>
+                      <div class="form-text">Supported formats: Excel (.xlsx, .xls) and CSV (.csv)</div>
+                  </div>
+
+                  <!-- Progress Bar -->
+                  <div id="uploadProgress" class="progress mb-3" style="display: none;">
+                      <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                           role="progressbar" style="width: 0%"></div>
+                  </div>
+
+                  <!-- Results Section -->
+                  <div id="uploadResults" style="display: none;">
+                      <div class="alert" id="uploadAlert"></div>
+                      <div id="errorDetails" style="display: none;">
+                          <h6>Errors Found:</h6>
+                          <div class="table-responsive">
+                              <table class="table table-sm">
+                                  <thead>
+                                      <tr>
+                                          <th>Row</th>
+                                          <th>Error</th>
+                                      </tr>
+                                  </thead>
+                                  <tbody id="errorTableBody"></tbody>
+                              </table>
+                          </div>
+                      </div>
+                  </div>
+              </form>
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+              <button type="button" class="btn btn-primary" id="uploadButton">
+                  <i class="bx bx-upload me-2"></i>Upload Models
+              </button>
+          </div>
+      </div>
+  </div>
+</div>
+
+
+
 <!-- Image Modal -->
 <!-- <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -211,6 +302,106 @@
       }
   }
 </script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+      const uploadButton = document.getElementById('uploadButton');
+      const uploadForm = document.getElementById('bulkUploadForm');
+      const uploadProgress = document.getElementById('uploadProgress');
+      const uploadResults = document.getElementById('uploadResults');
+      const uploadAlert = document.getElementById('uploadAlert');
+      const errorDetails = document.getElementById('errorDetails');
+      const errorTableBody = document.getElementById('errorTableBody');
+  
+      uploadButton.addEventListener('click', function() {
+          const fileInput = document.getElementById('bulkUploadFile');
+          const file = fileInput.files[0];
+          
+          if (!file) {
+              alert('Please select a file to upload');
+              return;
+          }
+  
+          // Show progress bar
+          uploadProgress.style.display = 'block';
+          uploadResults.style.display = 'none';
+          uploadButton.disabled = true;
+          uploadButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading...';
+  
+          // Create FormData
+          const formData = new FormData(uploadForm);
+  
+          // Upload file
+          fetch('{% url "bulk_upload_models" %}', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                  'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+              }
+          })
+          .then(response => response.json())
+          .then(data => {
+              uploadProgress.style.display = 'none';
+              uploadResults.style.display = 'block';
+              
+              if (data.success) {
+                  uploadAlert.className = 'alert alert-success';
+                  uploadAlert.innerHTML = `
+                      <i class="bx bx-check-circle me-2"></i>
+                      <strong>Success!</strong> ${data.created_count} models uploaded successfully.
+                      ${data.skipped_count > 0 ? `<br><small>${data.skipped_count} models were skipped due to duplicate model numbers.</small>` : ''}
+                  `;
+                  errorDetails.style.display = 'none';
+                  
+                  // Refresh the page after successful upload
+                  setTimeout(() => {
+                      window.location.reload();
+                  }, 2000);
+              } else {
+                  uploadAlert.className = 'alert alert-danger';
+                  uploadAlert.innerHTML = `
+                      <i class="bx bx-error-circle me-2"></i>
+                      <strong>Upload Failed!</strong> ${data.message}
+                  `;
+                  
+                  if (data.errors && data.errors.length > 0) {
+                      errorDetails.style.display = 'block';
+                      errorTableBody.innerHTML = '';
+                      data.errors.forEach(error => {
+                          const row = errorTableBody.insertRow();
+                          row.insertCell(0).textContent = error.row;
+                          row.insertCell(1).textContent = error.message;
+                      });
+                  } else {
+                      errorDetails.style.display = 'none';
+                  }
+              }
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              uploadProgress.style.display = 'none';
+              uploadResults.style.display = 'block';
+              uploadAlert.className = 'alert alert-danger';
+              uploadAlert.innerHTML = `
+                  <i class="bx bx-error-circle me-2"></i>
+                  <strong>Error!</strong> An unexpected error occurred during upload.
+              `;
+          })
+          .finally(() => {
+              uploadButton.disabled = false;
+              uploadButton.innerHTML = '<i class="bx bx-upload me-2"></i>Upload Models';
+          });
+      });
+  
+      // Reset form when modal is closed
+      document.getElementById('bulkUploadModal').addEventListener('hidden.bs.modal', function() {
+          uploadForm.reset();
+          uploadProgress.style.display = 'none';
+          uploadResults.style.display = 'none';
+          uploadButton.disabled = false;
+          uploadButton.innerHTML = '<i class="bx bx-upload me-2"></i>Upload Models';
+      });
+  });
+  </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script src="{% static 'js/product_list.js' %}"></script>

@@ -73,7 +73,7 @@ label.form-label {
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="colors" class="form-label">Model Colors</label>
-                                <select class="form-select select22" id="colors" name="colors" multiple required>
+                                <select class="form-select select22" id="colors" name="colors" multiple>
                                     <option value="GJ">Ganga Jamuna</option>
                                     <option value="Black">Black</option>
                                     <option value="White">White</option>
@@ -139,7 +139,7 @@ label.form-label {
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="status" class="form-label">Status</label>
-                                <select class="form-select" id="status" name="status" required>
+                                <select class="form-select" id="status" name="status" >
                                     <option value="" selected disabled>Select Status</option>
                                     <!-- Status options will be populated via JavaScript -->
                                 </select>
@@ -148,26 +148,26 @@ label.form-label {
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="length" class="form-label">Length (cm)</label>
-                                <input type="number" step="0.01" class="form-control" id="length" name="length" required>
+                                <input type="number" step="0.01" class="form-control" id="length" name="length" >
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="breadth" class="form-label">Breadth (cm)</label>
-                                <input type="number" step="0.01" class="form-control" id="breadth" name="breadth" required>
+                                <input type="number" step="0.01" class="form-control" id="breadth" name="breadth" >
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="weight" class="form-label">Weight (gm)</label>
-                                <input type="number" step="0.01" class="form-control" id="weight" name="weight" required>
+                                <input type="number" step="0.01" class="form-control" id="weight" name="weight">
                             </div>
                         </div>
                         <div class="col-md-9">
                             <div class="mb-3 col-lg-auto">
                                 <label for="model_img" class="form-label">Model Image</label>
                                 <div class="d-flex align-items-center">
-                                    <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/*" required onchange="this.nextElementSibling.classList.remove('d-none')">
+                                    <input type="file" class="form-control me-3" id="model_img" name="model_img" accept="image/*"  onchange="this.nextElementSibling.classList.remove('d-none')">
                         
                                 </div>
                             </div>
@@ -359,7 +359,7 @@ label.form-label {
             <div class="col-md-6">
                 <div class="mb-3">
                     <label class="form-label">Stone Name</label>
-                    <select class="form-control stone-name-select" required>
+                    <select class="form-control stone-name-select" >
                         <option value="">Select Stone</option>
                         <!-- Options will be populated from the database -->
                     </select>
@@ -368,7 +368,7 @@ label.form-label {
             <div class="col-md-6">
                 <div class="mb-3">
                     <label class="form-label">Type Name</label>
-                    <select class="form-control stone-type-select" required>
+                    <select class="form-control stone-type-select" >
                         <option value="">Select Type</option>
                         <!-- Options will be populated based on selected stone -->
                     </select>
@@ -389,7 +389,7 @@ label.form-label {
             <div class="col-md-6">
                 <div class="mb-3">
                     <label class="form-label">Material</label>
-                    <select class="form-control raw-material-select" required>
+                    <select class="form-control raw-material-select" >
                         <option value="">Select Material</option>
                         <!-- Options will be populated from the database -->
                     </select>
@@ -399,7 +399,7 @@ label.form-label {
                 <div class="mb-3">
                     <label class="form-label">Weight (gm)</label>
                     <div class="input-group">
-                        <input type="number" step="0.01" class="form-control raw-material-weight" required>
+                        <input type="number" step="0.01" class="form-control raw-material-weight" >
                         <!-- <div class="input-group-text">
                             <input class="form-check-input mt-0 get-rate-checkbox" type="checkbox" value="">
                             <small class="ms-2">Get Rate</small>

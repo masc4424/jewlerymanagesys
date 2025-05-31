@@ -33,10 +33,10 @@ class ModelStatus(models.Model):
 
 class Model(models.Model):
     model_no = models.CharField(max_length=100, unique=True)
-    length = models.DecimalField(max_digits=10, decimal_places=2)
-    breadth = models.DecimalField(max_digits=10, decimal_places=2)
-    weight = models.DecimalField(max_digits=10, decimal_places=2)
-    model_img = models.ImageField(upload_to='model_img/')
+    length = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    breadth = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    weight = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    model_img = models.ImageField(upload_to='model_img/', null=True, blank=True)
     jewelry_type = models.ForeignKey(JewelryType, on_delete=models.CASCADE, related_name='models')
     status = models.ForeignKey(ModelStatus, on_delete=models.SET_NULL, null=True, blank=True) 
 
