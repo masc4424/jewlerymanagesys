@@ -11,7 +11,7 @@ from django.conf import settings
 import traceback
 from order.models import Order
 
-@login_required(login_url='login')
+@login_required(login_url='login_auth')
 def get_client_models(request):
     """
     Retrieve all models associated with the logged-in client without using DRF
@@ -143,7 +143,7 @@ def get_client_models(request):
             'message': f"An error occurred: {str(e)}"
         }, status=500)
 
-@login_required(login_url='login')
+@login_required(login_url='login_auth')
 def check_order_for_color(request, model_id):
     """
     Check if an order exists for the logged-in client and selected model color

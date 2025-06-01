@@ -4,7 +4,7 @@ from user_role_management.models import *
 from django.contrib.auth.decorators import login_required
 from jewl_metals.models import Metal 
 
-@login_required(login_url='login')
+@login_required(login_url='login_auth')
 def dashboard_render(request):
     userprofile = UserProfile.objects.get(user=request.user)
 
@@ -22,7 +22,7 @@ def dashboard_render(request):
         'metals': metals,  
     })
 
-@login_required(login_url='login')
+@login_required(login_url='login_auth')
 def dashboard_client_render(request):
     userprofile = UserProfile.objects.get(user=request.user)
 
