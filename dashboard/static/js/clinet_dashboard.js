@@ -16,6 +16,23 @@ $(document).ready(function () {
     });
     loadModels();
     updateCartCount();
+
+        // Bind search function to input event
+    $('#searchInput').on('input', search);
+    
+    // Clear search functionality
+    $('#clearSearch').on('click', function() {
+        $('#searchInput').val('');
+        $('.model-item').show(); // Show all models
+        $('.no-models-found').remove(); // Remove no results message
+    });
+    
+    // Optional: Clear search on Escape key
+    $('#searchInput').on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            $('#clearSearch').click();
+        }
+    });
 });
 
 // Load all models via AJAX
@@ -32,12 +49,20 @@ function loadModels() {
                 let readyToDeliverCount = 0;
                 let othersCount = 0;
 
+                // Collect unique jewelry types for the filter
+                const jewelryTypes = new Set();
+                
                 models.forEach((model, index) => {
+                    // Add jewelry type to the set for filter dropdown
+                    if (model.jewelry_type_name && model.jewelry_type_name !== "N/A") {
+                        jewelryTypes.add(model.jewelry_type_name);
+                    }
+                    
                     // Check if model has a delivered order
                     const isReadyToDeliver = model.order && model.order.is_delivered;
                     
-                    // Generate the card HTML
-                    const cardHtml = generateModelCard(model);
+                    // Generate the card HTML with data attributes for filtering
+                    const cardHtml = generateModelCardWithFilter(model);
                     
                     // Add to the appropriate tab
                     if (isReadyToDeliver) {
@@ -49,43 +74,34 @@ function loadModels() {
                     }
                 });
 
-                // Update the DOM with generated HTML
+                // Update the DOM with generated HTML FIRST
                 $('#ready-to-deliver-cards').html(readyToDeliverHtml);
                 $('#others-cards').html(othersHtml);
                 
                 // Show/hide empty states
-                if (readyToDeliverCount === 0) {
-                    $('#ready-to-deliver-empty').removeClass('d-none');
-                } else {
-                    $('#ready-to-deliver-empty').addClass('d-none');
-                }
-                
-                if (othersCount === 0) {
-                    $('#others-empty').removeClass('d-none');
-                } else {
-                    $('#others-empty').addClass('d-none');
-                }
+                updateEmptyStates(readyToDeliverCount, othersCount);
                 
                 // Attach event listeners AFTER adding the HTML to the DOM
-                $('.color-select').on('change', function() {
-                    const modelId = $(this).data('model-id');
-                    const selectedColor = $(this).val();
-                    checkOrderForColor(modelId, selectedColor);
-                });
+                attachEventListeners(models);
                 
-                // Initial check for each model's default color
-                models.forEach((model) => {
-                    const defaultColor = $(`#color-select-${model.id}`).val();
-                    if (defaultColor) {
-                        checkOrderForColor(model.id, defaultColor);
-                    }
-                });
+                // Initialize filter functionality BEFORE populating dropdown
+                initializeFilterFunctionality();
+                
+                // Populate the jewelry type filter dropdown LAST
+                // Use setTimeout to ensure DOM is fully updated
+                setTimeout(() => {
+                    populateJewelryTypeFilter(Array.from(jewelryTypes).sort());
+                }, 100);
                 
                 // Add the image modal to the page if it doesn't exist
                 if ($('#imageZoomModal').length === 0) {
                     addImageZoomModal();
                     initializeImageZoom();
                 }
+                
+                // DEBUG: Uncomment the line below to debug filtering
+                // setTimeout(() => debugFilter(), 500);
+                
             } else {
                 showAlert('warning', response.message);
             }
@@ -95,6 +111,201 @@ function loadModels() {
             showAlert('danger', `Error: ${error}`);
         }
     });
+}
+
+// Function to populate jewelry type filter dropdown
+function populateJewelryTypeFilter(jewelryTypes) {
+    const categoryFilter = $('#categoryFilter');
+    
+    // Clear existing options except "All Categories"
+    categoryFilter.find('option:not(:first)').remove();
+    
+    // Add jewelry types to the dropdown
+    jewelryTypes.forEach(type => {
+        categoryFilter.append(`<option value="${type}">${type}</option>`);
+    });
+    
+    // Select the first jewelry type (index 1, since index 0 is "All Categories")
+    if (jewelryTypes.length > 0) {
+        categoryFilter.prop('selectedIndex', 1);
+        categoryFilter.trigger('change');
+    }
+}
+
+// Initialize filter functionality
+function initializeFilterFunctionality() {
+    // Jewelry type filter change event
+    $('#categoryFilter').on('change', function() {
+        const selectedCategory = $(this).val();
+        filterModelsByJewelryType(selectedCategory);
+    });
+    
+    // Optional: Add search functionality if you have a search input
+    $('#searchInput').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        const selectedCategory = $('#categoryFilter').val();
+        filterModels(searchTerm, selectedCategory);
+    });
+}
+
+// Filter models by jewelry type only
+function filterModelsByJewelryType(selectedCategory) {
+    const searchTerm = $('#searchInput').val() ? $('#searchInput').val().toLowerCase() : '';
+    filterModels(searchTerm, selectedCategory);
+}
+
+// Combined filter function for search and jewelry type
+function filterModels(searchTerm = '', selectedCategory = '') {
+    // Filter both tabs
+    filterCardsInContainer('#ready-to-deliver-cards', searchTerm, selectedCategory);
+    filterCardsInContainer('#others-cards', searchTerm, selectedCategory);
+    
+    // Update empty states after filtering
+    updateEmptyStatesAfterFilter();
+}
+
+// Filter cards within a specific container
+function filterCardsInContainer(containerId, searchTerm, selectedCategory) {
+    const container = $(containerId);
+    const cards = container.find('.col-md-3');
+    
+    cards.each(function() {
+        const card = $(this);
+        const jewelryType = card.find('.card').data('jewelry-type') || '';
+        const modelNo = card.find('.card-title').text().toLowerCase();
+        
+        // Check if card matches search term
+        const matchesSearch = !searchTerm || modelNo.includes(searchTerm);
+        
+        // Check if card matches jewelry type filter
+        const matchesCategory = !selectedCategory || selectedCategory === '' || jewelryType === selectedCategory;
+        
+        // Show/hide card based on filters
+        if (matchesSearch && matchesCategory) {
+            card.show();
+        } else {
+            card.hide();
+        }
+    });
+}
+
+// Update empty states after filtering
+function updateEmptyStatesAfterFilter() {
+    // Check ready to deliver tab
+    const visibleReadyCards = $('#ready-to-deliver-cards .col-md-3:visible').length;
+    const readyEmptyState = $('#ready-to-deliver-empty');
+    
+    if (visibleReadyCards === 0) {
+        if (readyEmptyState.length === 0) {
+            $('#ready-to-deliver-cards').append(`
+                <div id="ready-to-deliver-empty" class="col-12 text-center py-5">
+                    <div class="text-muted">
+                        <i class="fa-solid fa-search fa-3x mb-3"></i>
+                        <h5>No models found</h5>
+                        <p>Try adjusting your filters or search terms.</p>
+                    </div>
+                </div>
+            `);
+        } else {
+            readyEmptyState.show();
+        }
+    } else {
+        readyEmptyState.hide();
+    }
+    
+    // Check others tab
+    const visibleOtherCards = $('#others-cards .col-md-3:visible').length;
+    const othersEmptyState = $('#others-empty');
+    
+    if (visibleOtherCards === 0) {
+        if (othersEmptyState.length === 0) {
+            $('#others-cards').append(`
+                <div id="others-empty" class="col-12 text-center py-5">
+                    <div class="text-muted">
+                        <i class="fa-solid fa-search fa-3x mb-3"></i>
+                        <h5>No models found</h5>
+                        <p>Try adjusting your filters or search terms.</p>
+                    </div>
+                </div>
+            `);
+        } else {
+            othersEmptyState.show();
+        }
+    } else {
+        othersEmptyState.hide();
+    }
+}
+
+// Generate model card with filter data attributes
+function generateModelCardWithFilter(model) {
+    // Check if order exists AND is delivered to show Re-order button
+    const hasDeliveredOrder = model.order && model.order.order_id && model.order.is_delivered;
+    
+    return `
+        <div class="col-md-3 mb-3">
+            <div class="card h-100 shadow-sm" id="model-${model.id}" data-jewelry-type="${model.jewelry_type_name}" data-model-no="${model.model_no}">
+                <div class="position-relative">
+                    <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
+                    <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}x${model.breadth}cm</span>
+                    <img src="${model.model_img}" class="card-img-top cursor-pointer" alt="${model.model_no}" 
+                         style="height: 180px; object-fit: cover;" 
+                         onclick="openImageModal('${model.model_img}', '${model.model_no}', '${model.jewelry_type_name}', '${model.weight}', '${model.length}', '${model.breadth}')">
+                </div>
+                <div class="card-body p-2">
+                    <div class="row align-items-center">
+                        <!-- Left side: Model info -->
+                        <div class="col-6">
+                            <h6 class="card-title mb-0">${model.model_no}</h6>
+                            <small class="text-muted">${model.jewelry_type_name} &bull; </small>
+                            <small class="text-muted">${model.weight}gm</small>
+                        </div>
+                        
+                        <!-- Right side: Color dropdown with label -->
+                        <div class="col-6">
+                            <label for="color-select-${model.id}" class="form-label mb-1 small">Color:</label>
+                            <select id="color-select-${model.id}" class="form-select form-select-sm color-select" data-model-id="${model.id}" data-order-id="${model.order ? model.order.order_id : ''}">
+                                ${model.colors.map(color => `<option value="${color.id}">${color.color}</option>`).join('')}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Center: Add button and controls -->
+                    <div class="row mt-2">
+                        <div class="col-12 text-center">
+                            <div id="cart-controls-${model.id}" class="d-none">
+                                <div class="d-flex justify-content-center align-items-center gap-2">
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="decrementQty(${model.id})">-</button>
+                                    <span id="qty-${model.id}">1</span>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="incrementQty(${model.id})">+</button>
+                                    <button class="btn btn-success btn-sm ms-2" onclick="addToCart(${model.id})" title="Add to Cart">
+                                        <i class="fa-solid fa-cart-shopping"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Re-order button: Will be visible only if there's a delivered order -->
+                            ${hasDeliveredOrder ? `
+                                <button class="btn btn-success btn-md" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
+                                    Re-order <i class="fa-solid fa-rotate-right"></i>
+                                </button>
+                            ` : `
+                                <button class="btn btn-secondary btn-sm" disabled id="add-btn-${model.id}">
+                                    ${model.order ? 'In Progress' : 'No Order Available'}
+                                </button>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Clear all filters
+function clearAllFilters() {
+    $('#categoryFilter').val('');
+    $('#searchInput').val('');
+    filterModels('', '');
 }
 
 function generateModelCard(model) {
@@ -240,6 +451,7 @@ function checkOrderForColor(modelId, selectedColor) {
         }
     });
 }
+
 // Function to open the image modal
 function openImageModal(imageUrl, modelName, jewelryType, weight, length, breadth) {
     $('#imageModalTitle').text(modelName);
@@ -253,7 +465,6 @@ function openImageModal(imageUrl, modelName, jewelryType, weight, length, breadt
     const modal = new bootstrap.Modal(document.getElementById('imageZoomModal'));
     modal.show();
 }
-
 
 // Initialize zoom functionality for the image modal
 function initializeImageZoom() {
@@ -441,7 +652,6 @@ window.addToCart = function (modelId) {
     });
 };
 
-
 // Function to get CSRF token
 function getCsrfToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]').value;
@@ -551,7 +761,6 @@ function loadCartItems() {
     });
 }
 
-
 // Function to update cart item quantity
 function updateCartItemQty(cartItemId, newQty) {
     if (newQty < 1) {
@@ -639,7 +848,6 @@ function proceedToCheckout() {
     });
 }
 
-
 function getCSRFToken() {
     return document.querySelector('[name=csrfmiddlewaretoken]').value;
 }
@@ -657,3 +865,153 @@ function showToast(message, type = 'info') {
     const toastElement = new bootstrap.Toast(document.getElementById(toastId));
     toastElement.show();
 }
+
+// Add missing functions that are referenced but not defined
+
+// Function to show alerts
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    $('#response-container').html(alertHtml);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        $('.alert').alert('close');
+    }, 5000);
+}
+
+// Function to update empty states
+function updateEmptyStates(readyToDeliverCount, othersCount) {
+    // Handle ready to deliver empty state
+    if (readyToDeliverCount === 0) {
+        $('#ready-to-deliver-cards').html(`
+            <div class="col-12 text-center py-5">
+                <div class="text-muted">
+                    <i class="fa-solid fa-box-open fa-3x mb-3"></i>
+                    <h5>No Ready to Deliver Models</h5>
+                    <p>No models are currently ready for delivery.</p>
+                </div>
+            </div>
+        `);
+    }
+    
+    // Handle others empty state
+    if (othersCount === 0) {
+        $('#others-cards').html(`
+            <div class="col-12 text-center py-5">
+                <div class="text-muted">
+                    <i class="fa-solid fa-box-open fa-3x mb-3"></i>
+                    <h5>No Other Models</h5>
+                    <p>No other models are available.</p>
+                </div>
+            </div>
+        `);
+    }
+}
+
+// Function to attach event listeners (placeholder - implement based on your needs)
+function attachEventListeners(models) {
+    // Attach color change event listeners
+    $('.color-select').off('change').on('change', function() {
+        const modelId = $(this).data('model-id');
+        const selectedColor = $(this).val();
+        checkOrderForColor(modelId, selectedColor);
+    });
+    
+    // You can add more event listeners here as needed
+    console.log('Event listeners attached for', models.length, 'models');
+}
+
+function search() {
+    const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    const activeTab = $('.tab-pane.active');
+    const activeTabId = activeTab.attr('id');
+    let visibleCount = 0;
+    
+    // Search through model cards in the active tab
+    activeTab.find('.col-md-4, .col-lg-3, .col-sm-6').each(function() { // Adjust these classes based on your card structure
+        const modelText = $(this).text().toLowerCase();
+        
+        if (searchTerm === '' || modelText.includes(searchTerm)) {
+            $(this).show();
+            visibleCount++;
+        } else {
+            $(this).hide();
+        }
+    });
+    
+    // Handle no results found
+    if (visibleCount === 0 && searchTerm !== '') {
+        // Remove existing "no results" message
+        $('.no-models-found').remove();
+        
+        // Add "no models found" message to the active tab's row container
+        activeTab.find('.row').append(
+            '<div class="col-12 no-models-found">' +
+                '<div class="text-center text-muted py-4">' +
+                    '<i class="fa-solid fa-search mb-2" style="font-size: 2rem; opacity: 0.5;"></i>' +
+                    '<p class="mb-0">No models found matching "' + searchTerm + '"</p>' +
+                '</div>' +
+            '</div>'
+        );
+    } else {
+        // Remove "no results" message if models are visible
+        $('.no-models-found').remove();
+    }
+    
+    // Show/hide the empty state based on visible cards
+    if (activeTabId === 'ready-to-deliver') {
+        if (visibleCount === 0 && searchTerm === '') {
+            $('#ready-to-deliver-empty').removeClass('d-none');
+        } else {
+            $('#ready-to-deliver-empty').addClass('d-none');
+        }
+    } else if (activeTabId === 'others') {
+        if (visibleCount === 0 && searchTerm === '') {
+            $('#others-empty').removeClass('d-none');
+        } else {
+            $('#others-empty').addClass('d-none');
+        }
+    }
+}
+
+$(document).ready(function() {
+    // Bind search function to input event
+    $('#searchInput').on('input', search);
+    
+    // Clear search functionality
+    $('#clearSearch').on('click', function() {
+        $('#searchInput').val('');
+        $('.col-md-4, .col-lg-3, .col-sm-6').show(); // Show all model cards
+        $('.no-models-found').remove(); // Remove no results message
+        
+        // Reset empty states for both tabs
+        const activeTab = $('.tab-pane.active');
+        const activeTabId = activeTab.attr('id');
+        const visibleCards = activeTab.find('.col-md-4, .col-lg-3, .col-sm-6:visible').length;
+        
+        if (visibleCards === 0) {
+            if (activeTabId === 'ready-to-deliver') {
+                $('#ready-to-deliver-empty').removeClass('d-none');
+            } else if (activeTabId === 'others') {
+                $('#others-empty').removeClass('d-none');
+            }
+        }
+    });
+    
+    // Re-run search when switching tabs
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function() {
+        search();
+    });
+    
+    // Optional: Clear search on Escape key
+    $('#searchInput').on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            $('#clearSearch').click();
+        }
+    });
+});

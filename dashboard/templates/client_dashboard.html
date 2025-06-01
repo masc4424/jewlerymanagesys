@@ -67,20 +67,44 @@
             <span id="cart-count" class="badge bg-light text-dark ms-2">0</span>
         </button>
     </div>
-    
-    <!-- Tabs Navigation -->
-    <ul class="nav nav-tabs mb-3" id="modelsTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="ready-to-deliver-tab" data-bs-toggle="tab" data-bs-target="#ready-to-deliver" type="button" role="tab" aria-controls="ready-to-deliver" aria-selected="true">
-                Delivered Items
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="others-tab" data-bs-toggle="tab" data-bs-target="#others" type="button" role="tab" aria-controls="others" aria-selected="false">
-                New Order Status
-            </button>
-        </li>
-    </ul>
+
+    <!-- Combined Filter and Tabs Section -->
+    <div class="d-flex justify-content-between align-items-end mb-3">
+        <!-- Tabs Navigation (Left Side) -->
+        <ul class="nav nav-tabs mb-0" id="modelsTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="ready-to-deliver-tab" data-bs-toggle="tab" data-bs-target="#ready-to-deliver" type="button" role="tab" aria-controls="ready-to-deliver" aria-selected="true">
+                    Delivered Items
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="others-tab" data-bs-toggle="tab" data-bs-target="#others" type="button" role="tab" aria-controls="others" aria-selected="false">
+                    New Order Status
+                </button>
+            </li>
+        </ul>
+        
+        <!-- Filter and Search Section (Right Side) -->
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+            <!-- Search Bar -->
+            <div class="input-group" style="width: 250px;">
+                <span class="input-group-text">
+                    <i class="fa-solid fa-search"></i>
+                </span>
+                <input type="text" class="form-control" id="searchInput" placeholder="Search models...">
+                <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Clear search">
+                    <i class="fa-solid fa-times"></i>
+                </button>
+            </div>
+            
+            <!-- Category Filter -->
+            <div class="d-flex align-items-center">
+                <select class="form-select" id="categoryFilter" style="width: 200px;">
+                    <option value="">All Categories</option>
+                </select>
+            </div>
+        </div>
+    </div>
     
     <!-- Tabs Content -->
     <div class="tab-content" id="modelsTabsContent">
