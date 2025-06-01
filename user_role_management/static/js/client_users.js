@@ -237,4 +237,22 @@ $(document).ready(function() {
     $('#editUserModal').on('hidden.bs.modal', function() {
         $('#editUserForm')[0].reset();
     });
+
+    $('#toggleEditPassword').on('click', function() {
+        const passwordField = $('#edit_password');
+        const icon = $('#editPasswordIcon');
+        const type = passwordField.attr('type') === 'password' ? 'text' : 'password';
+        passwordField.attr('type', type);
+    
+        // Toggle icon class
+        icon.toggleClass('fa-eye fa-eye-slash');
+    });
+
+    $('#toggleAddPassword').on('click', function() {
+        const passwordField = $('#add_password');
+        const icon = $('#addPasswordIcon');
+        const type = passwordField.attr('type') === 'password' ? 'text' : 'password';
+        passwordField.attr('type', type);
+        icon.toggleClass('fa-eye fa-eye-slash');
+    });
 });

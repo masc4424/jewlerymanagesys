@@ -97,9 +97,12 @@
                                 <label for="add_email" class="form-label">Email*</label>
                                 <input type="email" class="form-control" id="add_email" name="email" required>
                             </div>
-                            <div class="mb-3">
+                            <div class="mb-3 position-relative">
                                 <label for="add_password" class="form-label">Password*</label>
                                 <input type="password" class="form-control" id="add_password" name="password" required>
+                                <span class="position-absolute top-50 end-0 translate-middle-y me-3 mt-3" style="cursor: pointer;" id="toggleAddPassword">
+                                    <i id="addPasswordIcon" class="fa-solid fa-eye"></i>
+                                </span>
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -158,10 +161,13 @@
                                 <label for="edit_email" class="form-label">Email*</label>
                                 <input type="email" class="form-control" id="edit_email" name="email" required>
                             </div>
-                            <div class="mb-3">
+                            <div class="mb-3 position-relative">
                                 <label for="edit_password" class="form-label">Password (leave blank to keep current)</label>
                                 <input type="password" class="form-control" id="edit_password" name="password">
-                            </div>
+                                <span class="position-absolute top-50 end-0 translate-middle-y me-3 mt-3" style="cursor: pointer;" id="toggleEditPassword">
+                                    <i id="editPasswordIcon" class="fa-solid fa-eye"></i>
+                                </span>
+                            </div>                            
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
