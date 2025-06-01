@@ -1,9 +1,10 @@
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
-from product_inv.models import ModelClient, Model, ModelColor
+from product_inv.models import *
 from django.templatetags.static import static
 from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods
 from order.models import ClientAddToCart, Order, RepeatedOrder
 import json
 from django.db.models import Sum
@@ -411,3 +412,24 @@ def create_repeated_order(request):
         'message': 'Repeated orders created successfully',
         'data': repeated_orders
     })
+
+@login_required
+@require_http_methods(["GET"])
+def get_jewelry_types_simple(request):
+    """
+    Simple API endpoint to fetch jewelry type names only
+    """
+    try:
+        jewelry_types = JewelryType.objects.all().values('id', 'name').order_by('name')
+        
+        return JsonResponse({
+            'status': 'success',
+            'data': list(jewelry_types)
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Error fetching jewelry types: {str(e)}',
+            'data': []
+        }, status=500)
