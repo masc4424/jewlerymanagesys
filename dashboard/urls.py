@@ -17,4 +17,5 @@ urlpatterns += [
     path('update-cart/',update_cart_item, name='update_cart_item'),
     path('remove-from-cart/',remove_from_cart, name='remove_from_cart'),
     path('create-repeated-order/', create_repeated_order, name='create_repeated_order'),
+    path('api/jewelry-types/', get_jewelry_types_simple, name='get_jewelry_types'),
 ]

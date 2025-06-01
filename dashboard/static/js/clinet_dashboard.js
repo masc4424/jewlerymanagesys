@@ -33,6 +33,15 @@ $(document).ready(function () {
             $('#clearSearch').click();
         }
     });
+
+    populateJewelryTypeFilter();
+});
+
+$(document).on('focus mousedown', '#categoryFilter', function() {
+    // Only populate if it hasn't been populated yet (only has the default option)
+    if ($(this).children('option').length === 1) {
+        populateJewelryTypeFilter();
+    }
 });
 
 // Load all models via AJAX
@@ -114,22 +123,58 @@ function loadModels() {
 }
 
 // Function to populate jewelry type filter dropdown
-function populateJewelryTypeFilter(jewelryTypes) {
+function populateJewelryTypeFilter() {
     const categoryFilter = $('#categoryFilter');
     
-    // Clear existing options except "All Categories"
-    categoryFilter.find('option:not(:first)').remove();
+    // Show loading state
+    categoryFilter.prop('disabled', true);
+    categoryFilter.html('<option>Loading...</option>');
     
-    // Add jewelry types to the dropdown
-    jewelryTypes.forEach(type => {
-        categoryFilter.append(`<option value="${type}">${type}</option>`);
+    $.ajax({
+        url: '/api/jewelry-types/', // Update this URL to match your Django URL pattern
+        type: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            // Clear existing options
+            categoryFilter.empty();
+            
+            // Add "All Categories" as the first option
+            categoryFilter.append('<option value="">All Categories</option>');
+            
+            if (response.status === 'success' && response.data) {
+                // Add jewelry types to the dropdown
+                response.data.forEach(jewelryType => {
+                    categoryFilter.append(`<option value="${jewelryType.id}">${jewelryType.name}</option>`);
+                });
+                
+                // Select the first jewelry type (index 1, since index 0 is "All Categories")
+                if (response.data.length > 0) {
+                    categoryFilter.prop('selectedIndex', 1);
+                    categoryFilter.trigger('change');
+                }
+            } else {
+                // Handle case when no jewelry types are found
+                categoryFilter.append('<option>No jewelry types available</option>');
+            }
+            
+            // Re-enable the dropdown
+            categoryFilter.prop('disabled', false);
+        },
+        error: function(xhr, status, error) {
+            console.error('Error fetching jewelry types:', error);
+            
+            // Clear and show error state
+            categoryFilter.empty();
+            categoryFilter.append('<option value="">All Categories</option>');
+            categoryFilter.append('<option>Error loading types</option>');
+            
+            // Re-enable the dropdown
+            categoryFilter.prop('disabled', false);
+            
+            // Show error message to user
+            showAlert('warning', 'Failed to load jewelry types. Please refresh the page.');
+        }
     });
-    
-    // Select the first jewelry type (index 1, since index 0 is "All Categories")
-    if (jewelryTypes.length > 0) {
-        categoryFilter.prop('selectedIndex', 1);
-        categoryFilter.trigger('change');
-    }
 }
 
 // Initialize filter functionality
@@ -167,6 +212,7 @@ function filterModels(searchTerm = '', selectedCategory = '') {
 // Filter cards within a specific container
 function filterCardsInContainer(containerId, searchTerm, selectedCategory) {
     const container = $(containerId);
+    // Use the correct card selector - based on your generateModelCardWithFilter function, it's .col-md-3
     const cards = container.find('.col-md-3');
     
     cards.each(function() {
@@ -928,6 +974,7 @@ function attachEventListeners(models) {
 
 function search() {
     const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    const selectedCategory = $('#categoryFilter').val();
     const activeTab = $('.tab-pane.active');
     const activeTabId = activeTab.attr('id');
     let visibleCount = 0;
