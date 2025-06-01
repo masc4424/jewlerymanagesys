@@ -135,7 +135,7 @@
     </div>
 
        <!-- Image Modal -->
-       <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-fullscreen">
         <div class="modal-content position-relative">
             <div class="px-4 pt-1 text-center">
@@ -161,8 +161,11 @@
             <!-- Close Button -->
     
             <div class="modal-body p-0">
-                <div class="image-container fullscreen-container">
-                    <img id="modalImage" src="#" alt="Model Image">
+                <div class="zoom-container" style="overflow: hidden; position: relative; height: 70vh; width: 100%; border: 1px solid #ddd;">
+                    <div class="image-wrapper" style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+                        <img id="modalImage" src="#" alt="Model Image"
+                             style="max-height: 100%; max-width: 100%; object-fit: contain; display: block; transform-origin: center; transition: transform 0.2s;">
+                    </div>
                 </div>
             </div>
             
