@@ -148,9 +148,11 @@ function generatePagination() {
     const $paginationList = $('#pagination-list');
     const $paginationContainer = $('#pagination-container');
     
-    // Hide pagination if only one page or no results
-    if (totalPages <= 1) {
+    // Hide pagination if only one page, no results, or no models
+    if (totalPages <= 1 || filteredModels.length === 0) {
         $paginationContainer.addClass('d-none');
+        // Also hide pagination info when there are no models
+        $('#pagination-info').addClass('d-none');
         return;
     }
     
@@ -244,6 +246,7 @@ function generatePagination() {
         `);
     } else {
         $('#pagination-info small').text(`Showing ${startItem} to ${endItem} of ${filteredModels.length} models`);
+        $('#pagination-info').removeClass('d-none');
     }
 }
 
