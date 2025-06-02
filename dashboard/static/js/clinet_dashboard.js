@@ -1,4 +1,5 @@
 $(document).ready(function () {
+    showLoader();
     // Fix for tab highlighting
     $('.nav-link').on('click', function (e) {
         // Remove active class from all tabs
@@ -28,6 +29,15 @@ $(document).ready(function () {
     });
 });
 
+function showLoader() {
+    $('#main-loader').removeClass('d-none').show();
+}
+
+// Hide loader function
+function hideLoader() {
+    $('#main-loader').addClass('d-none').hide();
+}
+
 let allModels = [];
 
 // Load all models via AJAX
@@ -43,6 +53,7 @@ function loadModels() {
                 loadJewelryTypes();
             } else {
                 showAlert('warning', response.message);
+                hideLoader();
             }
         },
         error: function (xhr, status, error) {
@@ -52,21 +63,35 @@ function loadModels() {
     });
 }
 
+let currentPage = 1;
+let itemsPerPage = 8; // Adjust as needed
+let totalPages = 1;
+let filteredModels = [];
+
 // Function to render models based on provided data
 function renderModels(models) {
+    filteredModels = models;
+    totalPages = Math.ceil(models.length / itemsPerPage);
+    
+    // Reset to page 1 if current page exceeds total pages
+    if (currentPage > totalPages) {
+        currentPage = 1;
+    }
+    
+    // Calculate start and end indices for current page
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedModels = models.slice(startIndex, endIndex);
+    
     let readyToDeliverHtml = '';
     let othersHtml = '';
     let readyToDeliverCount = 0;
     let othersCount = 0;
 
-    models.forEach((model, index) => {
-        // Check if model has a delivered order
+    paginatedModels.forEach((model, index) => {
         const isReadyToDeliver = model.order && model.order.is_delivered;
-        
-        // Generate the card HTML
         const cardHtml = generateModelCard(model);
         
-        // Add to the appropriate tab
         if (isReadyToDeliver) {
             readyToDeliverHtml += cardHtml;
             readyToDeliverCount++;
@@ -80,7 +105,7 @@ function renderModels(models) {
     $('#ready-to-deliver-cards').html(readyToDeliverHtml);
     $('#others-cards').html(othersHtml);
     
-    // Show/hide empty states
+    // Show/hide empty states based on paginated results
     if (readyToDeliverCount === 0) {
         $('#ready-to-deliver-empty').removeClass('d-none');
     } else {
@@ -93,7 +118,7 @@ function renderModels(models) {
         $('#others-empty').addClass('d-none');
     }
     
-    // Attach event listeners AFTER adding the HTML to the DOM
+    // Attach event listeners
     $('.color-select').on('change', function() {
         const modelId = $(this).data('model-id');
         const selectedColor = $(this).val();
@@ -101,37 +126,159 @@ function renderModels(models) {
     });
     
     // Initial check for each model's default color
-    models.forEach((model) => {
+    paginatedModels.forEach((model) => {
         const defaultColor = $(`#color-select-${model.id}`).val();
         if (defaultColor) {
             checkOrderForColor(model.id, defaultColor);
         }
     });
     
-    // Add the image modal to the page if it doesn't exist
+    // Add image modal if it doesn't exist
     if ($('#imageZoomModal').length === 0) {
         addImageZoomModal();
         initializeImageZoom();
     }
+    
+    // Generate pagination controls
+    generatePagination();
 }
+
+// Generate pagination controls
+function generatePagination() {
+    const $paginationList = $('#pagination-list');
+    const $paginationContainer = $('#pagination-container');
+    
+    // Hide pagination if only one page or no results
+    if (totalPages <= 1) {
+        $paginationContainer.addClass('d-none');
+        return;
+    }
+    
+    $paginationContainer.removeClass('d-none');
+    $paginationList.empty();
+    
+    // Previous button
+    const prevDisabled = currentPage === 1 ? 'disabled' : '';
+    $paginationList.append(`
+        <li class="page-item ${prevDisabled}">
+            <a class="page-link" href="#" onclick="goToPage(${currentPage - 1})" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+    `);
+    
+    // Page numbers
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // Adjust start page if we're near the end
+    if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // First page and ellipsis
+    if (startPage > 1) {
+        $paginationList.append(`
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="goToPage(1)">1</a>
+            </li>
+        `);
+        if (startPage > 2) {
+            $paginationList.append(`
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `);
+        }
+    }
+    
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        const activeClass = i === currentPage ? 'active' : '';
+        $paginationList.append(`
+            <li class="page-item ${activeClass}">
+                <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+            </li>
+        `);
+    }
+    
+    // Last page and ellipsis
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            $paginationList.append(`
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `);
+        }
+        $paginationList.append(`
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="goToPage(${totalPages})">${totalPages}</a>
+            </li>
+        `);
+    }
+    
+    // Next button
+    const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+    $paginationList.append(`
+        <li class="page-item ${nextDisabled}">
+            <a class="page-link" href="#" onclick="goToPage(${currentPage + 1})" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    `);
+    
+    // Add pagination info
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(currentPage * itemsPerPage, filteredModels.length);
+    
+    // Add pagination info below pagination controls (optional)
+    if ($('#pagination-info').length === 0) {
+        $paginationContainer.after(`
+            <div id="pagination-info" class="text-center mt-2">
+                <small class="text-muted">
+                    Showing ${startItem} to ${endItem} of ${filteredModels.length} models
+                </small>
+            </div>
+        `);
+    } else {
+        $('#pagination-info small').text(`Showing ${startItem} to ${endItem} of ${filteredModels.length} models`);
+    }
+}
+
+// Go to specific page
+window.goToPage = function(page) {
+    if (page < 1 || page > totalPages || page === currentPage) {
+        return;
+    }
+    
+    currentPage = page;
+    renderModels(filteredModels);
+    
+    // Scroll to top of the models section
+    $('html, body').animate({
+        scrollTop: $('#ready-to-deliver-tab').offset().top - 100
+    }, 300);
+};
 
 // Function to filter models based on category and search
 function filterModels() {
     const selectedCategory = $('#categoryFilter').val();
     const searchTerm = $('#searchInput').val().toLowerCase().trim();
     
-    let filteredModels = allModels;
+    let filtered = allModels;
     
     // Filter by category
     if (selectedCategory) {
-        filteredModels = filteredModels.filter(model => 
+        filtered = filtered.filter(model => 
             model.jewelry_type_name && model.jewelry_type_name.toLowerCase().includes(selectedCategory.toLowerCase())
         );
     }
     
-    // Filter by search term (searches in model_no, jewelry_type_name, status_name)
+    // Filter by search term
     if (searchTerm) {
-        filteredModels = filteredModels.filter(model => {
+        filtered = filtered.filter(model => {
             const modelNo = model.model_no ? model.model_no.toLowerCase() : '';
             const jewelryType = model.jewelry_type_name ? model.jewelry_type_name.toLowerCase() : '';
             const status = model.status_name ? model.status_name.toLowerCase() : '';
@@ -144,8 +291,41 @@ function filterModels() {
         });
     }
     
+    // Reset to first page when filtering
+    currentPage = 1;
+    
     // Re-render with filtered models
+    renderModels(filtered);
+}
+
+function changeItemsPerPage(newItemsPerPage) {
+    itemsPerPage = newItemsPerPage;
+    currentPage = 1; // Reset to first page
     renderModels(filteredModels);
+}
+
+function addItemsPerPageSelector() {
+    const selectorHtml = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <label for="itemsPerPageSelect" class="form-label me-2">Items per page:</label>
+                <select id="itemsPerPageSelect" class="form-select form-select-sm d-inline-block w-auto">
+                    <option value="8">8</option>
+                    <option value="12" selected>12</option>
+                    <option value="16">16</option>
+                    <option value="24">24</option>
+                </select>
+            </div>
+        </div>
+    `;
+    
+    // Add this before your models container
+    $('#models-container').prepend(selectorHtml);
+    
+    // Add event listener
+    $('#itemsPerPageSelect').on('change', function() {
+        changeItemsPerPage(parseInt($(this).val()));
+    });
 }
 
 function loadJewelryTypes() {
@@ -170,12 +350,16 @@ function loadJewelryTypes() {
                     // Trigger the filtering to load data for the selected category
                     filterModels();
                 }
+
+                hideLoader();
             } else {
                 console.error('Failed to load jewelry types:', response.message);
+                hideLoader();
             }
         },
         error: function (xhr, status, error) {
             console.error('Error loading jewelry types:', error);
+            hideLoader();
         }
     });
 }

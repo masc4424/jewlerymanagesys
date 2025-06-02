@@ -130,6 +130,20 @@
     <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 </div>
 
+<div id="main-loader" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading models...</p>
+</div>
+
+<!-- Add pagination controls -->
+<nav aria-label="Models pagination" id="pagination-container" class="d-none">
+    <ul class="pagination justify-content-center" id="pagination-list">
+        <!-- Pagination will be generated here -->
+    </ul>
+</nav>
+
 <!-- CSRF Token for AJAX -->
 {% csrf_token %}
 {% endblock %}
