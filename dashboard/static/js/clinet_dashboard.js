@@ -472,7 +472,7 @@ function generateModelCard(model) {
                                     Re-order <i class="fa-solid fa-rotate-right"></i>
                                 </button>
                             ` : `
-                                <button class="btn btn-secondary btn-sm" disabled id="add-btn-${model.id}">
+                                <button class="btn btn-secondary btn-sm" id="add-btn-${model.id}">
                                     ${model.order ? 'In Progress' : 'No Order Available'}
                                 </button>
                             `}
