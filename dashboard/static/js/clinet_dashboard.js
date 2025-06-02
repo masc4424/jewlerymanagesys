@@ -118,6 +118,26 @@ function renderModels(models) {
         $('#others-empty').addClass('d-none');
     }
     
+    // Check which tab is currently active and hide pagination if active tab shows empty state
+    const activeTab = $('.nav-link.active').attr('id');
+    let shouldHidePagination = false;
+    
+    if (activeTab === 'ready-to-deliver-tab') {
+        // Check if ready-to-deliver tab is showing empty state
+        shouldHidePagination = !$('#ready-to-deliver-empty').hasClass('d-none');
+    } else if (activeTab === 'others-tab') {
+        // Check if others tab is showing empty state
+        shouldHidePagination = !$('#others-empty').hasClass('d-none');
+    }
+    
+    if (shouldHidePagination) {
+        $('#pagination-container').addClass('d-none');
+        $('#pagination-info').addClass('d-none');
+    } else {
+        // Generate pagination controls only if active tab has content
+        generatePagination();
+    }
+    
     // Attach event listeners
     $('.color-select').on('change', function() {
         const modelId = $(this).data('model-id');
@@ -138,9 +158,6 @@ function renderModels(models) {
         addImageZoomModal();
         initializeImageZoom();
     }
-    
-    // Generate pagination controls
-    generatePagination();
 }
 
 // Generate pagination controls
@@ -148,9 +165,11 @@ function generatePagination() {
     const $paginationList = $('#pagination-list');
     const $paginationContainer = $('#pagination-container');
     
-    // Hide pagination if only one page or no results
-    if (totalPages <= 1) {
+    // Hide pagination if only one page, no results, or no models
+    if (totalPages <= 1 || filteredModels.length === 0) {
         $paginationContainer.addClass('d-none');
+        // Also hide pagination info when there are no models
+        $('#pagination-info').addClass('d-none');
         return;
     }
     
@@ -244,6 +263,26 @@ function generatePagination() {
         `);
     } else {
         $('#pagination-info small').text(`Showing ${startItem} to ${endItem} of ${filteredModels.length} models`);
+        $('#pagination-info').removeClass('d-none');
+    }
+}
+
+// Function to handle tab visibility for pagination
+function handleTabPaginationVisibility() {
+    const activeTab = $('.nav-link.active').attr('id');
+    let shouldHidePagination = false;
+    
+    if (activeTab === 'ready-to-deliver-tab') {
+        shouldHidePagination = !$('#ready-to-deliver-empty').hasClass('d-none');
+    } else if (activeTab === 'others-tab') {
+        shouldHidePagination = !$('#others-empty').hasClass('d-none');
+    }
+    
+    if (shouldHidePagination) {
+        $('#pagination-container').addClass('d-none');
+        $('#pagination-info').addClass('d-none');
+    } else if (filteredModels.length > 0) {
+        generatePagination();
     }
 }
 
