@@ -471,11 +471,7 @@ function generateModelCard(model) {
                                 <button class="btn btn-success btn-md" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
                                     Re-order <i class="fa-solid fa-rotate-right"></i>
                                 </button>
-                            ` : `
-                                <button class="btn btn-secondary btn-sm" id="add-btn-${model.id}">
-                                    ${model.order ? 'In Progress' : 'No Order Available'}
-                                </button>
-                            `}
+                            ` : ``}
                         </div>
                     </div>
                 </div>
