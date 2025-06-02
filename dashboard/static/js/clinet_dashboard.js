@@ -44,36 +44,96 @@ $(document).on('focus mousedown', '#categoryFilter', function() {
     }
 });
 
+function search() {
+    const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    const selectedCategory = $('#categoryFilter').val();
+    const activeTab = $('.tab-pane.active');
+    const activeTabId = activeTab.attr('id');
+    let visibleCount = 0;
+    
+    // FIX: Change from .col-md-4, .col-lg-3, .col-sm-6 to .col-md-3
+    activeTab.find('.col-md-3').each(function() {
+        const modelText = $(this).text().toLowerCase();
+        
+        if (searchTerm === '' || modelText.includes(searchTerm)) {
+            $(this).show();
+            visibleCount++;
+        } else {
+            $(this).hide();
+        }
+    });
+    
+    // Handle no results found
+    if (visibleCount === 0 && searchTerm !== '') {
+        $('.no-models-found').remove();
+        
+        activeTab.find('.row').append(
+            '<div class="col-12 no-models-found">' +
+                '<div class="text-center text-muted py-4">' +
+                    '<i class="fa-solid fa-search mb-2" style="font-size: 2rem; opacity: 0.5;"></i>' +
+                    '<p class="mb-0">No models found matching "' + searchTerm + '"</p>' +
+                '</div>' +
+            '</div>'
+        );
+    } else {
+        $('.no-models-found').remove();
+    }
+    
+    // Show/hide the empty state based on visible cards
+    if (activeTabId === 'ready-to-deliver') {
+        if (visibleCount === 0 && searchTerm === '') {
+            $('#ready-to-deliver-empty').removeClass('d-none');
+        } else {
+            $('#ready-to-deliver-empty').addClass('d-none');
+        }
+    } else if (activeTabId === 'others') {
+        if (visibleCount === 0 && searchTerm === '') {
+            $('#others-empty').removeClass('d-none');
+        } else {
+            $('#others-empty').addClass('d-none');
+        }
+    }
+}
+
 // Load all models via AJAX
 function loadModels() {
+    console.log('Loading models...');
+    
     $.ajax({
         url: '/api/client/models/',
         type: 'GET',
         dataType: 'json',
         success: function (response) {
+            console.log('API Response:', response);
+            
             if (response.status === 'success') {
                 const models = response.data;
+                console.log('Models loaded:', models.length);
+                
+                // Check if models array exists and has items
+                if (!models || models.length === 0) {
+                    console.warn('No models found in response');
+                    updateEmptyStates(0, 0);
+                    return;
+                }
+                
                 let readyToDeliverHtml = '';
                 let othersHtml = '';
                 let readyToDeliverCount = 0;
                 let othersCount = 0;
 
-                // Collect unique jewelry types for the filter
                 const jewelryTypes = new Set();
                 
                 models.forEach((model, index) => {
-                    // Add jewelry type to the set for filter dropdown
+                    console.log(`Processing model ${index + 1}:`, model.model_no);
+                    
                     if (model.jewelry_type_name && model.jewelry_type_name !== "N/A") {
                         jewelryTypes.add(model.jewelry_type_name);
                     }
                     
-                    // Check if model has a delivered order
                     const isReadyToDeliver = model.order && model.order.is_delivered;
-                    
-                    // Generate the card HTML with data attributes for filtering
                     const cardHtml = generateModelCardWithFilter(model);
                     
-                    // Add to the appropriate tab
                     if (isReadyToDeliver) {
                         readyToDeliverHtml += cardHtml;
                         readyToDeliverCount++;
@@ -83,41 +143,63 @@ function loadModels() {
                     }
                 });
 
-                // Update the DOM with generated HTML FIRST
-                $('#ready-to-deliver-cards').html(readyToDeliverHtml);
-                $('#others-cards').html(othersHtml);
+                console.log('Ready to deliver count:', readyToDeliverCount);
+                console.log('Others count:', othersCount);
+                
+                // FIX: Check if containers exist before updating
+                const readyContainer = $('#ready-to-deliver-cards');
+                const othersContainer = $('#others-cards');
+                
+                console.log('Ready container exists:', readyContainer.length > 0);
+                console.log('Others container exists:', othersContainer.length > 0);
+                
+                if (readyContainer.length === 0) {
+                    console.error('ERROR: #ready-to-deliver-cards container not found!');
+                    return;
+                }
+                
+                if (othersContainer.length === 0) {
+                    console.error('ERROR: #others-cards container not found!');
+                    return;
+                }
+
+                // Update the DOM
+                readyContainer.html(readyToDeliverHtml);
+                othersContainer.html(othersHtml);
+                
+                console.log('DOM updated - Ready HTML length:', readyToDeliverHtml.length);
+                console.log('DOM updated - Others HTML length:', othersHtml.length);
                 
                 // Show/hide empty states
                 updateEmptyStates(readyToDeliverCount, othersCount);
                 
-                // Attach event listeners AFTER adding the HTML to the DOM
+                // Attach event listeners
                 attachEventListeners(models);
                 
-                // Initialize filter functionality BEFORE populating dropdown
+                // Initialize filter functionality
                 initializeFilterFunctionality();
                 
-                // Populate the jewelry type filter dropdown LAST
-                // Use setTimeout to ensure DOM is fully updated
+                // Populate jewelry type filter
                 setTimeout(() => {
                     populateJewelryTypeFilter(Array.from(jewelryTypes).sort());
                 }, 100);
                 
-                // Add the image modal to the page if it doesn't exist
+                // Add image modal
                 if ($('#imageZoomModal').length === 0) {
                     addImageZoomModal();
                     initializeImageZoom();
                 }
                 
-                // DEBUG: Uncomment the line below to debug filtering
-                // setTimeout(() => debugFilter(), 500);
-                
             } else {
+                console.error('API returned error status:', response.message);
                 showAlert('warning', response.message);
             }
         },
         error: function (xhr, status, error) {
-            console.error('Error:', error);
-            showAlert('danger', `Error: ${error}`);
+            console.error('AJAX Error:', error);
+            console.error('Status:', status);
+            console.error('Response Text:', xhr.responseText);
+            showAlert('danger', `Error loading models: ${error}`);
         }
     });
 }
@@ -284,58 +366,75 @@ function updateEmptyStatesAfterFilter() {
 
 // Generate model card with filter data attributes
 function generateModelCardWithFilter(model) {
-    // Check if order exists AND is delivered to show Re-order button
+    // FIX: Add null checks and default values
+    if (!model) {
+        console.error('Model is null or undefined');
+        return '';
+    }
+    
+    const modelId = model.id || 0;
+    const modelNo = model.model_no || 'Unknown';
+    const jewelryType = model.jewelry_type_name || 'N/A';
+    const weight = model.weight || '0';
+    const length = model.length || '0';
+    const breadth = model.breadth || '0';
+    const statusName = model.status_name || 'Unknown';
+    const modelImg = model.model_img || '/static/images/placeholder.jpg';
+    const colors = model.colors || [];
+    
+    // Check if order exists AND is delivered
     const hasDeliveredOrder = model.order && model.order.order_id && model.order.is_delivered;
+    
+    // FIX: Ensure colors array has at least one item
+    const colorOptions = colors.length > 0 
+        ? colors.map(color => `<option value="${color.id}">${color.color}</option>`).join('')
+        : '<option value="">No colors available</option>';
     
     return `
         <div class="col-md-3 mb-3">
-            <div class="card h-100 shadow-sm" id="model-${model.id}" data-jewelry-type="${model.jewelry_type_name}" data-model-no="${model.model_no}">
+            <div class="card h-100 shadow-sm" id="model-${modelId}" data-jewelry-type="${jewelryType}" data-model-no="${modelNo}">
                 <div class="position-relative">
-                    <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
-                    <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}x${model.breadth}cm</span>
-                    <img src="${model.model_img}" class="card-img-top cursor-pointer" alt="${model.model_no}" 
+                    <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${statusName}</span>
+                    <span class="badge bg-dark position-absolute top-0 end-0 m-2">${length}x${breadth}cm</span>
+                    <img src="${modelImg}" class="card-img-top cursor-pointer" alt="${modelNo}" 
                          style="height: 180px; object-fit: cover;" 
-                         onclick="openImageModal('${model.model_img}', '${model.model_no}', '${model.jewelry_type_name}', '${model.weight}', '${model.length}', '${model.breadth}')">
+                         onclick="openImageModal('${modelImg}', '${modelNo}', '${jewelryType}', '${weight}', '${length}', '${breadth}')">
                 </div>
                 <div class="card-body p-2">
                     <div class="row align-items-center">
-                        <!-- Left side: Model info -->
                         <div class="col-6">
-                            <h6 class="card-title mb-0">${model.model_no}</h6>
-                            <small class="text-muted">${model.jewelry_type_name} &bull; </small>
-                            <small class="text-muted">${model.weight}gm</small>
+                            <h6 class="card-title mb-0">${modelNo}</h6>
+                            <small class="text-muted">${jewelryType} &bull; </small>
+                            <small class="text-muted">${weight}gm</small>
                         </div>
                         
-                        <!-- Right side: Color dropdown with label -->
                         <div class="col-6">
-                            <label for="color-select-${model.id}" class="form-label mb-1 small">Color:</label>
-                            <select id="color-select-${model.id}" class="form-select form-select-sm color-select" data-model-id="${model.id}" data-order-id="${model.order ? model.order.order_id : ''}">
-                                ${model.colors.map(color => `<option value="${color.id}">${color.color}</option>`).join('')}
+                            <label for="color-select-${modelId}" class="form-label mb-1 small">Color:</label>
+                            <select id="color-select-${modelId}" class="form-select form-select-sm color-select" data-model-id="${modelId}" data-order-id="${model.order ? model.order.order_id : ''}">
+                                ${colorOptions}
                             </select>
                         </div>
                     </div>
                     
-                    <!-- Center: Add button and controls -->
                     <div class="row mt-2">
                         <div class="col-12 text-center">
-                            <div id="cart-controls-${model.id}" class="d-none">
+                            <div id="cart-controls-${modelId}" class="d-none">
                                 <div class="d-flex justify-content-center align-items-center gap-2">
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="decrementQty(${model.id})">-</button>
-                                    <span id="qty-${model.id}">1</span>
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="incrementQty(${model.id})">+</button>
-                                    <button class="btn btn-success btn-sm ms-2" onclick="addToCart(${model.id})" title="Add to Cart">
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="decrementQty(${modelId})">-</button>
+                                    <span id="qty-${modelId}">1</span>
+                                    <button class="btn btn-outline-secondary btn-sm" onclick="incrementQty(${modelId})">+</button>
+                                    <button class="btn btn-success btn-sm ms-2" onclick="addToCart(${modelId})" title="Add to Cart">
                                         <i class="fa-solid fa-cart-shopping"></i>
                                     </button>
                                 </div>
                             </div>
                             
-                            <!-- Re-order button: Will be visible only if there's a delivered order -->
                             ${hasDeliveredOrder ? `
-                                <button class="btn btn-success btn-md" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
+                                <button class="btn btn-success btn-md" onclick="showCartControls(${modelId})" id="add-btn-${modelId}">
                                     Re-order <i class="fa-solid fa-rotate-right"></i>
                                 </button>
                             ` : `
-                                <button class="btn btn-secondary btn-sm" disabled id="add-btn-${model.id}">
+                                <button class="btn btn-secondary btn-sm" disabled id="add-btn-${modelId}">
                                     ${model.order ? 'In Progress' : 'No Order Available'}
                                 </button>
                             `}
@@ -961,67 +1060,19 @@ function updateEmptyStates(readyToDeliverCount, othersCount) {
 
 // Function to attach event listeners (placeholder - implement based on your needs)
 function attachEventListeners(models) {
+    console.log('Attaching event listeners...');
+    
+    // Remove existing listeners to prevent duplicates
+    $('.color-select').off('change');
+    
     // Attach color change event listeners
-    $('.color-select').off('change').on('change', function() {
+    $('.color-select').on('change', function() {
         const modelId = $(this).data('model-id');
         const selectedColor = $(this).val();
+        console.log(`Color changed for model ${modelId} to ${selectedColor}`);
         checkOrderForColor(modelId, selectedColor);
     });
     
-    // You can add more event listeners here as needed
     console.log('Event listeners attached for', models.length, 'models');
-}
-
-function search() {
-    const searchTerm = $('#searchInput').val().toLowerCase().trim();
-    const selectedCategory = $('#categoryFilter').val();
-    const activeTab = $('.tab-pane.active');
-    const activeTabId = activeTab.attr('id');
-    let visibleCount = 0;
-    
-    // Search through model cards in the active tab
-    activeTab.find('.col-md-4, .col-lg-3, .col-sm-6').each(function() { // Adjust these classes based on your card structure
-        const modelText = $(this).text().toLowerCase();
-        
-        if (searchTerm === '' || modelText.includes(searchTerm)) {
-            $(this).show();
-            visibleCount++;
-        } else {
-            $(this).hide();
-        }
-    });
-    
-    // Handle no results found
-    if (visibleCount === 0 && searchTerm !== '') {
-        // Remove existing "no results" message
-        $('.no-models-found').remove();
-        
-        // Add "no models found" message to the active tab's row container
-        activeTab.find('.row').append(
-            '<div class="col-12 no-models-found">' +
-                '<div class="text-center text-muted py-4">' +
-                    '<i class="fa-solid fa-search mb-2" style="font-size: 2rem; opacity: 0.5;"></i>' +
-                    '<p class="mb-0">No models found matching "' + searchTerm + '"</p>' +
-                '</div>' +
-            '</div>'
-        );
-    } else {
-        // Remove "no results" message if models are visible
-        $('.no-models-found').remove();
-    }
-    
-    // Show/hide the empty state based on visible cards
-    if (activeTabId === 'ready-to-deliver') {
-        if (visibleCount === 0 && searchTerm === '') {
-            $('#ready-to-deliver-empty').removeClass('d-none');
-        } else {
-            $('#ready-to-deliver-empty').addClass('d-none');
-        }
-    } else if (activeTabId === 'others') {
-        if (visibleCount === 0 && searchTerm === '') {
-            $('#others-empty').removeClass('d-none');
-        } else {
-            $('#others-empty').addClass('d-none');
-        }
-    }
+    console.log('Color selects found:', $('.color-select').length);
 }
