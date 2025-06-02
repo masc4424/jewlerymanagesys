@@ -531,9 +531,9 @@ function checkOrderForColor(modelId, selectedColor) {
     
     // Show loading state
     const $addBtn = $(`#add-btn-${modelId}`);
-    $addBtn.prop('disabled', true);
-    $addBtn.removeClass('btn-success btn-secondary').addClass('btn-secondary');
-    $addBtn.html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
+    // $addBtn.prop('disabled', true);
+    // $addBtn.removeClass('btn-success btn-secondary').addClass('btn-secondary');
+    // $addBtn.html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
     
     // Ensure the URL is correct with numeric model ID
     $.ajax({
