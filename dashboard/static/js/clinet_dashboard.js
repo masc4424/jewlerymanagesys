@@ -163,13 +163,6 @@ function loadJewelryTypes() {
                 });
                 
                 $('#categoryFilter').html(optionsHtml);
-                
-                // Auto-select the first jewelry type if available AND models are loaded
-                if (jewelryTypes.length > 0 && allModels.length > 0) {
-                    $('#categoryFilter').val(jewelryTypes[0].name);
-                    // Trigger the filtering to load data for the selected category
-                    filterModels();
-                }
             } else {
                 console.error('Failed to load jewelry types:', response.message);
             }
