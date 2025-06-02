@@ -27,6 +27,16 @@ $(document).ready(function () {
         $('#searchInput').val('');
         filterModels();
     });
+
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        // Remove active class from all tabs
+        $('.nav-link').removeClass('active');
+        // Add active class to the active tab
+        $(e.target).addClass('active');
+        
+        // Re-evaluate pagination visibility when tab is switched
+        handleTabPaginationVisibility();
+    });
 });
 
 function showLoader() {
@@ -68,7 +78,6 @@ let itemsPerPage = 8; // Adjust as needed
 let totalPages = 1;
 let filteredModels = [];
 
-// Function to render models based on provided data
 function renderModels(models) {
     filteredModels = models;
     totalPages = Math.ceil(models.length / itemsPerPage);
@@ -118,27 +127,10 @@ function renderModels(models) {
         $('#others-empty').addClass('d-none');
     }
     
-    // Check which tab is currently active and hide pagination if active tab shows empty state
-    const activeTab = $('.nav-link.active').attr('id');
-    let shouldHidePagination = false;
+    // Use the updated function to handle pagination visibility
+    handleTabPaginationVisibility();
     
-    if (activeTab === 'ready-to-deliver-tab') {
-        // Check if ready-to-deliver tab is showing empty state
-        shouldHidePagination = !$('#ready-to-deliver-empty').hasClass('d-none');
-    } else if (activeTab === 'others-tab') {
-        // Check if others tab is showing empty state
-        shouldHidePagination = !$('#others-empty').hasClass('d-none');
-    }
-    
-    if (shouldHidePagination) {
-        $('#pagination-container').addClass('d-none');
-        $('#pagination-info').addClass('d-none');
-    } else {
-        // Generate pagination controls only if active tab has content
-        generatePagination();
-    }
-    
-    // Attach event listeners
+    // Rest of your existing code for event listeners...
     $('.color-select').on('change', function() {
         const modelId = $(this).data('model-id');
         const selectedColor = $(this).val();
@@ -160,7 +152,7 @@ function renderModels(models) {
     }
 }
 
-// Generate pagination controls
+// Also update the generatePagination function to be more robust
 function generatePagination() {
     const $paginationList = $('#pagination-list');
     const $paginationContainer = $('#pagination-container');
@@ -168,7 +160,24 @@ function generatePagination() {
     // Hide pagination if only one page, no results, or no models
     if (totalPages <= 1 || filteredModels.length === 0) {
         $paginationContainer.addClass('d-none');
-        // Also hide pagination info when there are no models
+        $('#pagination-info').addClass('d-none');
+        return;
+    }
+    
+    // Check if current active tab has content
+    const activeTab = $('.nav-link.active').attr('id');
+    const readyToDeliverCount = $('#ready-to-deliver-cards .col-md-3').length;
+    const othersCount = $('#others-cards .col-md-3').length;
+    
+    let currentTabHasContent = false;
+    if (activeTab === 'ready-to-deliver-tab') {
+        currentTabHasContent = readyToDeliverCount > 0;
+    } else if (activeTab === 'others-tab') {
+        currentTabHasContent = othersCount > 0;
+    }
+    
+    if (!currentTabHasContent) {
+        $paginationContainer.addClass('d-none');
         $('#pagination-info').addClass('d-none');
         return;
     }
@@ -186,12 +195,11 @@ function generatePagination() {
         </li>
     `);
     
-    // Page numbers
+    // Page numbers logic (keeping your existing implementation)
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
     
-    // Adjust start page if we're near the end
     if (endPage - startPage < maxVisiblePages - 1) {
         startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
@@ -252,7 +260,6 @@ function generatePagination() {
     const startItem = (currentPage - 1) * itemsPerPage + 1;
     const endItem = Math.min(currentPage * itemsPerPage, filteredModels.length);
     
-    // Add pagination info below pagination controls (optional)
     if ($('#pagination-info').length === 0) {
         $paginationContainer.after(`
             <div id="pagination-info" class="text-center mt-2">
@@ -270,18 +277,28 @@ function generatePagination() {
 // Function to handle tab visibility for pagination
 function handleTabPaginationVisibility() {
     const activeTab = $('.nav-link.active').attr('id');
+    
+    // Get the actual counts from the rendered content
+    const readyToDeliverCount = $('#ready-to-deliver-cards .col-md-3').length;
+    const othersCount = $('#others-cards .col-md-3').length;
+    
     let shouldHidePagination = false;
     
     if (activeTab === 'ready-to-deliver-tab') {
-        shouldHidePagination = !$('#ready-to-deliver-empty').hasClass('d-none');
+        // Hide pagination if ready-to-deliver tab has no items
+        shouldHidePagination = readyToDeliverCount === 0;
     } else if (activeTab === 'others-tab') {
-        shouldHidePagination = !$('#others-empty').hasClass('d-none');
+        // Hide pagination if others tab has no items
+        shouldHidePagination = othersCount === 0;
     }
     
-    if (shouldHidePagination) {
+    if (shouldHidePagination || filteredModels.length === 0) {
         $('#pagination-container').addClass('d-none');
         $('#pagination-info').addClass('d-none');
-    } else if (filteredModels.length > 0) {
+    } else {
+        // Show pagination if there are filtered models and current tab has content
+        $('#pagination-container').removeClass('d-none');
+        $('#pagination-info').removeClass('d-none');
         generatePagination();
     }
 }
