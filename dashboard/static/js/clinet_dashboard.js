@@ -551,14 +551,14 @@ function checkOrderForColor(modelId, selectedColor) {
                 $addBtn.html('Re-order <i class="fa-solid fa-rotate-right"></i>');
             } else if (response.status === 'success' && response.data && response.data.order_exists) {
                 // Order exists but not delivered
-                $addBtn.prop('disabled', true);
-                $addBtn.removeClass('btn-success').addClass('btn-secondary');
-                $addBtn.text('In Progress');
+                // $addBtn.prop('disabled', true);
+                // $addBtn.removeClass('btn-success').addClass('btn-secondary');
+                // $addBtn.text('In Progress');
             } else {
                 // No order exists
-                $addBtn.prop('disabled', true);
-                $addBtn.removeClass('btn-success').addClass('btn-secondary');
-                $addBtn.text('No Order for this Color');
+                // $addBtn.prop('disabled', true);
+                // $addBtn.removeClass('btn-success').addClass('btn-secondary');
+                // $addBtn.text('No Order for this Color');
             }
         },
         error: function (xhr, status, error) {
