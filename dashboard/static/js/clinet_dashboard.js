@@ -289,6 +289,12 @@ function checkOrderForColor(modelId, selectedColor) {
     // Add console logging for debugging
     console.log(`Checking order for model ${modelId} with color ${selectedColor}`);
     
+    // Show loading state
+    const $addBtn = $(`#add-btn-${modelId}`);
+    $addBtn.prop('disabled', true);
+    $addBtn.removeClass('btn-success btn-secondary').addClass('btn-secondary');
+    $addBtn.html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
+    
     // Ensure the URL is correct with numeric model ID
     $.ajax({
         url: `/api/client/models/${modelId}/order/`,
@@ -300,26 +306,26 @@ function checkOrderForColor(modelId, selectedColor) {
             console.log('Response:', response);
             if (response.status === 'success' && response.data && response.data.order_exists && response.data.is_delivered) {
                 // Order exists AND is delivered
-                $(`#add-btn-${modelId}`).prop('disabled', false);
-                $(`#add-btn-${modelId}`).removeClass('btn-secondary').addClass('btn-success');
-                $(`#add-btn-${modelId}`).html('Re-order <i class="fa-solid fa-rotate-right"></i>');
+                $addBtn.prop('disabled', false);
+                $addBtn.removeClass('btn-secondary').addClass('btn-success');
+                $addBtn.html('Re-order <i class="fa-solid fa-rotate-right"></i>');
             } else if (response.status === 'success' && response.data && response.data.order_exists) {
                 // Order exists but not delivered
-                $(`#add-btn-${modelId}`).prop('disabled', true);
-                $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
-                $(`#add-btn-${modelId}`).text('In Progress');
+                $addBtn.prop('disabled', true);
+                $addBtn.removeClass('btn-success').addClass('btn-secondary');
+                $addBtn.text('In Progress');
             } else {
                 // No order exists
-                $(`#add-btn-${modelId}`).prop('disabled', true);
-                $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
-                $(`#add-btn-${modelId}`).text('No Order for this Color');
+                $addBtn.prop('disabled', true);
+                $addBtn.removeClass('btn-success').addClass('btn-secondary');
+                $addBtn.text('No Order for this Color');
             }
         },
         error: function (xhr, status, error) {
             console.error('Error checking order:', xhr.status, xhr.responseText);
-            $(`#add-btn-${modelId}`).prop('disabled', true);
-            $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
-            $(`#add-btn-${modelId}`).text('Error Checking Order');
+            $addBtn.prop('disabled', true);
+            $addBtn.removeClass('btn-success').addClass('btn-secondary');
+            $addBtn.text('Error Checking Order');
         }
     });
 }
