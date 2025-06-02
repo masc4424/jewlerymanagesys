@@ -472,6 +472,9 @@ function generateModelCard(model) {
                                     Re-order <i class="fa-solid fa-rotate-right"></i>
                                 </button>
                             ` : `
+                                <button class="btn btn-secondary btn-sm" disabled id="add-btn-${model.id}">
+                                    ${model.order ? 'In Progress' : 'No Order Available'}
+                                </button>
                             `}
                         </div>
                     </div>
@@ -528,9 +531,9 @@ function checkOrderForColor(modelId, selectedColor) {
     
     // Show loading state
     const $addBtn = $(`#add-btn-${modelId}`);
-    // $addBtn.prop('disabled', true);
-    // $addBtn.removeClass('btn-success btn-secondary').addClass('btn-secondary');
-    // $addBtn.html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
+    $addBtn.prop('disabled', true);
+    $addBtn.removeClass('btn-success btn-secondary').addClass('btn-secondary');
+    $addBtn.html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
     
     // Ensure the URL is correct with numeric model ID
     $.ajax({
@@ -548,14 +551,14 @@ function checkOrderForColor(modelId, selectedColor) {
                 $addBtn.html('Re-order <i class="fa-solid fa-rotate-right"></i>');
             } else if (response.status === 'success' && response.data && response.data.order_exists) {
                 // Order exists but not delivered
-                // $addBtn.prop('disabled', true);
-                // $addBtn.removeClass('btn-success').addClass('btn-secondary');
-                // $addBtn.text('In Progress');
+                $addBtn.prop('disabled', true);
+                $addBtn.removeClass('btn-success').addClass('btn-secondary');
+                $addBtn.text('In Progress');
             } else {
                 // No order exists
-                // $addBtn.prop('disabled', true);
-                // $addBtn.removeClass('btn-success').addClass('btn-secondary');
-                // $addBtn.text('No Order for this Color');
+                $addBtn.prop('disabled', true);
+                $addBtn.removeClass('btn-success').addClass('btn-secondary');
+                $addBtn.text('No Order for this Color');
             }
         },
         error: function (xhr, status, error) {
