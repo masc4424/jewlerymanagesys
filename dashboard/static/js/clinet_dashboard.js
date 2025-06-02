@@ -531,7 +531,6 @@ function checkOrderForColor(modelId, selectedColor) {
     
     // Show loading state
     const $addBtn = $(`#add-btn-${modelId}`);
-    $addBtn.prop('disabled', true);
     $addBtn.removeClass('btn-success btn-secondary').addClass('btn-secondary');
     $addBtn.html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
     
@@ -546,24 +545,20 @@ function checkOrderForColor(modelId, selectedColor) {
             console.log('Response:', response);
             if (response.status === 'success' && response.data && response.data.order_exists && response.data.is_delivered) {
                 // Order exists AND is delivered
-                $addBtn.prop('disabled', false);
                 $addBtn.removeClass('btn-secondary').addClass('btn-success');
                 $addBtn.html('Re-order <i class="fa-solid fa-rotate-right"></i>');
             } else if (response.status === 'success' && response.data && response.data.order_exists) {
                 // Order exists but not delivered
-                $addBtn.prop('disabled', true);
                 $addBtn.removeClass('btn-success').addClass('btn-secondary');
                 $addBtn.text('In Progress');
             } else {
                 // No order exists
-                $addBtn.prop('disabled', true);
                 $addBtn.removeClass('btn-success').addClass('btn-secondary');
                 $addBtn.text('No Order for this Color');
             }
         },
         error: function (xhr, status, error) {
             console.error('Error checking order:', xhr.status, xhr.responseText);
-            $addBtn.prop('disabled', true);
             $addBtn.removeClass('btn-success').addClass('btn-secondary');
             $addBtn.text('Error Checking Order');
         }
