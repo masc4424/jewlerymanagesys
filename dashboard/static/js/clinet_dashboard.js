@@ -118,18 +118,6 @@ function renderModels(models) {
         $('#others-empty').addClass('d-none');
     }
     
-    // Hide pagination if any empty state is showing
-    const isReadyToDeliverEmpty = !$('#ready-to-deliver-empty').hasClass('d-none');
-    const isOthersEmpty = !$('#others-empty').hasClass('d-none');
-    
-    if (isReadyToDeliverEmpty || isOthersEmpty) {
-        $('#pagination-container').addClass('d-none');
-        $('#pagination-info').addClass('d-none');
-    } else {
-        // Generate pagination controls only if no empty states are showing
-        generatePagination();
-    }
-    
     // Attach event listeners
     $('.color-select').on('change', function() {
         const modelId = $(this).data('model-id');
@@ -150,6 +138,9 @@ function renderModels(models) {
         addImageZoomModal();
         initializeImageZoom();
     }
+    
+    // Generate pagination controls
+    generatePagination();
 }
 
 // Generate pagination controls
@@ -157,11 +148,9 @@ function generatePagination() {
     const $paginationList = $('#pagination-list');
     const $paginationContainer = $('#pagination-container');
     
-    // Hide pagination if only one page, no results, or no models
-    if (totalPages <= 1 || filteredModels.length === 0) {
+    // Hide pagination if only one page or no results
+    if (totalPages <= 1) {
         $paginationContainer.addClass('d-none');
-        // Also hide pagination info when there are no models
-        $('#pagination-info').addClass('d-none');
         return;
     }
     
@@ -255,7 +244,6 @@ function generatePagination() {
         `);
     } else {
         $('#pagination-info small').text(`Showing ${startItem} to ${endItem} of ${filteredModels.length} models`);
-        $('#pagination-info').removeClass('d-none');
     }
 }
 
