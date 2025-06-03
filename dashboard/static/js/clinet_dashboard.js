@@ -321,8 +321,35 @@ window.goToPage = function(page) {
         othersCurrentPage = page;
     }
     
-    // Re-render with current filters
-    filterModels();
+    // Get current filtered models (don't re-filter, just use current filter state)
+    const selectedCategory = $('#categoryFilter').val();
+    const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    
+    let filtered = allModels;
+    
+    // Apply the same filters that are currently active
+    if (selectedCategory) {
+        filtered = filtered.filter(model => 
+            model.jewelry_type_name && model.jewelry_type_name.toLowerCase().includes(selectedCategory.toLowerCase())
+        );
+    }
+    
+    if (searchTerm) {
+        filtered = filtered.filter(model => {
+            const modelNo = model.model_no ? model.model_no.toLowerCase() : '';
+            const jewelryType = model.jewelry_type_name ? model.jewelry_type_name.toLowerCase() : '';
+            const status = model.status_name ? model.status_name.toLowerCase() : '';
+            const weight = model.weight ? model.weight.toString() : '';
+            
+            return modelNo.includes(searchTerm) || 
+                   jewelryType.includes(searchTerm) || 
+                   status.includes(searchTerm) ||
+                   weight.includes(searchTerm);
+        });
+    }
+    
+    // Re-render with the filtered models (this will use the updated page numbers)
+    renderModels(filtered);
     
     // Scroll to top of the models section
     $('html, body').animate({
