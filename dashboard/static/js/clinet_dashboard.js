@@ -33,6 +33,8 @@ $(document).ready(function () {
         $('.nav-link').removeClass('active');
         // Add active class to the active tab
         $(e.target).addClass('active');
+
+        currentPage = 1;
         
         // Re-evaluate pagination visibility when tab is switched
         handleTabPaginationVisibility();
@@ -74,13 +76,27 @@ function loadModels() {
 }
 
 let currentPage = 1;
-let itemsPerPage = 8; // Adjust as needed
+let itemsPerPage = 8;
+let deliveredModels = [];
+let otherModels = [];
+let activeTabData = [];
 let totalPages = 1;
-let filteredModels = [];
 
 function renderModels(models) {
-    filteredModels = models;
-    totalPages = Math.ceil(models.length / itemsPerPage);
+    // Split models based on delivery status
+    deliveredModels = models.filter(model => model.order && model.order.is_delivered);
+    otherModels = models.filter(model => !(model.order && model.order.is_delivered));
+    
+    // Determine which data to use based on active tab
+    const activeTab = $('.nav-link.active').attr('id');
+    if (activeTab === 'ready-to-deliver-tab') {
+        activeTabData = deliveredModels;
+    } else {
+        activeTabData = otherModels;
+    }
+    
+    // Calculate pagination based on active tab data
+    totalPages = Math.ceil(activeTabData.length / itemsPerPage);
     
     // Reset to page 1 if current page exceeds total pages
     if (currentPage > totalPages) {
@@ -90,45 +106,51 @@ function renderModels(models) {
     // Calculate start and end indices for current page
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const paginatedModels = models.slice(startIndex, endIndex);
+    const paginatedModels = activeTabData.slice(startIndex, endIndex);
     
+    // Generate HTML for both tabs (but only show paginated results for active tab)
     let readyToDeliverHtml = '';
     let othersHtml = '';
-    let readyToDeliverCount = 0;
-    let othersCount = 0;
-
-    paginatedModels.forEach((model, index) => {
-        const isReadyToDeliver = model.order && model.order.is_delivered;
-        const cardHtml = generateModelCard(model);
-        
-        if (isReadyToDeliver) {
-            readyToDeliverHtml += cardHtml;
-            readyToDeliverCount++;
-        } else {
-            othersHtml += cardHtml;
-            othersCount++;
-        }
-    });
+    
+    if (activeTab === 'ready-to-deliver-tab') {
+        // Show paginated delivered items
+        paginatedModels.forEach((model) => {
+            readyToDeliverHtml += generateModelCard(model);
+        });
+        // Show all other items (or you can paginate these separately if needed)
+        otherModels.forEach((model) => {
+            othersHtml += generateModelCard(model);
+        });
+    } else {
+        // Show all delivered items
+        deliveredModels.forEach((model) => {
+            readyToDeliverHtml += generateModelCard(model);
+        });
+        // Show paginated other items
+        paginatedModels.forEach((model) => {
+            othersHtml += generateModelCard(model);
+        });
+    }
 
     // Update the DOM with generated HTML
     $('#ready-to-deliver-cards').html(readyToDeliverHtml);
     $('#others-cards').html(othersHtml);
     
-    // Show/hide empty states based on paginated results
-    if (readyToDeliverCount === 0) {
+    // Show/hide empty states
+    if (deliveredModels.length === 0) {
         $('#ready-to-deliver-empty').removeClass('d-none');
     } else {
         $('#ready-to-deliver-empty').addClass('d-none');
     }
     
-    if (othersCount === 0) {
+    if (otherModels.length === 0) {
         $('#others-empty').removeClass('d-none');
     } else {
         $('#others-empty').addClass('d-none');
     }
     
-    // Use the updated function to handle pagination visibility
-    handleTabPaginationVisibility();
+    // Generate pagination
+    generatePagination();
     
     // Rest of your existing code for event listeners...
     $('.color-select').on('change', function() {
@@ -152,31 +174,13 @@ function renderModels(models) {
     }
 }
 
-// Also update the generatePagination function to be more robust
+// Updated generatePagination function
 function generatePagination() {
     const $paginationList = $('#pagination-list');
     const $paginationContainer = $('#pagination-container');
     
-    // Hide pagination if only one page, no results, or no models
-    if (totalPages <= 1 || filteredModels.length === 0) {
-        $paginationContainer.addClass('d-none');
-        $('#pagination-info').addClass('d-none');
-        return;
-    }
-    
-    // Check if current active tab has content
-    const activeTab = $('.nav-link.active').attr('id');
-    const readyToDeliverCount = $('#ready-to-deliver-cards .col-md-3').length;
-    const othersCount = $('#others-cards .col-md-3').length;
-    
-    let currentTabHasContent = false;
-    if (activeTab === 'ready-to-deliver-tab') {
-        currentTabHasContent = readyToDeliverCount > 0;
-    } else if (activeTab === 'others-tab') {
-        currentTabHasContent = othersCount > 0;
-    }
-    
-    if (!currentTabHasContent) {
+    // Hide pagination if only one page, no results, or no models in active tab
+    if (totalPages <= 1 || activeTabData.length === 0) {
         $paginationContainer.addClass('d-none');
         $('#pagination-info').addClass('d-none');
         return;
@@ -195,7 +199,7 @@ function generatePagination() {
         </li>
     `);
     
-    // Page numbers logic (keeping your existing implementation)
+    // Page numbers logic
     const maxVisiblePages = 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
     let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
@@ -258,49 +262,72 @@ function generatePagination() {
     
     // Add pagination info
     const startItem = (currentPage - 1) * itemsPerPage + 1;
-    const endItem = Math.min(currentPage * itemsPerPage, filteredModels.length);
+    const endItem = Math.min(currentPage * itemsPerPage, activeTabData.length);
     
     if ($('#pagination-info').length === 0) {
         $paginationContainer.after(`
             <div id="pagination-info" class="text-center mt-2">
                 <small class="text-muted">
-                    Showing ${startItem} to ${endItem} of ${filteredModels.length} models
+                    Showing ${startItem} to ${endItem} of ${activeTabData.length} models
                 </small>
             </div>
         `);
     } else {
-        $('#pagination-info small').text(`Showing ${startItem} to ${endItem} of ${filteredModels.length} models`);
+        $('#pagination-info small').text(`Showing ${startItem} to ${endItem} of ${activeTabData.length} models`);
         $('#pagination-info').removeClass('d-none');
     }
 }
 
-// Function to handle tab visibility for pagination
+// Updated handleTabPaginationVisibility function
 function handleTabPaginationVisibility() {
     const activeTab = $('.nav-link.active').attr('id');
     
-    // Get the actual counts from the rendered content
-    const readyToDeliverCount = $('#ready-to-deliver-cards .col-md-3').length;
-    const othersCount = $('#others-cards .col-md-3').length;
-    
-    let shouldHidePagination = false;
-    
+    // Update activeTabData based on current tab
     if (activeTab === 'ready-to-deliver-tab') {
-        // Hide pagination if ready-to-deliver tab has no items
-        shouldHidePagination = readyToDeliverCount === 0;
-    } else if (activeTab === 'others-tab') {
-        // Hide pagination if others tab has no items
-        shouldHidePagination = othersCount === 0;
+        activeTabData = deliveredModels;
+    } else {
+        activeTabData = otherModels;
     }
     
-    if (shouldHidePagination || filteredModels.length === 0) {
-        $('#pagination-container').addClass('d-none');
-        $('#pagination-info').addClass('d-none');
-    } else {
-        // Show pagination if there are filtered models and current tab has content
-        $('#pagination-container').removeClass('d-none');
-        $('#pagination-info').removeClass('d-none');
-        generatePagination();
+    // Recalculate pagination
+    totalPages = Math.ceil(activeTabData.length / itemsPerPage);
+    
+    // Reset to page 1 if current page exceeds total pages
+    if (currentPage > totalPages) {
+        currentPage = 1;
     }
+    
+    // Re-render models for the active tab
+    renderModels(allModels.filter(model => {
+        // Apply current filters
+        const selectedCategory = $('#categoryFilter').val();
+        const searchTerm = $('#searchInput').val().toLowerCase().trim();
+        
+        let include = true;
+        
+        // Filter by category
+        if (selectedCategory) {
+            include = include && model.jewelry_type_name && 
+                     model.jewelry_type_name.toLowerCase().includes(selectedCategory.toLowerCase());
+        }
+        
+        // Filter by search term
+        if (searchTerm) {
+            const modelNo = model.model_no ? model.model_no.toLowerCase() : '';
+            const jewelryType = model.jewelry_type_name ? model.jewelry_type_name.toLowerCase() : '';
+            const status = model.status_name ? model.status_name.toLowerCase() : '';
+            const weight = model.weight ? model.weight.toString() : '';
+            
+            include = include && (
+                modelNo.includes(searchTerm) || 
+                jewelryType.includes(searchTerm) || 
+                status.includes(searchTerm) ||
+                weight.includes(searchTerm)
+            );
+        }
+        
+        return include;
+    }));
 }
 
 // Go to specific page
@@ -310,7 +337,9 @@ window.goToPage = function(page) {
     }
     
     currentPage = page;
-    renderModels(filteredModels);
+    
+    // Re-render with current filters
+    filterModels();
     
     // Scroll to top of the models section
     $('html, body').animate({
