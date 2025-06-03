@@ -18,7 +18,6 @@ $(document).ready(function () {
     
     loadModels();
     updateCartCount();
-    // loadJewelryTypes();
     
     // Add event listeners for filtering
     $('#categoryFilter').on('change', filterModels);
@@ -34,7 +33,13 @@ $(document).ready(function () {
         // Add active class to the active tab
         $(e.target).addClass('active');
 
-        currentPage = 1;
+        // Reset page for the newly active tab
+        const activeTab = $(e.target).attr('id');
+        if (activeTab === 'ready-to-deliver-tab') {
+            deliveredCurrentPage = 1;
+        } else {
+            othersCurrentPage = 1;
+        }
         
         // Re-evaluate pagination visibility when tab is switched
         handleTabPaginationVisibility();
@@ -51,6 +56,14 @@ function hideLoader() {
 }
 
 let allModels = [];
+
+let deliveredCurrentPage = 1;
+let othersCurrentPage = 1;
+let itemsPerPage = 8;
+let deliveredModels = [];
+let otherModels = [];
+let deliveredTotalPages = 1;
+let othersTotalPages = 1;
 
 // Load all models via AJAX
 function loadModels() {
@@ -75,62 +88,46 @@ function loadModels() {
     });
 }
 
-let currentPage = 1;
-let itemsPerPage = 8;
-let deliveredModels = [];
-let otherModels = [];
-let activeTabData = [];
-let totalPages = 1;
-
 function renderModels(models) {
     // Split models based on delivery status
     deliveredModels = models.filter(model => model.order && model.order.is_delivered);
     otherModels = models.filter(model => !(model.order && model.order.is_delivered));
     
-    // Determine which data to use based on active tab
-    const activeTab = $('.nav-link.active').attr('id');
-    if (activeTab === 'ready-to-deliver-tab') {
-        activeTabData = deliveredModels;
-    } else {
-        activeTabData = otherModels;
+    // Calculate pagination for both tabs
+    deliveredTotalPages = Math.ceil(deliveredModels.length / itemsPerPage);
+    othersTotalPages = Math.ceil(otherModels.length / itemsPerPage);
+    
+    // Reset to page 1 if current page exceeds total pages for each tab
+    if (deliveredCurrentPage > deliveredTotalPages && deliveredTotalPages > 0) {
+        deliveredCurrentPage = 1;
+    }
+    if (othersCurrentPage > othersTotalPages && othersTotalPages > 0) {
+        othersCurrentPage = 1;
     }
     
-    // Calculate pagination based on active tab data
-    totalPages = Math.ceil(activeTabData.length / itemsPerPage);
+    // Calculate pagination for delivered items
+    const deliveredStartIndex = (deliveredCurrentPage - 1) * itemsPerPage;
+    const deliveredEndIndex = deliveredStartIndex + itemsPerPage;
+    const paginatedDeliveredModels = deliveredModels.slice(deliveredStartIndex, deliveredEndIndex);
     
-    // Reset to page 1 if current page exceeds total pages
-    if (currentPage > totalPages) {
-        currentPage = 1;
-    }
+    // Calculate pagination for other items
+    const othersStartIndex = (othersCurrentPage - 1) * itemsPerPage;
+    const othersEndIndex = othersStartIndex + itemsPerPage;
+    const paginatedOtherModels = otherModels.slice(othersStartIndex, othersEndIndex);
     
-    // Calculate start and end indices for current page
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const paginatedModels = activeTabData.slice(startIndex, endIndex);
-    
-    // Generate HTML for both tabs (but only show paginated results for active tab)
+    // Generate HTML for both tabs with their respective paginated results
     let readyToDeliverHtml = '';
     let othersHtml = '';
     
-    if (activeTab === 'ready-to-deliver-tab') {
-        // Show paginated delivered items
-        paginatedModels.forEach((model) => {
-            readyToDeliverHtml += generateModelCard(model);
-        });
-        // Show all other items (or you can paginate these separately if needed)
-        otherModels.forEach((model) => {
-            othersHtml += generateModelCard(model);
-        });
-    } else {
-        // Show all delivered items
-        deliveredModels.forEach((model) => {
-            readyToDeliverHtml += generateModelCard(model);
-        });
-        // Show paginated other items
-        paginatedModels.forEach((model) => {
-            othersHtml += generateModelCard(model);
-        });
-    }
+    // Render delivered items (paginated)
+    paginatedDeliveredModels.forEach((model) => {
+        readyToDeliverHtml += generateModelCard(model);
+    });
+    
+    // Render other items (paginated)
+    paginatedOtherModels.forEach((model) => {
+        othersHtml += generateModelCard(model);
+    });
 
     // Update the DOM with generated HTML
     $('#ready-to-deliver-cards').html(readyToDeliverHtml);
@@ -149,10 +146,10 @@ function renderModels(models) {
         $('#others-empty').addClass('d-none');
     }
     
-    // Generate pagination
+    // Generate pagination based on active tab
     generatePagination();
     
-    // Rest of your existing code for event listeners...
+    // Add event listeners for color selection
     $('.color-select').on('change', function() {
         const modelId = $(this).data('model-id');
         const selectedColor = $(this).val();
@@ -160,7 +157,10 @@ function renderModels(models) {
     });
     
     // Initial check for each model's default color
-    paginatedModels.forEach((model) => {
+    const activeTab = $('.nav-link.active').attr('id');
+    const modelsToCheck = activeTab === 'ready-to-deliver-tab' ? paginatedDeliveredModels : paginatedOtherModels;
+    
+    modelsToCheck.forEach((model) => {
         const defaultColor = $(`#color-select-${model.id}`).val();
         if (defaultColor) {
             checkOrderForColor(model.id, defaultColor);
@@ -178,6 +178,19 @@ function renderModels(models) {
 function generatePagination() {
     const $paginationList = $('#pagination-list');
     const $paginationContainer = $('#pagination-container');
+    
+    const activeTab = $('.nav-link.active').attr('id');
+    let currentPage, totalPages, activeTabData;
+    
+    if (activeTab === 'ready-to-deliver-tab') {
+        currentPage = deliveredCurrentPage;
+        totalPages = deliveredTotalPages;
+        activeTabData = deliveredModels;
+    } else {
+        currentPage = othersCurrentPage;
+        totalPages = othersTotalPages;
+        activeTabData = otherModels;
+    }
     
     // Hide pagination if only one page, no results, or no models in active tab
     if (totalPages <= 1 || activeTabData.length === 0) {
@@ -280,63 +293,33 @@ function generatePagination() {
 
 // Updated handleTabPaginationVisibility function
 function handleTabPaginationVisibility() {
-    const activeTab = $('.nav-link.active').attr('id');
-    
-    // Update activeTabData based on current tab
-    if (activeTab === 'ready-to-deliver-tab') {
-        activeTabData = deliveredModels;
-    } else {
-        activeTabData = otherModels;
-    }
-    
-    // Recalculate pagination
-    totalPages = Math.ceil(activeTabData.length / itemsPerPage);
-    
-    // Reset to page 1 if current page exceeds total pages
-    if (currentPage > totalPages) {
-        currentPage = 1;
-    }
-    
-    // Re-render models for the active tab
-    renderModels(allModels.filter(model => {
-        // Apply current filters
-        const selectedCategory = $('#categoryFilter').val();
-        const searchTerm = $('#searchInput').val().toLowerCase().trim();
-        
-        let include = true;
-        
-        // Filter by category
-        if (selectedCategory) {
-            include = include && model.jewelry_type_name && 
-                     model.jewelry_type_name.toLowerCase().includes(selectedCategory.toLowerCase());
-        }
-        
-        // Filter by search term
-        if (searchTerm) {
-            const modelNo = model.model_no ? model.model_no.toLowerCase() : '';
-            const jewelryType = model.jewelry_type_name ? model.jewelry_type_name.toLowerCase() : '';
-            const status = model.status_name ? model.status_name.toLowerCase() : '';
-            const weight = model.weight ? model.weight.toString() : '';
-            
-            include = include && (
-                modelNo.includes(searchTerm) || 
-                jewelryType.includes(searchTerm) || 
-                status.includes(searchTerm) ||
-                weight.includes(searchTerm)
-            );
-        }
-        
-        return include;
-    }));
+    // Re-render models with current filters
+    filterModels();
 }
 
 // Go to specific page
 window.goToPage = function(page) {
+    const activeTab = $('.nav-link.active').attr('id');
+    let currentPage, totalPages;
+    
+    if (activeTab === 'ready-to-deliver-tab') {
+        currentPage = deliveredCurrentPage;
+        totalPages = deliveredTotalPages;
+    } else {
+        currentPage = othersCurrentPage;
+        totalPages = othersTotalPages;
+    }
+    
     if (page < 1 || page > totalPages || page === currentPage) {
         return;
     }
     
-    currentPage = page;
+    // Update the appropriate page variable
+    if (activeTab === 'ready-to-deliver-tab') {
+        deliveredCurrentPage = page;
+    } else {
+        othersCurrentPage = page;
+    }
     
     // Re-render with current filters
     filterModels();
@@ -376,8 +359,9 @@ function filterModels() {
         });
     }
     
-    // Reset to first page when filtering
-    currentPage = 1;
+    // Reset to first page when filtering (for both tabs)
+    deliveredCurrentPage = 1;
+    othersCurrentPage = 1;
     
     // Re-render with filtered models
     renderModels(filtered);
@@ -385,8 +369,9 @@ function filterModels() {
 
 function changeItemsPerPage(newItemsPerPage) {
     itemsPerPage = newItemsPerPage;
-    currentPage = 1; // Reset to first page
-    renderModels(filteredModels);
+    deliveredCurrentPage = 1; // Reset both pages
+    othersCurrentPage = 1;
+    renderModels(allModels);
 }
 
 function addItemsPerPageSelector() {
@@ -395,8 +380,8 @@ function addItemsPerPageSelector() {
             <div>
                 <label for="itemsPerPageSelect" class="form-label me-2">Items per page:</label>
                 <select id="itemsPerPageSelect" class="form-select form-select-sm d-inline-block w-auto">
-                    <option value="8">8</option>
-                    <option value="12" selected>12</option>
+                    <option value="8" selected>8</option>
+                    <option value="12">12</option>
                     <option value="16">16</option>
                     <option value="24">24</option>
                 </select>
