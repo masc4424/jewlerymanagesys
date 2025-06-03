@@ -912,10 +912,14 @@ function loadCartItems() {
 
 // Function to update cart item quantity
 function updateCartItemQty(cartItemId, newQty) {
+    console.time('updateCartItemQty'); // Add timing
+    
     if (newQty < 1) {
         removeCartItem(cartItemId);
         return;
     }
+    
+    console.log('Starting AJAX request...'); // Debug log
     
     $.ajax({
         url: '/update-cart/',
@@ -925,14 +929,25 @@ function updateCartItemQty(cartItemId, newQty) {
             'quantity': newQty,
             'csrfmiddlewaretoken': getCsrfToken()
         },
+        beforeSend: function() {
+            console.log('Request sent to server');
+        },
         success: function(response) {
+            console.log('Server response received');
             if (response.status === 'success') {
+                console.time('loadCartItems');
                 loadCartItems();
+                console.timeEnd('loadCartItems');
+                
+                console.time('updateCartCount');
                 updateCartCount();
+                console.timeEnd('updateCartCount');
             }
+            console.timeEnd('updateCartItemQty');
         },
         error: function(xhr, status, error) {
             console.error('Error updating cart item:', error);
+            console.timeEnd('updateCartItemQty');
         }
     });
 }
