@@ -64,7 +64,7 @@ def get_client_models(request):
                 materials.append({
                     'metal_name': material.metal.name,
                     'metal_id': material.metal.metal_unique_id,
-                    'weight': float(material.weight),
+                    'weight': float(material.weight) if material.weight is not None else 0.0,
                     'unit': material.unit
                 })
             
@@ -104,13 +104,13 @@ def get_client_models(request):
             except Order.DoesNotExist:
                 order_data = None
             
-            # Create model data dictionary
+            # Create model data dictionary with null checks for float conversions
             model_data = {
                 'id': model.id,
                 'model_no': model.model_no,
-                'length': float(model.length),
-                'breadth': float(model.breadth),
-                'weight': float(model.weight),
+                'length': float(model.length) if model.length is not None else 0.0,
+                'breadth': float(model.breadth) if model.breadth is not None else 0.0,
+                'weight': float(model.weight) if model.weight is not None else 0.0,
                 'model_img': model_img_url,
                 'jewelry_type_name': jewelry_type_name,
                 'status_name': status_name,
@@ -144,6 +144,7 @@ def get_client_models(request):
             'message': f"An error occurred: {str(e)}"
         }, status=500)
 
+        
 @login_required(login_url='login_auth')
 def check_order_for_color(request, model_id):
     """
