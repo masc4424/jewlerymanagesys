@@ -11,7 +11,7 @@ $(document).ready(function () {
             { data: 'sr_no' },
             { data: 'name' },
             { data: 'in_stock' },
-            { data: 'todays_rate' },
+            // { data: 'todays_rate' },
             { data: 'threshold' },
             {
                 data: null,
@@ -19,7 +19,7 @@ $(document).ready(function () {
                 render: function (data, type, row) {
                     return `
                         <div class="d-flex gap-2">
-                            <button class="btn btn-sm btn-outline-info add-rate-btn" data-id="${row.id}" data-name="${row.name}">
+                            <button class="btn btn-sm btn-outline-info add-rate-btn d-none" data-id="${row.id}" data-name="${row.name}">
                                 <i class="bx bx-rupee"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${row.id}">

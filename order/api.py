@@ -103,8 +103,16 @@ def get_orders_json(request):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-    # GET logic (with grouping functionality)
+    # GET logic (with filtering and grouping functionality)
     orders = Order.objects.all().select_related('client', 'model', 'color', 'status')
+    
+    # Apply filtering based on query parameters
+    filter_status = request.GET.get('status')
+    if filter_status == 'delivered':
+        orders = orders.filter(delivered=True)
+    elif filter_status == 'not-delivered':
+        orders = orders.filter(delivered=False)
+    # If filter_status is None or 'all', show all orders (no additional filtering)
     
     # Create a dictionary to group orders
     grouped_orders = {}
