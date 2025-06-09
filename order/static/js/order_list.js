@@ -1657,4 +1657,393 @@ $(document).ready(function() {
             $('body').css('padding-right', '');
         });
     });
+
+    let selectedFile = null;
+    let validationPassed = false;
+
+    // Download template functionality
+    $('#downloadTemplate').on('click', function() {
+        window.location.href = '/download-order-template/';
+    });
+
+    // Add download existing orders button (optional)
+    const downloadExistingBtn = $('<button>')
+        .addClass('btn btn-outline-secondary btn-sm ms-2')
+        .html('<i class="bx bx-data"></i> Download Existing Orders')
+        .on('click', function() {
+            window.location.href = '/download-existing-orders/';
+        });
+    $('#downloadTemplate').parent().append(downloadExistingBtn);
+
+    // File selection - Fixed version with multiple approaches
+    $('#selectFileBtn').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Select file button clicked'); // Debug log
+        
+        // Try multiple approaches to trigger file input
+        const fileInput = document.getElementById('csvFileInput');
+        if (fileInput) {
+            fileInput.click();
+        } else {
+            console.error('File input not found');
+        }
+    });
+
+    // Alternative approach - also handle click on the upload area
+    $('#uploadArea').on('click', function(e) {
+        if (e.target === this || $(e.target).hasClass('upload-content') || $(e.target).closest('.upload-content').length) {
+            e.preventDefault();
+            $('#csvFileInput')[0].click();
+        }
+    });
+
+    // File input change - Enhanced version
+    $('#csvFileInput').on('change', function(e) {
+        console.log('File input changed'); // Debug log
+        const file = e.target.files[0];
+        if (file) {
+            console.log('File selected:', file.name); // Debug log
+            handleFileSelection(file);
+        }
+    });
+
+    // Drag and drop functionality
+    $('#uploadArea')
+        .on('dragover', function(e) {
+            e.preventDefault();
+            $(this).addClass('drag-over');
+        })
+        .on('dragleave', function(e) {
+            e.preventDefault();
+            $(this).removeClass('drag-over');
+        })
+        .on('drop', function(e) {
+            e.preventDefault();
+            $(this).removeClass('drag-over');
+            
+            const files = e.originalEvent.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelection(files[0]);
+            }
+        });
+
+    // Remove file
+    $('#removeFile').on('click', function() {
+        clearFileSelection();
+    });
+
+    // Process bulk upload
+    $('#processBulkUpload').on('click', function() {
+        if (selectedFile && validationPassed) {
+            processBulkUpload();
+        }
+    });
+
+    // Handle file selection
+    function handleFileSelection(file) {
+        console.log('Handling file selection:', file.name); // Debug log
+        
+        // Validate file type
+        const allowedTypes = ['.csv', '.xlsx', '.xls'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!allowedTypes.includes(fileExtension)) {
+            showAlert('Please select a CSV or Excel file.', 'danger');
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+            showAlert('File size should not exceed 10MB.', 'danger');
+            return;
+        }
+
+        selectedFile = file;
+        
+        // Display file info
+        $('#fileName').text(file.name);
+        $('#fileSize').text(formatFileSize(file.size));
+        $('#fileInfo').show();
+        
+        // Hide upload area
+        $('#uploadArea').hide();
+        
+        // Reset validation
+        $('#validationResults').hide();
+        validationPassed = false;
+        $('#processBulkUpload').prop('disabled', true);
+        
+        // Auto-validate file
+        validateFile();
+    }
+
+    // Clear file selection
+    function clearFileSelection() {
+        selectedFile = null;
+        validationPassed = false;
+        
+        // Reset UI
+        $('#fileInfo').hide();
+        $('#uploadArea').show();
+        $('#validationResults').hide();
+        $('#uploadProgress').hide();
+        $('#processBulkUpload').prop('disabled', true);
+        
+        // Clear file input
+        $('#csvFileInput').val('');
+    }
+
+    // Validate file
+    function validateFile() {
+        if (!selectedFile) return;
+        
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        // Show progress
+        $('#uploadProgress').show();
+        updateProgress(0, 'Validating...');
+        
+        $.ajax({
+            url: '/validate-bulk-upload/',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(data) {
+                $('#uploadProgress').hide();
+                
+                if (data.valid) {
+                    validationPassed = true;
+                    $('#processBulkUpload').prop('disabled', false);
+                    
+                    // Show success message
+                    showValidationResults(data, 'success');
+                } else {
+                    validationPassed = false;
+                    $('#processBulkUpload').prop('disabled', true);
+                    
+                    // Show errors
+                    showValidationResults(data, 'danger');
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#uploadProgress').hide();
+                showAlert('Error validating file: ' + error, 'danger');
+                console.error('Validation error:', error);
+            }
+        });
+    }
+
+    // Process bulk upload
+    function processBulkUpload() {
+        if (!selectedFile || !validationPassed) return;
+        
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        // Show progress
+        $('#uploadProgress').show();
+        updateProgress(0, 'Processing orders...');
+        $('#processBulkUpload').prop('disabled', true);
+        
+        $.ajax({
+            url: '/process-bulk-upload/',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(data) {
+                $('#uploadProgress').hide();
+                $('#processBulkUpload').prop('disabled', false);
+                
+                if (data.success) {
+                    showAlert(
+                        `Successfully created ${data.created_count} orders!` +
+                        (data.failed_count > 0 ? ` ${data.failed_count} orders failed.` : ''),
+                        'success'
+                    );
+                    
+                    // Show detailed results
+                    showProcessResults(data);
+                    
+                    // Only reload if there are no failed orders
+                    if (data.failed_count === 0) {
+                        // Close modal after success
+                        setTimeout(function() {
+                            $('#bulkUploadModal').modal('hide');
+                            // Refresh page to show new orders
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        // Keep modal open so user can see the errors
+                        console.log('Failed orders:', data.failed_orders);
+                    }
+                } else {
+                    showAlert('Error processing upload: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#uploadProgress').hide();
+                $('#processBulkUpload').prop('disabled', false);
+                showAlert('Error processing upload: ' + error, 'danger');
+                console.error('Upload error:', error);
+            }
+        });
+    }
+
+    // Helper functions
+    function showValidationResults(data, type) {
+        $('#validationResults').show().removeClass().addClass(`alert alert-${type}`);
+        
+        let html = '<h6>Validation Results:</h6>';
+        html += `<p><strong>Total rows:</strong> ${data.total_rows}</p>`;
+        html += `<p><strong>Valid rows:</strong> ${data.valid_rows}</p>`;
+        
+        if (data.errors && data.errors.length > 0) {
+            html += '<h6 class="text-danger">Errors:</h6><ul>';
+            $.each(data.errors, function(index, error) {
+                html += `<li class="text-danger">${error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        if (data.warnings && data.warnings.length > 0) {
+            html += '<h6 class="text-warning">Warnings:</h6><ul>';
+            $.each(data.warnings, function(index, warning) {
+                html += `<li class="text-warning">${warning}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        $('#validationResults').html(html);
+    }
+
+    function showProcessResults(data) {
+        let html = '<div class="alert alert-info mt-3">';
+        html += '<h6>Processing Results:</h6>';
+        html += `<p><strong>Created:</strong> ${data.created_count} orders</p>`;
+        
+        if (data.failed_count > 0) {
+            html += `<p><strong>Failed:</strong> ${data.failed_count} orders</p>`;
+            html += '<h6>Failed Orders:</h6><ul>';
+            $.each(data.failed_orders, function(index, failed) {
+                html += `<li>Row ${failed.row}: ${failed.error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        html += '</div>';
+        
+        // Insert after validation results
+        $('#validationResults').after(html);
+    }
+
+    function updateProgress(percent, text) {
+        $('#uploadProgress .progress-bar').css('width', percent + '%');
+        $('#uploadProgress small').text(text);
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function showAlert(message, type) {
+        // Create alert element
+        const alert = $(`
+            <div class="alert alert-${type} alert-dismissible fade show">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+        
+        // Insert at top of modal body
+        $('#bulkUploadModal .modal-body').prepend(alert);
+        
+        // Auto remove after 5 seconds
+        setTimeout(function() {
+            alert.remove();
+        }, 5000);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Reset modal when closed
+    $('#bulkUploadModal').on('hidden.bs.modal', function() {
+        clearFileSelection();
+    });
+
+    // Initialize drag and drop styling
+    initializeDragDropStyles();
+
+    // CSS for drag and drop styling
+    function initializeDragDropStyles() {
+        if (!$('#bulk-upload-styles').length) {
+            $('head').append(`
+                <style id="bulk-upload-styles">
+                    .bulk-upload-area {
+                        border: 2px dashed #dee2e6;
+                        border-radius: 8px;
+                        padding: 40px;
+                        text-align: center;
+                        background-color: #f8f9fa;
+                        transition: all 0.3s ease;
+                        cursor: pointer;
+                    }
+                    
+                    .bulk-upload-area:hover {
+                        border-color: #007bff;
+                        background-color: #e7f3ff;
+                    }
+                    
+                    .bulk-upload-area.drag-over {
+                        border-color: #007bff;
+                        background-color: #e7f3ff;
+                        transform: scale(1.02);
+                    }
+                    
+                    .upload-content {
+                        pointer-events: none;
+                    }
+                    
+                    /* Ensure buttons are clickable */
+                    .upload-content button {
+                        pointer-events: auto;
+                    }
+                </style>
+            `);
+        }
+    }
 });
+
+// Debug function to test if elements exist
+function debugElements() {
+    console.log('Select File Button:', $('#selectFileBtn').length);
+    console.log('File Input:', $('#csvFileInput').length);
+    console.log('Upload Area:', $('#uploadArea').length);
+}

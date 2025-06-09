@@ -2,6 +2,7 @@ from django.urls import path
 from order.api import*
 from order.views import*
 from order.client_order_api_views import *
+from order.csv_bulk_order import *
 
 # view
 urlpatterns = [
@@ -53,4 +54,14 @@ urlpatterns += [
     path('api/orders/<int:order_id>/return/', return_order, name='return_order'),
     path('api/repeated-orders/<int:order_id>/return/', return_order, name='return_repeated_order'),
     path('api/repeated-orders/<int:order_id>/cancel/', cancel_repeated_order, name='cancel_repeated_order'),
+]
+
+# csv bulk api
+
+urlpatterns += [
+    path('download-order-template/', download_order_template, name='download_order_template'),
+    path('api/template-data/', get_template_data, name='get_template_data'),
+    path('download-existing-orders/', download_existing_orders_template, name='download_existing_orders'),
+    path('validate-bulk-upload/', validate_bulk_upload, name='validate_bulk_upload'),
+    path('process-bulk-upload/', process_bulk_upload, name='process_bulk_upload'),
 ]
