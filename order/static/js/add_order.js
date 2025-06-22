@@ -1,8 +1,15 @@
 $(document).ready(function () {
+    let allModels = []; // Store all models data
+    let currentPage = 1;
+    const itemsPerPage = 8;
+
     // When client changes, fetch models and cart count
     $('#clientSelect').change(function () {
         let clientId = $(this).val();
         $('#modelsContainer').empty();
+        $('#paginationContainer').empty(); // Clear pagination
+        allModels = []; // Reset models array
+        currentPage = 1; // Reset to first page
 
         // Show or hide Go to Cart button
         if (clientId) {
@@ -37,51 +44,152 @@ $(document).ready(function () {
 
         // Fetch models
         $.get(`/client/${clientId}/models/`, function (data) {
-            data.models.forEach(function (model) {
-                let card = `
-                    <div class="col-md-3 mb-3">
-                        <div class="card h-100 shadow-sm" id="card-${model.id}">
-                            <div class="position-relative">
-                                <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
-                                <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}X${model.breadth}</span>
-                                <img src="${model.image}" class="card-img-top" alt="${model.model_no}" style="height: 180px; object-fit: cover;">
-                            </div>
-                            <div class="card-body p-2">
-                                <div class="row align-items-center">
-                                    <div class="col-6">
-                                        <h6 class="card-title mb-0">${model.model_no}</h6>
-                                        <small class="text-muted">Weight: ${model.weight}</small>
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label mb-1 small">Color:</label>
-                                        <select class="form-select form-select-sm color-select" data-model-id="${model.id}">
-                                            ${model.colors.map(c => `<option value="${c.id}">${c.color}</option>`).join('')}
-                                        </select>
-                                    </div>
+            allModels = data.models; // Store all models
+            displayModels(1); // Display first page
+            createPagination(); // Create pagination controls
+        });
+    });
+
+    // Function to display models for a specific page
+    function displayModels(page) {
+        currentPage = page;
+        const startIndex = (page - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const modelsToShow = allModels.slice(startIndex, endIndex);
+
+        $('#modelsContainer').empty();
+
+        modelsToShow.forEach(function (model) {
+            let card = `
+                <div class="col-md-3 mb-3">
+                    <div class="card h-100 shadow-sm" id="card-${model.id}">
+                        <div class="position-relative">
+                            <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
+                            <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}X${model.breadth}</span>
+                            <img src="${model.image}" class="card-img-top" alt="${model.model_no}" style="height: 180px; object-fit: cover;">
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="row align-items-center">
+                                <div class="col-6">
+                                    <h6 class="card-title mb-0">${model.model_no}</h6>
+                                    <small class="text-muted">Weight: ${model.weight}</small>
                                 </div>
-                                <div class="row mt-2">
-                                    <div class="col-12 text-center">
-                                        <div class="counter-section d-none" data-model-id="${model.id}">
-                                            <div class="d-flex justify-content-center align-items-center gap-2">
-                                                <button class="btn btn-outline-secondary btn-sm decrement-btn" type="button" data-model-id="${model.id}">−</button>
-                                                <span class="px-2 quantity-input" data-model-id="${model.id}">1</span>
-                                                <button class="btn btn-outline-secondary btn-sm increment-btn" type="button" data-model-id="${model.id}">+</button>
-                                                <button class="btn btn-success btn-sm ms-2 cart-btn" type="button">
-                                                    <i class="fa fa-shopping-cart"></i>
-                                                </button>
-                                            </div>
+                                <div class="col-6">
+                                    <label class="form-label mb-1 small">Color:</label>
+                                    <select class="form-select form-select-sm color-select" data-model-id="${model.id}">
+                                        ${model.colors.map(c => `<option value="${c.id}">${c.color}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12 text-center">
+                                    <div class="counter-section d-none" data-model-id="${model.id}">
+                                        <div class="d-flex justify-content-center align-items-center gap-2">
+                                            <button class="btn btn-outline-secondary btn-sm decrement-btn" type="button" data-model-id="${model.id}">−</button>
+                                            <span class="px-2 quantity-input" data-model-id="${model.id}">1</span>
+                                            <button class="btn btn-outline-secondary btn-sm increment-btn" type="button" data-model-id="${model.id}">+</button>
+                                            <button class="btn btn-success btn-sm ms-2 cart-btn" type="button">
+                                                <i class="fa fa-shopping-cart"></i>
+                                            </button>
                                         </div>
-                                        <button class="btn btn-sm btn-primary mt-2 select-btn" data-model-id="${model.id}">Add to Cart</button>
-                                        <input class="form-check-input model-check d-none" type="checkbox" data-model-id="${model.id}">
                                     </div>
+                                    <button class="btn btn-sm btn-primary mt-2 select-btn" data-model-id="${model.id}">Add to Cart</button>
+                                    <input class="form-check-input model-check d-none" type="checkbox" data-model-id="${model.id}">
                                 </div>
                             </div>
                         </div>
                     </div>
-                `;
-                $('#modelsContainer').append(card);
-            });
+                </div>
+            `;
+            $('#modelsContainer').append(card);
         });
+    }
+
+    // Function to create pagination controls
+    function createPagination() {
+        const totalPages = Math.ceil(allModels.length / itemsPerPage);
+        
+        if (totalPages <= 1) {
+            $('#paginationContainer').empty();
+            return;
+        }
+
+        let paginationHtml = `
+            <nav aria-label="Models pagination" class="mt-4">
+                <ul class="pagination justify-content-center">
+        `;
+
+        // Previous button
+        paginationHtml += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${currentPage - 1}">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        `;
+
+        // Page numbers
+        for (let i = 1; i <= totalPages; i++) {
+            // Show first page, last page, current page, and pages around current page
+            if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+                paginationHtml += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" data-page="${i}">${i}</a>
+                    </li>
+                `;
+            } else if (i === currentPage - 3 || i === currentPage + 3) {
+                // Add ellipsis
+                paginationHtml += `
+                    <li class="page-item disabled">
+                        <span class="page-link">...</span>
+                    </li>
+                `;
+            }
+        }
+
+        // Next button
+        paginationHtml += `
+            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${currentPage + 1}">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+        `;
+
+        paginationHtml += `
+                </ul>
+            </nav>
+        `;
+
+        // Add pagination info
+        const startItem = (currentPage - 1) * itemsPerPage + 1;
+        const endItem = Math.min(currentPage * itemsPerPage, allModels.length);
+        
+        paginationHtml += `
+            <div class="text-center mt-2">
+                <small class="text-muted">
+                    Showing ${startItem} to ${endItem} of ${allModels.length} models
+                </small>
+            </div>
+        `;
+
+        $('#paginationContainer').html(paginationHtml);
+    }
+
+    // Handle pagination clicks
+    $(document).on('click', '.page-link', function (e) {
+        e.preventDefault();
+        const page = parseInt($(this).data('page'));
+        
+        if (page && page !== currentPage && page > 0 && page <= Math.ceil(allModels.length / itemsPerPage)) {
+            displayModels(page);
+            createPagination();
+            
+            // Scroll to top of models container
+            $('html, body').animate({
+                scrollTop: $('#modelsContainer').offset().top - 100
+            }, 300);
+        }
     });
 
     // Handle select button click
@@ -521,7 +629,6 @@ $(document).ready(function () {
         $('#cartItemsContainer').html(html);
     }
 
-    // Update cart item count
     // Update cart item count - Improved version
     function updateCartCount(clientId) {
         $.ajax({

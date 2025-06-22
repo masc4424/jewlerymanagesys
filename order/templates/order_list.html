@@ -53,7 +53,7 @@
         </div>
 
         <!-- Tabs for filtering -->
-        <ul class="nav nav-tabs orders-tabs" id="ordersFilterTabs" role="tablist">
+        <!-- <ul class="nav nav-tabs orders-tabs" id="ordersFilterTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="all-orders-tab" data-filter="all" type="button" role="tab">All Orders</button>
             </li>
@@ -63,31 +63,69 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="not-delivered-tab" data-filter="not-delivered" type="button" role="tab">Mark as Not Delivered</button>
             </li>
-        </ul>
+        </ul> -->
 
-        <div class="card">
+        <div id="summarySection" class="card mb-4">
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table" id="usersTable">
-                        <thead>
-                            <tr>
-                                <th>SL No.</th>
-                                <th>Client Name</th>
-                                <th>Model</th>
-                                <th>Model Status</th>
-                                <th>Delivery Status</th>
-                                <th>Quantity</th>
-                                <th>Repeated Order</th>
-                                <th>Weight / set(gm)</th>
-                                <th>Delivery Date</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
+                <h5 class="mb-3">Order Summary</h5>
+                <table class="table table-bordered table-hover" id="summaryTable">
+                    <thead>
+                        <tr>
+                            <th>Date of Order</th>
+                            <th>Client</th>
+                            <th>Quantity</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+
+        <div id="usersSection" style="display: none;">
+            <!-- Back Button -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <button class="btn btn-outline-secondary" id="backToSummary">
+                    ← Back to Summary
+                </button>
+                <ul class="nav nav-tabs orders-tabs" id="ordersFilterTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="all-orders-tab" data-filter="all" type="button" role="tab">All Orders</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="delivered-tab" data-filter="delivered" type="button" role="tab">Mark as Delivered</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="not-delivered-tab" data-filter="not-delivered" type="button" role="tab">Mark as Not Delivered</button>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="usersTable">
+                            <thead>
+                                <tr>
+                                    <th>SL No.</th>
+                                    <th>Client Name</th>
+                                    <th>Model</th>
+                                    <th>Model Status</th>
+                                    <th>Delivery Status</th>
+                                    <th>Quantity</th>
+                                    <th>Repeated Order</th>
+                                    <th>Weight / set(gm)</th>
+                                    <th>Delivery Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
+
     </div>
 
     <!-- Image Preview Modal -->

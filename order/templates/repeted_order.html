@@ -22,53 +22,169 @@
         <div class="d-flex justify-content-between">
             <h4 class="mt-4">Re Orders List</h4>
         </div>
-        <div class="card">
+        <div class="card mb-3" id="summaryTableCard">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-bar"></i> Orders Summary
+                </h5>
+            </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <!-- Add data-bs-spy attribute to monitor rendering -->
-                    <table id="repeatedOrdersTable" class="table table-striped table-bordered" width="100%" data-bs-spy="scroll">
-                        <thead>
+                    <table id="summaryTable" class="table table-striped table-hover">
+                        <thead class="table-dark">
                             <tr>
-                                <th>Sr. No.</th>
+                                <th>Order Date</th>
                                 <th>Client</th>
-                                <th>Model</th>
-                                <th>Delivery Status</th>
-                                <th>New Model Status</th>
-                                <th>Qty / Colour</th>
-                                <th>Weight</th>
+                                <th>Total Quantity</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Empty placeholder row to ensure tbody exists -->
-                            <tr class="placeholder-row">
-                                <td colspan="8">Loading data...</td>
-                            </tr>
+                            <!-- Data will be populated by JavaScript -->
                         </tbody>
                     </table>
                 </div>
             </div>
         </div>
+        <div id="mainTableContainer" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5>Detailed Orders</h5>
+                <button type="button" class="btn btn-secondary btn-sm" id="backToSummary">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Back to Summary
+                </button>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <!-- Add data-bs-spy attribute to monitor rendering -->
+                        <table id="repeatedOrdersTable" class="table table-striped table-bordered" width="100%" data-bs-spy="scroll">
+                            <thead>
+                                <tr>
+                                    <th>Sr. No.</th>
+                                    <th>Client</th>
+                                    <th>Model</th>
+                                    <th>Delivery Status</th>
+                                    <th>New Model Status</th>
+                                    <th>Qty / Colour</th>
+                                    <th>Weight</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Empty placeholder row to ensure tbody exists -->
+                                <tr class="placeholder-row">
+                                    <td colspan="8">Loading data...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Update Status Modal -->
+    <!-- Update Status Modal - Enhanced for Grouped Orders -->
     <div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="updateStatusModalLabel">Update Order Status</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <!-- Option selector for grouped orders -->
+                    <div id="groupedOrderOptions" class="mb-3" style="display: none;">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            This model has multiple color variants. You can update them individually or apply the same status to all.
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="updateMode" id="updateSingle" value="single" checked>
+                            <label class="form-check-label" for="updateSingle">
+                                Update Selected Order Only
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="updateMode" id="updateAll" value="all">
+                            <label class="form-check-label" for="updateAll">
+                                Apply Same Status to All Color Variants
+                            </label>
+                        </div>
+                        <hr>
+                    </div>
+
+                    <!-- Bulk Update Configuration (Hidden by default) -->
+                    <div id="bulkUpdateConfiguration" class="mb-3" style="display: none;">
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Bulk Update Mode:</strong> Configure the values to apply to all color variants.
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="applyStatusToAll" checked>
+                                    <label class="form-check-label" for="applyStatusToAll">
+                                        <strong>Update Status for All</strong>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="applyDeliveryDateToAll">
+                                    <label class="form-check-label" for="applyDeliveryDateToAll">
+                                        <strong>Update Delivery Date for All</strong>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="applyDeliveredFlagToAll">
+                                    <label class="form-check-label" for="applyDeliveredFlagToAll">
+                                        <strong>Update Delivered Status for All</strong>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="applyQuantityToAll">
+                                    <label class="form-check-label" for="applyQuantityToAll">
+                                        <strong>Set Same Delivered Quantity for All</strong>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                Only checked options will be applied to all variants. Unchecked options will keep their individual values.
+                            </small>
+                        </div>
+                        <hr>
+                    </div>
+
                     <form id="statusForm">
                         <input type="hidden" id="order_id" name="order_id">
+                        <input type="hidden" id="grouped_order_ids" name="grouped_order_ids">
                         <!-- CSRF Token - required for Django -->
                         <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+                        
+                        <!-- Order info display -->
+                        <div id="orderInfo" class="mb-3 p-3 bg-light rounded">
+                            <h6>Order Information:</h6>
+                            <div id="orderDetails">
+                                <!-- Will be populated dynamically -->
+                            </div>
+                        </div>
                         
                         <div class="mb-3">
                             <label for="status_id" class="form-label">Status</label>
                             <select class="form-select" id="status_id" name="status_id" required>
-                                <!-- Options will be loaded dynamically -->
                                 <option value="">Loading statuses...</option>
                             </select>
                         </div>
@@ -76,6 +192,7 @@
                         <div class="mb-3">
                             <label for="quantity_delivered" class="form-label">Quantity Delivered</label>
                             <input type="number" class="form-control" id="quantity_delivered" name="quantity_delivered">
+                            <small class="form-text text-muted">Leave blank if not applicable</small>
                         </div>
                         
                         <div class="mb-3">
@@ -85,13 +202,15 @@
                         
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input" id="delivered" name="delivered">
-                            <label class="form-check-label" for="delivered">Marked as Delivered</label>
+                            <label class="form-check-label" for="delivered">Mark as Delivered</label>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" id="saveStatusBtn">Save changes</button>
+                    <button type="button" class="btn btn-primary" id="saveStatusBtn">
+                        <i class="fas fa-save"></i> Save Changes
+                    </button>
                 </div>
             </div>
         </div>

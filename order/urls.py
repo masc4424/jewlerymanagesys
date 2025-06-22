@@ -40,6 +40,7 @@ urlpatterns += [
     path('api/repeated-orders/', get_repeated_orders_api, name='api_repeated_orders'),
     path('api/repeated-orders/<int:order_id>/', get_repeated_order_details, name='api_repeated_order_details'),
     path('api/update-repeated-order-status/', update_repeated_order_status, name='api_update_repeated_order_status'),
+    path('api/update-repeated-order-status-bulk/', update_repeated_order_status_bulk, name='update_repeated_order_status_bulk'),
     path('api/model-statuses/', get_model_statuses, name='api_model_statuses'),
     
     # Cart related URL
