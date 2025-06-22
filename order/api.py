@@ -851,7 +851,6 @@ def get_repeated_orders_api(request):
     
     return JsonResponse({'data': data})
 
-@login_required
 @require_POST
 def add_to_cart_ajax(request):
     """
@@ -911,7 +910,6 @@ def add_to_cart_ajax(request):
         'total_quantity': total_quantity
     })
 
-@login_required
 @require_GET
 def cart_item_count(request, client_id):
     """
