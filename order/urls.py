@@ -55,6 +55,8 @@ urlpatterns += [
     path('api/orders/<int:order_id>/return/', return_order, name='return_order'),
     path('api/repeated-orders/<int:order_id>/return/', return_order, name='return_repeated_order'),
     path('api/repeated-orders/<int:order_id>/cancel/', cancel_repeated_order, name='cancel_repeated_order'),
+    path('api/client/order-details-for-deletion/', get_order_details_for_deletion, name='get_order_details_for_deletion'),
+    path('api/client/delete-orders/', delete_client_orders_api, name='delete_client_orders_api'),
 ]
 
 # csv bulk api
