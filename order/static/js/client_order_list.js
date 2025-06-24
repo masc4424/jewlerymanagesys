@@ -580,6 +580,7 @@ $(document).ready(function() {
                         <button class="btn btn-sm btn-outline-danger delete-order-btn" 
                                 data-order-date="${row.order_date}" 
                                 data-model-no="${row.model_no}"
+                                data-is-reordered="${row.is_repeated}"
                                 title="Delete Orders">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -673,6 +674,7 @@ $(document).ready(function() {
                         <button class="btn btn-sm btn-outline-danger delete-order-btn" 
                                 data-order-date="${row.order_date}" 
                                 data-model-no="${row.model_no}"
+                                data-is-reordered="${row.is_repeated}"
                                 title="Delete Orders">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -1536,6 +1538,7 @@ $(document).ready(function() {
                         <button class="btn btn-sm btn-outline-danger delete-order-btn" 
                                 data-order-date="${row.order_date}" 
                                 data-model-no="${row.model_no}"
+                                data-is-reordered="${row.is_repeated}"
                                 title="Delete Orders">
                             <i class="fas fa-trash-alt"></i>
                         </button>
@@ -1550,23 +1553,25 @@ $(document).ready(function() {
         
         const orderDate = $(this).data('order-date');
         const modelNo = $(this).data('model-no');
+        const isReordered = $(this).data('is-reordered');
         
         // Set modal title information
         $('#deleteModalModelNo').text(modelNo);
         $('#deleteModalOrderDate').text(new Date(orderDate).toLocaleDateString());
         
         // Fetch detailed order information
-        fetchOrderDetailsForDeletion(orderDate, modelNo);
+        fetchOrderDetailsForDeletion(orderDate, modelNo, isReordered);
     });
 
     // Function to fetch order details for deletion
-    function fetchOrderDetailsForDeletion(orderDate, modelNo) {
+    function fetchOrderDetailsForDeletion(orderDate, modelNo, isReordered) {
         $.ajax({
             url: '/api/client/order-details-for-deletion/',
             method: 'POST',
             data: JSON.stringify({
                 order_date: orderDate,
-                model_no: modelNo
+                model_no: modelNo,
+                is_reordered: isReordered
             }),
             contentType: 'application/json',
             headers: {

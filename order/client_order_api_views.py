@@ -270,6 +270,7 @@ def get_order_details_for_deletion(request):
         data = json.loads(request.body)
         order_date = data.get('order_date')
         model_no = data.get('model_no')
+        is_reordered = data.get('is_reordered')
         
         if not order_date or not model_no:
             return JsonResponse({'success': False, 'message': 'Missing order_date or model_no'})
@@ -280,54 +281,55 @@ def get_order_details_for_deletion(request):
         if isinstance(order_date, str):
             order_date = datetime.strptime(order_date, '%Y-%m-%d').date()
         
-        # Get regular orders - remove __date if date_of_order is DateField
-        orders = Order.objects.filter(
-            client=user,
-            date_of_order=order_date,  # Direct comparison for DateField
-            model__model_no=model_no
-        ).select_related('model', 'color', 'status')
-        
-        # Get repeated orders - remove __date if date_of_reorder is DateField
-        repeated_orders = RepeatedOrder.objects.filter(
-            client=user,
-            date_of_reorder=order_date,  # Direct comparison for DateField
-            original_order__model__model_no=model_no
-        ).select_related('original_order__model', 'color', 'status')
-        
         order_details = []
         
-        # Process regular orders
-        for order in orders:
-            order_details.append({
-                'id': order.id,
-                'type': 'regular',
-                'model_no': order.model.model_no,
-                'quantity': order.quantity,
-                'color': order.color.color if order.color else 'N/A',
-                'status': order.model.status.status if order.model and order.model.status else 'N/A',
-                'order_date': order.date_of_order.isoformat(),
-                'delivered': order.delivered,
-                'is_approved': order.is_approved,
-                'weight': str(order.model.weight) + ' g',
-                'jewelry_type': order.model.jewelry_type.name
-            })
-        
-        # Process repeated orders
-        for repeated_order in repeated_orders:
-            order_details.append({
-                'id': repeated_order.id,
-                'type': 'repeated',
-                'model_no': repeated_order.original_order.model.model_no,
-                'quantity': repeated_order.quantity,
-                'color': repeated_order.color.color if repeated_order.color else 'N/A',
-                'status': repeated_order.original_order.model.status.status if repeated_order.original_order.model.status else 'N/A',
-                'order_date': repeated_order.date_of_reorder.isoformat(),
-                'delivered': repeated_order.delivered,
-                'is_approved': True,
-                'weight': str(repeated_order.original_order.model.weight) + ' g',
-                'jewelry_type': repeated_order.original_order.model.jewelry_type.name,
-                'repeat_order_id': repeated_order.repeat_order_id
-            })
+        if is_reordered:
+            # Get repeated orders only
+            repeated_orders = RepeatedOrder.objects.filter(
+                client=user,
+                date_of_reorder=order_date,
+                original_order__model__model_no=model_no
+            ).select_related('original_order__model', 'color', 'status')
+            
+            # Process repeated orders
+            for repeated_order in repeated_orders:
+                order_details.append({
+                    'id': repeated_order.id,
+                    'type': 'repeated',
+                    'model_no': repeated_order.original_order.model.model_no,
+                    'quantity': repeated_order.quantity,
+                    'color': repeated_order.color.color if repeated_order.color else 'N/A',
+                    'status': repeated_order.original_order.model.status.status if repeated_order.original_order.model.status else 'N/A',
+                    'order_date': repeated_order.date_of_reorder.isoformat(),
+                    'delivered': repeated_order.delivered,
+                    'is_approved': True,
+                    'weight': str(repeated_order.original_order.model.weight) + ' g',
+                    'jewelry_type': repeated_order.original_order.model.jewelry_type.name,
+                    'repeat_order_id': repeated_order.repeat_order_id
+                })
+        else:
+            # Get regular orders only
+            orders = Order.objects.filter(
+                client=user,
+                date_of_order=order_date,
+                model__model_no=model_no
+            ).select_related('model', 'color', 'status')
+            
+            # Process regular orders
+            for order in orders:
+                order_details.append({
+                    'id': order.id,
+                    'type': 'regular',
+                    'model_no': order.model.model_no,
+                    'quantity': order.quantity,
+                    'color': order.color.color if order.color else 'N/A',
+                    'status': order.model.status.status if order.model and order.model.status else 'N/A',
+                    'order_date': order.date_of_order.isoformat(),
+                    'delivered': order.delivered,
+                    'is_approved': order.is_approved,
+                    'weight': str(order.model.weight) + ' g',
+                    'jewelry_type': order.model.jewelry_type.name
+                })
         
         return JsonResponse({
             'success': True,
@@ -339,7 +341,7 @@ def get_order_details_for_deletion(request):
             'success': False,
             'message': f'Error fetching order details: {str(e)}'
         })
-    
+        
 @login_required
 @require_POST
 def approve_order(request, order_id):
