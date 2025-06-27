@@ -52,7 +52,7 @@ $(document).ready(function() {
                     // Model column with image - made clickable with color data attribute
                     return `
                         <div class="d-flex align-items-center">
-                            <img src="${row.model_img}" alt="${row.model_no}" class="rounded-circle model-thumbnail-img me-2 clickable-image" 
+                            <img src="${row.model_img}" alt="${row.model_no}" class="me-2 clickable-image" 
                                 width="40" height="40" data-img-src="${row.model_img}" 
                                 data-model-no="${row.model_no}" data-color="${row.color_name || row.color || 'N/A'}"
                                 data-length="${row.lenght || row.length || 'N/A'}" data-breadth="${row.breadth || 'N/A'}"
