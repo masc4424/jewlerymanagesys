@@ -1,8 +1,19 @@
 $(document).ready(function () {
+    let allModels = []; // Store all models for client-side filtering
+    let filteredModels = []; // Store filtered models
+    let currentPage = 1;
+    const itemsPerPage = 8;
+
     // When client changes, fetch models and cart count
     $('#clientSelect').change(function () {
         let clientId = $(this).val();
         $('#modelsContainer').empty();
+        $('#paginationContainer').empty();
+        $('#searchResultCount').addClass('d-none');
+        
+        // Clear search
+        $('#searchInput').val('');
+        currentPage = 1;
 
         // Show or hide Go to Cart button
         if (clientId) {
@@ -15,6 +26,8 @@ $(document).ready(function () {
                 .attr('href', '#');
             // reset badge
             $('#cartItemCount').text('0');
+            allModels = [];
+            filteredModels = [];
             return;
         }
 
@@ -37,51 +50,208 @@ $(document).ready(function () {
 
         // Fetch models
         $.get(`/client/${clientId}/models/`, function (data) {
-            data.models.forEach(function (model) {
-                let card = `
-                    <div class="col-md-3 mb-3">
-                        <div class="card h-100 shadow-sm" id="card-${model.id}">
-                            <div class="position-relative">
-                                <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
-                                <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}X${model.breadth}</span>
-                                <img src="${model.image}" class="card-img-top" alt="${model.model_no}" style="height: 180px; object-fit: cover;">
-                            </div>
-                            <div class="card-body p-2">
-                                <div class="row align-items-center">
-                                    <div class="col-6">
-                                        <h6 class="card-title mb-0">${model.model_no}</h6>
-                                        <small class="text-muted">Weight: ${model.weight}</small>
-                                    </div>
-                                    <div class="col-6">
-                                        <label class="form-label mb-1 small">Color:</label>
-                                        <select class="form-select form-select-sm color-select" data-model-id="${model.id}">
-                                            ${model.colors.map(c => `<option value="${c.id}">${c.color}</option>`).join('')}
-                                        </select>
-                                    </div>
+            allModels = data.models;
+            filteredModels = [...allModels]; // Initially show all models
+            displayModels();
+        });
+    });
+
+    // Search functionality
+    $('#searchInput').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase().trim();
+        
+        if (searchTerm === '') {
+            filteredModels = [...allModels];
+        } else {
+            filteredModels = allModels.filter(model => {
+                return (
+                    model.model_no.toLowerCase().includes(searchTerm) ||
+                    model.status_name.toLowerCase().includes(searchTerm) ||
+                    model.weight.toString().toLowerCase().includes(searchTerm) ||
+                    model.colors.some(color => color.color.toLowerCase().includes(searchTerm))
+                );
+            });
+        }
+        
+        currentPage = 1; // Reset to first page
+        displayModels();
+    });
+
+    // Clear search
+    $('#clearSearch').click(function() {
+        $('#searchInput').val('');
+        filteredModels = [...allModels];
+        currentPage = 1;
+        displayModels();
+    });
+
+    // Function to display models with pagination
+    function displayModels() {
+        const startIndex = (currentPage - 1) * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const modelsToShow = filteredModels.slice(startIndex, endIndex);
+        
+        // Update search result count
+        updateSearchResultCount();
+        
+        // Clear container
+        $('#modelsContainer').empty();
+        
+        if (modelsToShow.length === 0) {
+            $('#modelsContainer').html(`
+                <div class="col-12 text-center py-5">
+                    <i class="fa fa-search fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No models found</h5>
+                    <p class="text-muted">Try adjusting your search criteria</p>
+                </div>
+            `);
+            $('#paginationContainer').empty();
+            return;
+        }
+        
+        // Display models
+        modelsToShow.forEach(function (model) {
+            let card = `
+                <div class="col-md-3 mb-3">
+                    <div class="card h-100 shadow-sm" id="card-${model.id}">
+                        <div class="position-relative">
+                            <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
+                            <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}X${model.breadth}</span>
+                            <img src="${model.image}" class="card-img-top" alt="${model.model_no}" style="height: 180px; object-fit: cover;">
+                        </div>
+                        <div class="card-body p-2">
+                            <div class="row align-items-center">
+                                <div class="col-6">
+                                    <h6 class="card-title mb-0">${model.model_no}</h6>
+                                    <small class="text-muted">Weight: ${model.weight}</small>
                                 </div>
-                                <div class="row mt-2">
-                                    <div class="col-12 text-center">
-                                        <div class="counter-section d-none" data-model-id="${model.id}">
-                                            <div class="d-flex justify-content-center align-items-center gap-2">
-                                                <button class="btn btn-outline-secondary btn-sm decrement-btn" type="button" data-model-id="${model.id}">−</button>
-                                                <span class="px-2 quantity-input" data-model-id="${model.id}">1</span>
-                                                <button class="btn btn-outline-secondary btn-sm increment-btn" type="button" data-model-id="${model.id}">+</button>
-                                                <button class="btn btn-success btn-sm ms-2 cart-btn" type="button">
-                                                    <i class="fa fa-shopping-cart"></i>
-                                                </button>
-                                            </div>
+                                <div class="col-6">
+                                    <label class="form-label mb-1 small">Color:</label>
+                                    <select class="form-select form-select-sm color-select" data-model-id="${model.id}">
+                                        ${model.colors.map(c => `<option value="${c.id}">${c.color}</option>`).join('')}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-12 text-center">
+                                    <div class="counter-section d-none" data-model-id="${model.id}">
+                                        <div class="d-flex justify-content-center align-items-center gap-2">
+                                            <button class="btn btn-outline-secondary btn-sm decrement-btn" type="button" data-model-id="${model.id}">−</button>
+                                            <span class="px-2 quantity-input" data-model-id="${model.id}">1</span>
+                                            <button class="btn btn-outline-secondary btn-sm increment-btn" type="button" data-model-id="${model.id}">+</button>
+                                            <button class="btn btn-success btn-sm ms-2 cart-btn" type="button">
+                                                <i class="fa fa-shopping-cart"></i>
+                                            </button>
                                         </div>
-                                        <button class="btn btn-sm btn-primary mt-2 select-btn" data-model-id="${model.id}">Add to Cart</button>
-                                        <input class="form-check-input model-check d-none" type="checkbox" data-model-id="${model.id}">
                                     </div>
+                                    <button class="btn btn-sm btn-primary mt-2 select-btn" data-model-id="${model.id}">Add to Cart</button>
+                                    <input class="form-check-input model-check d-none" type="checkbox" data-model-id="${model.id}">
                                 </div>
                             </div>
                         </div>
                     </div>
-                `;
-                $('#modelsContainer').append(card);
-            });
+                </div>
+            `;
+            $('#modelsContainer').append(card);
         });
+        
+        // Display pagination
+        displayPagination();
+    }
+
+    // Function to update search result count
+    function updateSearchResultCount() {
+        const searchTerm = $('#searchInput').val().trim();
+        const resultCount = $('#searchResultCount');
+        
+        if (searchTerm !== '') {
+            resultCount.removeClass('d-none').html(`
+                Found <strong>${filteredModels.length}</strong> model(s) matching "<em>${searchTerm}</em>"
+            `);
+        } else {
+            resultCount.addClass('d-none');
+        }
+    }
+
+    // Function to display pagination
+    function displayPagination() {
+        const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
+        
+        if (totalPages <= 1) {
+            $('#paginationContainer').empty();
+            return;
+        }
+        
+        let paginationHtml = '<nav aria-label="Page navigation"><ul class="pagination justify-content-center">';
+        
+        // Previous button
+        paginationHtml += `
+            <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+            </li>
+        `;
+        
+        // Page numbers
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+        
+        // Adjust start page if we're near the end
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+        
+        // First page and ellipsis
+        if (startPage > 1) {
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+            if (startPage > 2) {
+                paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+        }
+        
+        // Page numbers
+        for (let i = startPage; i <= endPage; i++) {
+            paginationHtml += `
+                <li class="page-item ${i === currentPage ? 'active' : ''}">
+                    <a class="page-link" href="#" data-page="${i}">${i}</a>
+                </li>
+            `;
+        }
+        
+        // Last page and ellipsis
+        if (endPage < totalPages) {
+            if (endPage < totalPages - 1) {
+                paginationHtml += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+            }
+            paginationHtml += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+        }
+        
+        // Next button
+        paginationHtml += `
+            <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+            </li>
+        `;
+        
+        paginationHtml += '</ul></nav>';
+        
+        $('#paginationContainer').html(paginationHtml);
+    }
+
+    // Handle pagination clicks
+    $(document).on('click', '.page-link', function(e) {
+        e.preventDefault();
+        const page = parseInt($(this).data('page'));
+        
+        if (page && page !== currentPage && page >= 1 && page <= Math.ceil(filteredModels.length / itemsPerPage)) {
+            currentPage = page;
+            displayModels();
+            
+            // Scroll to top of models container
+            $('html, body').animate({
+                scrollTop: $('#modelsContainer').offset().top - 100
+            }, 500);
+        }
     });
 
     // Handle select button click
@@ -140,7 +310,7 @@ $(document).ready(function () {
                 model_id: modelId, 
                 color_id: colorId, 
                 quantity: quantity,
-                client_id: clientId  // Pass the client ID to the backend
+                client_id: clientId
             }),
             success: function (response) {
                 if (response.status === 'success') {
@@ -201,12 +371,12 @@ $(document).ready(function () {
         });
     });
 
-    // Handle quantity update - Fixed version
-    $(document).on('click', '.quantity-btn', function () {
-        const itemId = $(this).data('id');
+    // FIXED: Cart quantity update - Consistent data attribute usage
+    $(document).on('click', '.cart-quantity-btn', function () {
+        const cartItemId = $(this).data('cart-item-id');
         const action = $(this).data('action');
         const clientId = $('#clientIdHidden').val();
-        const quantitySpan = $(`#quantity-${itemId}`);
+        const quantitySpan = $(`#cart-quantity-${cartItemId}`);
         const currentQuantity = parseInt(quantitySpan.text());
         
         // Optimistic UI update
@@ -221,48 +391,29 @@ $(document).ready(function () {
             method: 'POST',
             headers: { 'X-CSRFToken': getCookie('csrftoken') },
             contentType: 'application/json',
-            data: JSON.stringify({ item_id: itemId, action: action }),
+            data: JSON.stringify({ item_id: cartItemId, action: action }),
             success: function (response) {
                 if (response.success) {
-                    // Update the quantity display without reloading the entire modal
-                    if (response.new_quantity) {
-                        $(`#quantity-${itemId}`).text(response.new_quantity);
-                    } else {
-                        // If item was removed (quantity became 0)
-                        if (action === 'decrease' && currentQuantity <= 1) {
-                            $(`[data-item-id="${itemId}"]`).fadeOut(300, function() {
-                                $(this).remove();
-                                // Check if cart is now empty
-                                if ($('#cartItemsContainer').children().length <= 1) { // Only "Proceed to Order" button left
-                                    $('#cartItemsContainer').html('<p class="text-center">Your cart is empty.</p>');
-                                }
-                            });
-                        }
+                    if (response.quantity) {
+                        quantitySpan.text(response.quantity);
                     }
-                    
-                    // Update the cart badge count
                     updateCartCount(clientId);
                 } else {
-                    // Revert the optimistic UI update
                     quantitySpan.text(currentQuantity);
                     Swal.fire('Error', response.message || 'Could not update quantity.', 'error');
                 }
             },
             error: function() {
-                // Revert the optimistic UI update
                 quantitySpan.text(currentQuantity);
                 Swal.fire('Error', 'Server error while updating quantity.', 'error');
             }
         });
     });
 
-    // Delete cart item - Improved version
-    $(document).on('click', '.delete-btn', function () {
-        const itemId = $(this).data('item-id');
+    // FIXED: Delete cart item - Use correct data attribute
+    $(document).on('click', '.delete-cart-item-btn', function () {
+        const cartItemId = $(this).data('cart-item-id');
         const clientId = $('#clientIdHidden').val();
-        
-        // Find the correct parent element to remove
-        // We're using the closest div with class list-group-item which contains this button
         const itemElement = $(this).closest('.list-group-item');
         
         if (itemElement.length === 0) {
@@ -270,100 +421,27 @@ $(document).ready(function () {
             return;
         }
         
-        // Optimistic UI removal
         itemElement.fadeOut(300);
 
         $.ajax({
-            url: `/api/cart/delete/${itemId}/`,
+            url: `/api/cart/delete/${cartItemId}/`,
             method: 'POST',
             data: { csrfmiddlewaretoken: getCookie('csrftoken') },
             success: function(response) {
-                // Complete the removal
                 itemElement.remove();
                 
-                // More reliable empty check - directly count visible list-group-items
                 const remainingItems = $('#cartItemsContainer .list-group-item:visible').length;
                 
                 if (remainingItems === 0) {
-                    // No items left, show empty cart message
                     $('#cartItemsContainer').html('<p class="text-center">Your cart is empty.</p>');
-                    
-                    // Also remove the proceed to order button if it exists
                     $('#proceedToOrderBtn').remove();
                 }
                 
-                // Update the cart badge count
                 updateCartCount(clientId);
             },
             error: function() {
-                // Show the item again if there was an error
                 itemElement.fadeIn(300);
                 Swal.fire('Error', 'Failed to remove item from cart.', 'error');
-            }
-        });
-    });
-
-    // Cart increment/decrement buttons handler
-    $(document).on('click', '.increment-btn, .decrement-btn', function() {
-        // Determine if this is increment or decrement
-        const isIncrement = $(this).hasClass('increment-btn');
-        const action = isIncrement ? 'increase' : 'decrease';
-        
-        // Get the item ID from data attribute
-        const modelId = $(this).data('model-id');
-        
-        // Find the quantity display element (the span between the buttons)
-        const quantityElement = $(this).closest('.input-group').find('.input-group-text');
-        let currentQuantity = parseInt(quantityElement.text()) || 1;
-        
-        // Get client ID from hidden input
-        const clientId = $('#clientIdHidden').val();
-        
-        // Optimistic UI update
-        if (isIncrement) {
-            currentQuantity++;
-            quantityElement.text(currentQuantity);
-        } else if (currentQuantity > 1) {
-            currentQuantity--;
-            quantityElement.text(currentQuantity);
-        } else if (currentQuantity <= 1 && !isIncrement) {
-            // If trying to decrease below 1, handle as delete
-            const deleteBtn = $(this).closest('.d-flex').find('.delete-btn');
-            if (deleteBtn.length > 0) {
-                deleteBtn.trigger('click');
-            }
-            return;
-        }
-        
-        // Send AJAX request to update quantity
-        $.ajax({
-            url: '/api/cart/update_quantity/',
-            method: 'POST',
-            headers: { 'X-CSRFToken': getCookie('csrftoken') },
-            contentType: 'application/json',
-            data: JSON.stringify({
-                item_id: modelId,
-                action: action
-            }),
-            success: function(response) {
-                if (response.success) {
-                    // Update UI with the returned quantity from server (more accurate)
-                    if (response.new_quantity) {
-                        quantityElement.text(response.new_quantity);
-                    }
-                    
-                    // Update the cart badge count
-                    updateCartCount(clientId);
-                } else {
-                    // Revert the optimistic UI update on error
-                    quantityElement.text(isIncrement ? currentQuantity - 1 : currentQuantity + 1);
-                    Swal.fire('Error', response.message || 'Could not update quantity.', 'error');
-                }
-            },
-            error: function() {
-                // Revert the optimistic UI update on error
-                quantityElement.text(isIncrement ? currentQuantity - 1 : currentQuantity + 1);
-                Swal.fire('Error', 'Server error while updating quantity.', 'error');
             }
         });
     });
@@ -373,7 +451,6 @@ $(document).ready(function () {
         e.preventDefault();
         let clientId = $('#clientSelect').val();
         
-        // Close any existing offcanvas first
         $('.offcanvas').each(function() {
             const offcanvasInstance = bootstrap.Offcanvas.getInstance(this);
             if (offcanvasInstance) {
@@ -381,12 +458,10 @@ $(document).ready(function () {
             }
         });
         
-        // Remove any existing modals/offcanvas from previous clicks
         $('#clientSideModalTemp, #clientSideModal').remove();
         $('.modal-backdrop, .offcanvas-backdrop').remove();
         $('body').removeClass('modal-open offcanvas-open');
         
-        // Now proceed with loading the new offcanvas
         $.ajax({
             url: `/ajax/cart/${clientId}/`,
             method: 'GET',
@@ -408,23 +483,18 @@ $(document).ready(function () {
                 tempModal.show();
             },
             success: function (response) {
-                // Properly dispose of the temp modal
                 const tempModalEl = document.getElementById('clientSideModalTemp');
                 const tempModalInstance = bootstrap.Offcanvas.getInstance(tempModalEl);
                 if (tempModalInstance) {
                     tempModalInstance.hide();
                 }
                 $('#clientSideModalTemp').remove();
-                
-                // Remove any lingering backdrops
                 $('.offcanvas-backdrop').remove();
                 
-                // Inject the new modal HTML and show it
                 $('body').append(response.html);
                 const modal = new bootstrap.Offcanvas(document.getElementById('clientSideModal'));
                 modal.show();
 
-                // Now fetch cart data and populate
                 $.get(`/api/cart/${clientId}/`, function (cartData) {
                     let cartHtml = '';
                     if (cartData.items && cartData.items.length > 0) {
@@ -441,11 +511,13 @@ $(document).ready(function () {
                                         </div>
                                         <div class="d-flex align-items-center">
                                             <div class="input-group input-group-sm me-2" style="width: 100px;">
-                                                <button class="btn btn-outline-secondary decrement-btn" type="button" data-model-id="${item.id}">-</button>
-                                                <span class="input-group-text bg-light">${item.quantity}</span>
-                                                <button class="btn btn-outline-secondary increment-btn" type="button" data-model-id="${item.id}">+</button>
+                                                <button class="btn btn-outline-secondary cart-quantity-btn" type="button" 
+                                                        data-cart-item-id="${item.id}" data-action="decrease">-</button>
+                                                <span class="input-group-text bg-light" id="cart-quantity-${item.id}">${item.quantity}</span>
+                                                <button class="btn btn-outline-secondary cart-quantity-btn" type="button" 
+                                                        data-cart-item-id="${item.id}" data-action="increase">+</button>
                                             </div>
-                                            <button class="btn btn-outline-danger btn-sm delete-btn" data-item-id="${item.id}">
+                                            <button class="btn btn-outline-danger btn-sm delete-cart-item-btn" data-cart-item-id="${item.id}">
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                         </div>
@@ -470,7 +542,6 @@ $(document).ready(function () {
                 });
             },
             error: function () {
-                // Properly dispose of the temp modal on error
                 const tempModalEl = document.getElementById('clientSideModalTemp');
                 const tempModalInstance = bootstrap.Offcanvas.getInstance(tempModalEl);
                 if (tempModalInstance) {
@@ -497,32 +568,14 @@ $(document).ready(function () {
             success: function (response) {
                 if (response.success) {
                     Swal.fire('Success', 'Order placed successfully!', 'success');
-                    $('#goToCartBtn').trigger('click'); // Reload cart
+                    $('#goToCartBtn').trigger('click');
                     updateCartCount(clientId);
                 }
             }
         });
     });
 
-    // Render cart items
-    function renderCartItems(items) {
-        let html = '';
-        items.forEach(item => {
-            html += `
-                <div class="border rounded p-2 mb-2">
-                    <strong>${item.model_no}</strong><br>
-                    Quantity: ${item.quantity}<br>
-                    Color: ${item.color}<br>
-                    Status: ${item.status}<br>
-                    <button class="btn btn-sm btn-danger mt-2 delete-btn" data-id="${item.id}">Delete</button>
-                </div>
-            `;
-        });
-        $('#cartItemsContainer').html(html);
-    }
-
     // Update cart item count
-    // Update cart item count - Improved version
     function updateCartCount(clientId) {
         $.ajax({
             url: `/cart/count/${clientId}/`,
@@ -532,7 +585,6 @@ $(document).ready(function () {
                 if (response.status === 'success') {
                     $('#cartItemCount').text(response.total_quantity);
                 } else {
-                    // Fallback to API endpoint if cart/count endpoint fails
                     $.get(`/api/cart/${clientId}/`, function (response) {
                         const totalItems = response.items ? response.items.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0) : 0;
                         $('#cartItemCount').text(totalItems);
@@ -540,7 +592,6 @@ $(document).ready(function () {
                 }
             },
             error: function () {
-                // Fallback to API endpoint if cart/count endpoint fails
                 $.get(`/api/cart/${clientId}/`, function (response) {
                     const totalItems = response.items ? response.items.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0) : 0;
                     $('#cartItemCount').text(totalItems);

@@ -1,4 +1,5 @@
 $(document).ready(function () {
+    showLoader();
     // Fix for tab highlighting
     $('.nav-link').on('click', function (e) {
         // Remove active class from all tabs
@@ -14,443 +15,450 @@ $(document).ready(function () {
         // Add active class to the active tab
         $(e.target).addClass('active');
     });
+    
     loadModels();
     updateCartCount();
-
-        // Bind search function to input event
-    $('#searchInput').on('input', search);
     
-    // Clear search functionality
+    // Add event listeners for filtering
+    $('#categoryFilter').on('change', filterModels);
+    $('#searchInput').on('input', filterModels);
     $('#clearSearch').on('click', function() {
         $('#searchInput').val('');
-        $('.model-item').show(); // Show all models
-        $('.no-models-found').remove(); // Remove no results message
-    });
-    
-    // Optional: Clear search on Escape key
-    $('#searchInput').on('keydown', function(e) {
-        if (e.key === 'Escape') {
-            $('#clearSearch').click();
-        }
+        filterModels();
     });
 
-    populateJewelryTypeFilter();
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        // Remove active class from all tabs
+        $('.nav-link').removeClass('active');
+        // Add active class to the active tab
+        $(e.target).addClass('active');
+
+        // Reset page for the newly active tab
+        const activeTab = $(e.target).attr('id');
+        if (activeTab === 'ready-to-deliver-tab') {
+            deliveredCurrentPage = 1;
+        } else {
+            othersCurrentPage = 1;
+        }
+        
+        // Re-evaluate pagination visibility when tab is switched
+        handleTabPaginationVisibility();
+    });
 });
 
-$(document).on('focus mousedown', '#categoryFilter', function() {
-    // Only populate if it hasn't been populated yet (only has the default option)
-    if ($(this).children('option').length === 1) {
-        populateJewelryTypeFilter();
-    }
-});
-
-function search() {
-    const searchTerm = $('#searchInput').val().toLowerCase().trim();
-    const selectedCategory = $('#categoryFilter').val();
-    const activeTab = $('.tab-pane.active');
-    const activeTabId = activeTab.attr('id');
-    let visibleCount = 0;
-    
-    // FIX: Change from .col-md-4, .col-lg-3, .col-sm-6 to .col-md-3
-    activeTab.find('.col-md-3').each(function() {
-        const modelText = $(this).text().toLowerCase();
-        
-        if (searchTerm === '' || modelText.includes(searchTerm)) {
-            $(this).show();
-            visibleCount++;
-        } else {
-            $(this).hide();
-        }
-    });
-    
-    // Handle no results found
-    if (visibleCount === 0 && searchTerm !== '') {
-        $('.no-models-found').remove();
-        
-        activeTab.find('.row').append(
-            '<div class="col-12 no-models-found">' +
-                '<div class="text-center text-muted py-4">' +
-                    '<i class="fa-solid fa-search mb-2" style="font-size: 2rem; opacity: 0.5;"></i>' +
-                    '<p class="mb-0">No models found matching "' + searchTerm + '"</p>' +
-                '</div>' +
-            '</div>'
-        );
-    } else {
-        $('.no-models-found').remove();
-    }
-    
-    // Show/hide the empty state based on visible cards
-    if (activeTabId === 'ready-to-deliver') {
-        if (visibleCount === 0 && searchTerm === '') {
-            $('#ready-to-deliver-empty').removeClass('d-none');
-        } else {
-            $('#ready-to-deliver-empty').addClass('d-none');
-        }
-    } else if (activeTabId === 'others') {
-        if (visibleCount === 0 && searchTerm === '') {
-            $('#others-empty').removeClass('d-none');
-        } else {
-            $('#others-empty').addClass('d-none');
-        }
-    }
+function showLoader() {
+    $('#main-loader').removeClass('d-none').show();
 }
+
+// Hide loader function
+function hideLoader() {
+    $('#main-loader').addClass('d-none').hide();
+}
+
+let allModels = [];
+
+let deliveredCurrentPage = 1;
+let othersCurrentPage = 1;
+let itemsPerPage = 8;
+let deliveredModels = [];
+let otherModels = [];
+let deliveredTotalPages = 1;
+let othersTotalPages = 1;
 
 // Load all models via AJAX
 function loadModels() {
-    console.log('Loading models...');
-    
     $.ajax({
         url: '/api/client/models/',
         type: 'GET',
         dataType: 'json',
         success: function (response) {
-            console.log('API Response:', response);
-            
             if (response.status === 'success') {
-                const models = response.data;
-                console.log('Models loaded:', models.length);
-                
-                // Check if models array exists and has items
-                if (!models || models.length === 0) {
-                    console.warn('No models found in response');
-                    updateEmptyStates(0, 0);
-                    return;
-                }
-                
-                let readyToDeliverHtml = '';
-                let othersHtml = '';
-                let readyToDeliverCount = 0;
-                let othersCount = 0;
-
-                const jewelryTypes = new Set();
-                
-                models.forEach((model, index) => {
-                    console.log(`Processing model ${index + 1}:`, model.model_no);
-                    
-                    if (model.jewelry_type_name && model.jewelry_type_name !== "N/A") {
-                        jewelryTypes.add(model.jewelry_type_name);
-                    }
-                    
-                    const isReadyToDeliver = model.order && model.order.is_delivered;
-                    const cardHtml = generateModelCardWithFilter(model);
-                    
-                    if (isReadyToDeliver) {
-                        readyToDeliverHtml += cardHtml;
-                        readyToDeliverCount++;
-                    } else {
-                        othersHtml += cardHtml;
-                        othersCount++;
-                    }
-                });
-
-                console.log('Ready to deliver count:', readyToDeliverCount);
-                console.log('Others count:', othersCount);
-                
-                // FIX: Check if containers exist before updating
-                const readyContainer = $('#ready-to-deliver-cards');
-                const othersContainer = $('#others-cards');
-                
-                console.log('Ready container exists:', readyContainer.length > 0);
-                console.log('Others container exists:', othersContainer.length > 0);
-                
-                if (readyContainer.length === 0) {
-                    console.error('ERROR: #ready-to-deliver-cards container not found!');
-                    return;
-                }
-                
-                if (othersContainer.length === 0) {
-                    console.error('ERROR: #others-cards container not found!');
-                    return;
-                }
-
-                // Update the DOM
-                readyContainer.html(readyToDeliverHtml);
-                othersContainer.html(othersHtml);
-                
-                console.log('DOM updated - Ready HTML length:', readyToDeliverHtml.length);
-                console.log('DOM updated - Others HTML length:', othersHtml.length);
-                
-                // Show/hide empty states
-                updateEmptyStates(readyToDeliverCount, othersCount);
-                
-                // Attach event listeners
-                attachEventListeners(models);
-                
-                // Initialize filter functionality
-                initializeFilterFunctionality();
-                
-                // Populate jewelry type filter
-                setTimeout(() => {
-                    populateJewelryTypeFilter(Array.from(jewelryTypes).sort());
-                }, 100);
-                
-                // Add image modal
-                if ($('#imageZoomModal').length === 0) {
-                    addImageZoomModal();
-                    initializeImageZoom();
-                }
-                
+                allModels = response.data; // Store all models for filtering
+                renderModels(allModels); // Initial render
+                loadJewelryTypes();
             } else {
-                console.error('API returned error status:', response.message);
                 showAlert('warning', response.message);
+                hideLoader();
             }
         },
         error: function (xhr, status, error) {
-            console.error('AJAX Error:', error);
-            console.error('Status:', status);
-            console.error('Response Text:', xhr.responseText);
-            showAlert('danger', `Error loading models: ${error}`);
+            console.error('Error:', error);
+            showAlert('danger', `Error: ${error}`);
         }
     });
 }
 
-// Function to populate jewelry type filter dropdown
-function populateJewelryTypeFilter() {
-    const categoryFilter = $('#categoryFilter');
+function renderModels(models) {
+    // Split models based on delivery status
+    deliveredModels = models.filter(model => model.order && model.order.is_delivered);
+    otherModels = models.filter(model => !(model.order && model.order.is_delivered));
     
-    // Show loading state
-    categoryFilter.prop('disabled', true);
-    categoryFilter.html('<option>Loading...</option>');
+    // Calculate pagination for both tabs
+    deliveredTotalPages = Math.ceil(deliveredModels.length / itemsPerPage);
+    othersTotalPages = Math.ceil(otherModels.length / itemsPerPage);
     
-    $.ajax({
-        url: '/api/jewelry-types/', // Update this URL to match your Django URL pattern
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            // Clear existing options
-            categoryFilter.empty();
-            
-            // Add "All Categories" as the first option
-            categoryFilter.append('<option value="">All Categories</option>');
-            
-            if (response.status === 'success' && response.data) {
-                // Add jewelry types to the dropdown
-                response.data.forEach(jewelryType => {
-                    categoryFilter.append(`<option value="${jewelryType.id}">${jewelryType.name}</option>`);
-                });
-                
-                // Select the first jewelry type (index 1, since index 0 is "All Categories")
-                if (response.data.length > 0) {
-                    categoryFilter.prop('selectedIndex', 1);
-                    categoryFilter.trigger('change');
-                }
-            } else {
-                // Handle case when no jewelry types are found
-                categoryFilter.append('<option>No jewelry types available</option>');
-            }
-            
-            // Re-enable the dropdown
-            categoryFilter.prop('disabled', false);
-        },
-        error: function(xhr, status, error) {
-            console.error('Error fetching jewelry types:', error);
-            
-            // Clear and show error state
-            categoryFilter.empty();
-            categoryFilter.append('<option value="">All Categories</option>');
-            categoryFilter.append('<option>Error loading types</option>');
-            
-            // Re-enable the dropdown
-            categoryFilter.prop('disabled', false);
-            
-            // Show error message to user
-            showAlert('warning', 'Failed to load jewelry types. Please refresh the page.');
-        }
-    });
-}
-
-// Initialize filter functionality
-function initializeFilterFunctionality() {
-    // Jewelry type filter change event
-    $('#categoryFilter').on('change', function() {
-        const selectedCategory = $(this).val();
-        filterModelsByJewelryType(selectedCategory);
+    // Reset to page 1 if current page exceeds total pages for each tab
+    if (deliveredCurrentPage > deliveredTotalPages && deliveredTotalPages > 0) {
+        deliveredCurrentPage = 1;
+    }
+    if (othersCurrentPage > othersTotalPages && othersTotalPages > 0) {
+        othersCurrentPage = 1;
+    }
+    
+    // Calculate pagination for delivered items
+    const deliveredStartIndex = (deliveredCurrentPage - 1) * itemsPerPage;
+    const deliveredEndIndex = deliveredStartIndex + itemsPerPage;
+    const paginatedDeliveredModels = deliveredModels.slice(deliveredStartIndex, deliveredEndIndex);
+    
+    // Calculate pagination for other items
+    const othersStartIndex = (othersCurrentPage - 1) * itemsPerPage;
+    const othersEndIndex = othersStartIndex + itemsPerPage;
+    const paginatedOtherModels = otherModels.slice(othersStartIndex, othersEndIndex);
+    
+    // Generate HTML for both tabs with their respective paginated results
+    let readyToDeliverHtml = '';
+    let othersHtml = '';
+    
+    // Render delivered items (paginated)
+    paginatedDeliveredModels.forEach((model) => {
+        readyToDeliverHtml += generateModelCard(model);
     });
     
-    // Optional: Add search functionality if you have a search input
-    $('#searchInput').on('input', function() {
-        const searchTerm = $(this).val().toLowerCase();
-        const selectedCategory = $('#categoryFilter').val();
-        filterModels(searchTerm, selectedCategory);
+    // Render other items (paginated)
+    paginatedOtherModels.forEach((model) => {
+        othersHtml += generateModelCard(model);
     });
-}
 
-// Filter models by jewelry type only
-function filterModelsByJewelryType(selectedCategory) {
-    const searchTerm = $('#searchInput').val() ? $('#searchInput').val().toLowerCase() : '';
-    filterModels(searchTerm, selectedCategory);
-}
-
-// Combined filter function for search and jewelry type
-function filterModels(searchTerm = '', selectedCategory = '') {
-    // Filter both tabs
-    filterCardsInContainer('#ready-to-deliver-cards', searchTerm, selectedCategory);
-    filterCardsInContainer('#others-cards', searchTerm, selectedCategory);
+    // Update the DOM with generated HTML
+    $('#ready-to-deliver-cards').html(readyToDeliverHtml);
+    $('#others-cards').html(othersHtml);
     
-    // Update empty states after filtering
-    updateEmptyStatesAfterFilter();
-}
-
-// Filter cards within a specific container
-function filterCardsInContainer(containerId, searchTerm, selectedCategory) {
-    const container = $(containerId);
-    // Use the correct card selector - based on your generateModelCardWithFilter function, it's .col-md-3
-    const cards = container.find('.col-md-3');
-    
-    cards.each(function() {
-        const card = $(this);
-        const jewelryType = card.find('.card').data('jewelry-type') || '';
-        const modelNo = card.find('.card-title').text().toLowerCase();
-        
-        // Check if card matches search term
-        const matchesSearch = !searchTerm || modelNo.includes(searchTerm);
-        
-        // Check if card matches jewelry type filter
-        const matchesCategory = !selectedCategory || selectedCategory === '' || jewelryType === selectedCategory;
-        
-        // Show/hide card based on filters
-        if (matchesSearch && matchesCategory) {
-            card.show();
-        } else {
-            card.hide();
-        }
-    });
-}
-
-// Update empty states after filtering
-function updateEmptyStatesAfterFilter() {
-    // Check ready to deliver tab
-    const visibleReadyCards = $('#ready-to-deliver-cards .col-md-3:visible').length;
-    const readyEmptyState = $('#ready-to-deliver-empty');
-    
-    if (visibleReadyCards === 0) {
-        if (readyEmptyState.length === 0) {
-            $('#ready-to-deliver-cards').append(`
-                <div id="ready-to-deliver-empty" class="col-12 text-center py-5">
-                    <div class="text-muted">
-                        <i class="fa-solid fa-search fa-3x mb-3"></i>
-                        <h5>No models found</h5>
-                        <p>Try adjusting your filters or search terms.</p>
-                    </div>
-                </div>
-            `);
-        } else {
-            readyEmptyState.show();
-        }
+    // Show/hide empty states
+    if (deliveredModels.length === 0) {
+        $('#ready-to-deliver-empty').removeClass('d-none');
     } else {
-        readyEmptyState.hide();
+        $('#ready-to-deliver-empty').addClass('d-none');
     }
     
-    // Check others tab
-    const visibleOtherCards = $('#others-cards .col-md-3:visible').length;
-    const othersEmptyState = $('#others-empty');
-    
-    if (visibleOtherCards === 0) {
-        if (othersEmptyState.length === 0) {
-            $('#others-cards').append(`
-                <div id="others-empty" class="col-12 text-center py-5">
-                    <div class="text-muted">
-                        <i class="fa-solid fa-search fa-3x mb-3"></i>
-                        <h5>No models found</h5>
-                        <p>Try adjusting your filters or search terms.</p>
-                    </div>
-                </div>
-            `);
-        } else {
-            othersEmptyState.show();
-        }
+    if (otherModels.length === 0) {
+        $('#others-empty').removeClass('d-none');
     } else {
-        othersEmptyState.hide();
+        $('#others-empty').addClass('d-none');
+    }
+    
+    // Generate pagination based on active tab
+    generatePagination();
+    
+    // Add event listeners for color selection
+    $('.color-select').on('change', function() {
+        const modelId = $(this).data('model-id');
+        const selectedColor = $(this).val();
+        checkOrderForColor(modelId, selectedColor);
+    });
+    
+    // Initial check for each model's default color
+    const activeTab = $('.nav-link.active').attr('id');
+    const modelsToCheck = activeTab === 'ready-to-deliver-tab' ? paginatedDeliveredModels : paginatedOtherModels;
+    
+    modelsToCheck.forEach((model) => {
+        const defaultColor = $(`#color-select-${model.id}`).val();
+        if (defaultColor) {
+            checkOrderForColor(model.id, defaultColor);
+        }
+    });
+    
+    // Add image modal if it doesn't exist
+    if ($('#imageZoomModal').length === 0) {
+        addImageZoomModal();
+        initializeImageZoom();
     }
 }
 
-// Generate model card with filter data attributes
-function generateModelCardWithFilter(model) {
-    // FIX: Add null checks and default values
-    if (!model) {
-        console.error('Model is null or undefined');
-        return '';
+// Updated generatePagination function
+function generatePagination() {
+    const $paginationList = $('#pagination-list');
+    const $paginationContainer = $('#pagination-container');
+    
+    const activeTab = $('.nav-link.active').attr('id');
+    let currentPage, totalPages, activeTabData;
+    
+    if (activeTab === 'ready-to-deliver-tab') {
+        currentPage = deliveredCurrentPage;
+        totalPages = deliveredTotalPages;
+        activeTabData = deliveredModels;
+    } else {
+        currentPage = othersCurrentPage;
+        totalPages = othersTotalPages;
+        activeTabData = otherModels;
     }
     
-    const modelId = model.id || 0;
-    const modelNo = model.model_no || 'Unknown';
-    const jewelryType = model.jewelry_type_name || 'N/A';
-    const weight = model.weight || '0';
-    const length = model.length || '0';
-    const breadth = model.breadth || '0';
-    const statusName = model.status_name || 'Unknown';
-    const modelImg = model.model_img || '/static/images/placeholder.jpg';
-    const colors = model.colors || [];
+    // Hide pagination if only one page, no results, or no models in active tab
+    if (totalPages <= 1 || activeTabData.length === 0) {
+        $paginationContainer.addClass('d-none');
+        $('#pagination-info').addClass('d-none');
+        return;
+    }
     
-    // Check if order exists AND is delivered
-    const hasDeliveredOrder = model.order && model.order.order_id && model.order.is_delivered;
+    $paginationContainer.removeClass('d-none');
+    $paginationList.empty();
     
-    // FIX: Ensure colors array has at least one item
-    const colorOptions = colors.length > 0 
-        ? colors.map(color => `<option value="${color.id}">${color.color}</option>`).join('')
-        : '<option value="">No colors available</option>';
+    // Previous button
+    const prevDisabled = currentPage === 1 ? 'disabled' : '';
+    $paginationList.append(`
+        <li class="page-item ${prevDisabled}">
+            <a class="page-link" href="#" onclick="goToPage(${currentPage - 1})" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+    `);
     
-    return `
-        <div class="col-md-3 mb-3">
-            <div class="card h-100 shadow-sm" id="model-${modelId}" data-jewelry-type="${jewelryType}" data-model-no="${modelNo}">
-                <div class="position-relative">
-                    <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${statusName}</span>
-                    <span class="badge bg-dark position-absolute top-0 end-0 m-2">${length}x${breadth}cm</span>
-                    <img src="${modelImg}" class="card-img-top cursor-pointer" alt="${modelNo}" 
-                         style="height: 180px; object-fit: cover;" 
-                         onclick="openImageModal('${modelImg}', '${modelNo}', '${jewelryType}', '${weight}', '${length}', '${breadth}')">
-                </div>
-                <div class="card-body p-2">
-                    <div class="row align-items-center">
-                        <div class="col-6">
-                            <h6 class="card-title mb-0">${modelNo}</h6>
-                            <small class="text-muted">${jewelryType} &bull; </small>
-                            <small class="text-muted">${weight}gm</small>
-                        </div>
-                        
-                        <div class="col-6">
-                            <label for="color-select-${modelId}" class="form-label mb-1 small">Color:</label>
-                            <select id="color-select-${modelId}" class="form-select form-select-sm color-select" data-model-id="${modelId}" data-order-id="${model.order ? model.order.order_id : ''}">
-                                ${colorOptions}
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="row mt-2">
-                        <div class="col-12 text-center">
-                            <div id="cart-controls-${modelId}" class="d-none">
-                                <div class="d-flex justify-content-center align-items-center gap-2">
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="decrementQty(${modelId})">-</button>
-                                    <span id="qty-${modelId}">1</span>
-                                    <button class="btn btn-outline-secondary btn-sm" onclick="incrementQty(${modelId})">+</button>
-                                    <button class="btn btn-success btn-sm ms-2" onclick="addToCart(${modelId})" title="Add to Cart">
-                                        <i class="fa-solid fa-cart-shopping"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            ${hasDeliveredOrder ? `
-                                <button class="btn btn-success btn-md" onclick="showCartControls(${modelId})" id="add-btn-${modelId}">
-                                    Re-order <i class="fa-solid fa-rotate-right"></i>
-                                </button>
-                            ` : `
-                                <button class="btn btn-secondary btn-sm" disabled id="add-btn-${modelId}">
-                                    ${model.order ? 'In Progress' : 'No Order Available'}
-                                </button>
-                            `}
-                        </div>
-                    </div>
-                </div>
+    // Page numbers logic
+    const maxVisiblePages = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    // First page and ellipsis
+    if (startPage > 1) {
+        $paginationList.append(`
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="goToPage(1)">1</a>
+            </li>
+        `);
+        if (startPage > 2) {
+            $paginationList.append(`
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `);
+        }
+    }
+    
+    // Page numbers
+    for (let i = startPage; i <= endPage; i++) {
+        const activeClass = i === currentPage ? 'active' : '';
+        $paginationList.append(`
+            <li class="page-item ${activeClass}">
+                <a class="page-link" href="#" onclick="goToPage(${i})">${i}</a>
+            </li>
+        `);
+    }
+    
+    // Last page and ellipsis
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            $paginationList.append(`
+                <li class="page-item disabled">
+                    <span class="page-link">...</span>
+                </li>
+            `);
+        }
+        $paginationList.append(`
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="goToPage(${totalPages})">${totalPages}</a>
+            </li>
+        `);
+    }
+    
+    // Next button
+    const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+    $paginationList.append(`
+        <li class="page-item ${nextDisabled}">
+            <a class="page-link" href="#" onclick="goToPage(${currentPage + 1})" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    `);
+    
+    // Add pagination info
+    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(currentPage * itemsPerPage, activeTabData.length);
+    
+    if ($('#pagination-info').length === 0) {
+        $paginationContainer.after(`
+            <div id="pagination-info" class="text-center mt-2">
+                <small class="text-muted">
+                    Showing ${startItem} to ${endItem} of ${activeTabData.length} models
+                </small>
+            </div>
+        `);
+    } else {
+        $('#pagination-info small').text(`Showing ${startItem} to ${endItem} of ${activeTabData.length} models`);
+        $('#pagination-info').removeClass('d-none');
+    }
+}
+
+// Updated handleTabPaginationVisibility function
+function handleTabPaginationVisibility() {
+    // Re-render models with current filters
+    filterModels();
+}
+
+// Go to specific page
+window.goToPage = function(page) {
+    const activeTab = $('.nav-link.active').attr('id');
+    let currentPage, totalPages;
+    
+    if (activeTab === 'ready-to-deliver-tab') {
+        currentPage = deliveredCurrentPage;
+        totalPages = deliveredTotalPages;
+    } else {
+        currentPage = othersCurrentPage;
+        totalPages = othersTotalPages;
+    }
+    
+    if (page < 1 || page > totalPages || page === currentPage) {
+        return;
+    }
+    
+    // Update the appropriate page variable
+    if (activeTab === 'ready-to-deliver-tab') {
+        deliveredCurrentPage = page;
+    } else {
+        othersCurrentPage = page;
+    }
+    
+    // Get current filtered models (don't re-filter, just use current filter state)
+    const selectedCategory = $('#categoryFilter').val();
+    const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    
+    let filtered = allModels;
+    
+    // Apply the same filters that are currently active
+    if (selectedCategory) {
+        filtered = filtered.filter(model => 
+            model.jewelry_type_name && model.jewelry_type_name.toLowerCase().includes(selectedCategory.toLowerCase())
+        );
+    }
+    
+    if (searchTerm) {
+        filtered = filtered.filter(model => {
+            const modelNo = model.model_no ? model.model_no.toLowerCase() : '';
+            const jewelryType = model.jewelry_type_name ? model.jewelry_type_name.toLowerCase() : '';
+            const status = model.status_name ? model.status_name.toLowerCase() : '';
+            const weight = model.weight ? model.weight.toString() : '';
+            
+            return modelNo.includes(searchTerm) || 
+                   jewelryType.includes(searchTerm) || 
+                   status.includes(searchTerm) ||
+                   weight.includes(searchTerm);
+        });
+    }
+    
+    // Re-render with the filtered models (this will use the updated page numbers)
+    renderModels(filtered);
+    
+    // Scroll to top of the models section
+    $('html, body').animate({
+        scrollTop: $('#ready-to-deliver-tab').offset().top - 100
+    }, 300);
+};
+
+// Function to filter models based on category and search
+function filterModels() {
+    const selectedCategory = $('#categoryFilter').val();
+    const searchTerm = $('#searchInput').val().toLowerCase().trim();
+    
+    let filtered = allModels;
+    
+    // Filter by category
+    if (selectedCategory) {
+        filtered = filtered.filter(model => 
+            model.jewelry_type_name && model.jewelry_type_name.toLowerCase().includes(selectedCategory.toLowerCase())
+        );
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+        filtered = filtered.filter(model => {
+            const modelNo = model.model_no ? model.model_no.toLowerCase() : '';
+            const jewelryType = model.jewelry_type_name ? model.jewelry_type_name.toLowerCase() : '';
+            const status = model.status_name ? model.status_name.toLowerCase() : '';
+            const weight = model.weight ? model.weight.toString() : '';
+            
+            return modelNo.includes(searchTerm) || 
+                   jewelryType.includes(searchTerm) || 
+                   status.includes(searchTerm) ||
+                   weight.includes(searchTerm);
+        });
+    }
+    
+    // Reset to first page when filtering (for both tabs)
+    deliveredCurrentPage = 1;
+    othersCurrentPage = 1;
+    
+    // Re-render with filtered models
+    renderModels(filtered);
+}
+
+function changeItemsPerPage(newItemsPerPage) {
+    itemsPerPage = newItemsPerPage;
+    deliveredCurrentPage = 1; // Reset both pages
+    othersCurrentPage = 1;
+    renderModels(allModels);
+}
+
+function addItemsPerPageSelector() {
+    const selectorHtml = `
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <label for="itemsPerPageSelect" class="form-label me-2">Items per page:</label>
+                <select id="itemsPerPageSelect" class="form-select form-select-sm d-inline-block w-auto">
+                    <option value="8" selected>8</option>
+                    <option value="12">12</option>
+                    <option value="16">16</option>
+                    <option value="24">24</option>
+                </select>
             </div>
         </div>
     `;
+    
+    // Add this before your models container
+    $('#models-container').prepend(selectorHtml);
+    
+    // Add event listener
+    $('#itemsPerPageSelect').on('change', function() {
+        changeItemsPerPage(parseInt($(this).val()));
+    });
 }
 
-// Clear all filters
-function clearAllFilters() {
-    $('#categoryFilter').val('');
-    $('#searchInput').val('');
-    filterModels('', '');
+function loadJewelryTypes() {
+    $.ajax({
+        url: '/api/jewelry-types/',
+        type: 'GET',
+        dataType: 'json',
+        success: function (response) {
+            if (response.status === 'success') {
+                const jewelryTypes = response.data;
+                let optionsHtml = '<option value="">All Categories</option>';
+                
+                jewelryTypes.forEach((type) => {
+                    optionsHtml += `<option value="${type.name}">${type.name}</option>`;
+                });
+                
+                $('#categoryFilter').html(optionsHtml);
+                
+                // Auto-select the first jewelry type if available AND models are loaded
+                if (jewelryTypes.length > 0 && allModels.length > 0) {
+                    $('#categoryFilter').val(jewelryTypes[0].name);
+                    // Trigger the filtering to load data for the selected category
+                    filterModels();
+                }
+
+                hideLoader();
+            } else {
+                console.error('Failed to load jewelry types:', response.message);
+                hideLoader();
+            }
+        },
+        error: function (xhr, status, error) {
+            console.error('Error loading jewelry types:', error);
+            hideLoader();
+        }
+    });
 }
 
 function generateModelCard(model) {
@@ -504,11 +512,7 @@ function generateModelCard(model) {
                                 <button class="btn btn-success btn-md" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
                                     Re-order <i class="fa-solid fa-rotate-right"></i>
                                 </button>
-                            ` : `
-                                <button class="btn btn-secondary btn-sm" disabled id="add-btn-${model.id}">
-                                    ${model.order ? 'In Progress' : 'No Order Available'}
-                                </button>
-                            `}
+                            ` : ``}
                         </div>
                     </div>
                 </div>
@@ -562,6 +566,11 @@ function checkOrderForColor(modelId, selectedColor) {
     // Add console logging for debugging
     console.log(`Checking order for model ${modelId} with color ${selectedColor}`);
     
+    // Show loading state
+    const $addBtn = $(`#add-btn-${modelId}`);
+    $addBtn.removeClass('btn-success btn-secondary').addClass('btn-secondary');
+    $addBtn.html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
+    
     // Ensure the URL is correct with numeric model ID
     $.ajax({
         url: `/api/client/models/${modelId}/order/`,
@@ -573,26 +582,22 @@ function checkOrderForColor(modelId, selectedColor) {
             console.log('Response:', response);
             if (response.status === 'success' && response.data && response.data.order_exists && response.data.is_delivered) {
                 // Order exists AND is delivered
-                $(`#add-btn-${modelId}`).prop('disabled', false);
-                $(`#add-btn-${modelId}`).removeClass('btn-secondary').addClass('btn-success');
-                $(`#add-btn-${modelId}`).html('Re-order <i class="fa-solid fa-rotate-right"></i>');
+                $addBtn.removeClass('btn-secondary').addClass('btn-success');
+                $addBtn.html('Re-order <i class="fa-solid fa-rotate-right"></i>');
             } else if (response.status === 'success' && response.data && response.data.order_exists) {
                 // Order exists but not delivered
-                $(`#add-btn-${modelId}`).prop('disabled', true);
-                $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
-                $(`#add-btn-${modelId}`).text('In Progress');
+                $addBtn.removeClass('btn-success').addClass('btn-secondary');
+                $addBtn.text('In Progress');
             } else {
                 // No order exists
-                $(`#add-btn-${modelId}`).prop('disabled', true);
-                $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
-                $(`#add-btn-${modelId}`).text('No Order for this Color');
+                $addBtn.removeClass('btn-success').addClass('btn-secondary');
+                $addBtn.text('No Order for this Color');
             }
         },
         error: function (xhr, status, error) {
             console.error('Error checking order:', xhr.status, xhr.responseText);
-            $(`#add-btn-${modelId}`).prop('disabled', true);
-            $(`#add-btn-${modelId}`).removeClass('btn-success').addClass('btn-secondary');
-            $(`#add-btn-${modelId}`).text('Error Checking Order');
+            $addBtn.removeClass('btn-success').addClass('btn-secondary');
+            $addBtn.text('Error Checking Order');
         }
     });
 }
@@ -864,7 +869,6 @@ function loadCartItems() {
                     cartHtml = `
                         <div class="list-group">
                             ${response.items.map(item => `
-
                                 <div class="list-group-item py-3 mb-3 shadow-sm rounded">
                                     <div class="d-flex align-items-center gap-3">
                                         <img src="${item.image}" alt="${item.model_no}" class="rounded" style="width: 60px; height: 60px; object-fit: cover;">
@@ -908,10 +912,14 @@ function loadCartItems() {
 
 // Function to update cart item quantity
 function updateCartItemQty(cartItemId, newQty) {
+    console.time('updateCartItemQty'); // Add timing
+    
     if (newQty < 1) {
         removeCartItem(cartItemId);
         return;
     }
+    
+    console.log('Starting AJAX request...'); // Debug log
     
     $.ajax({
         url: '/update-cart/',
@@ -921,14 +929,25 @@ function updateCartItemQty(cartItemId, newQty) {
             'quantity': newQty,
             'csrfmiddlewaretoken': getCsrfToken()
         },
+        beforeSend: function() {
+            console.log('Request sent to server');
+        },
         success: function(response) {
+            console.log('Server response received');
             if (response.status === 'success') {
+                console.time('loadCartItems');
                 loadCartItems();
+                console.timeEnd('loadCartItems');
+                
+                console.time('updateCartCount');
                 updateCartCount();
+                console.timeEnd('updateCartCount');
             }
+            console.timeEnd('updateCartItemQty');
         },
         error: function(xhr, status, error) {
             console.error('Error updating cart item:', error);
+            console.timeEnd('updateCartItemQty');
         }
     });
 }
@@ -1009,70 +1028,4 @@ function showToast(message, type = 'info') {
     $('#toast-container').append(toastHTML);
     const toastElement = new bootstrap.Toast(document.getElementById(toastId));
     toastElement.show();
-}
-
-// Add missing functions that are referenced but not defined
-
-// Function to show alerts
-function showAlert(type, message) {
-    const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    `;
-    $('#response-container').html(alertHtml);
-    
-    // Auto-dismiss after 5 seconds
-    setTimeout(() => {
-        $('.alert').alert('close');
-    }, 5000);
-}
-
-// Function to update empty states
-function updateEmptyStates(readyToDeliverCount, othersCount) {
-    // Handle ready to deliver empty state
-    if (readyToDeliverCount === 0) {
-        $('#ready-to-deliver-cards').html(`
-            <div class="col-12 text-center py-5">
-                <div class="text-muted">
-                    <i class="fa-solid fa-box-open fa-3x mb-3"></i>
-                    <h5>No Ready to Deliver Models</h5>
-                    <p>No models are currently ready for delivery.</p>
-                </div>
-            </div>
-        `);
-    }
-    
-    // Handle others empty state
-    if (othersCount === 0) {
-        $('#others-cards').html(`
-            <div class="col-12 text-center py-5">
-                <div class="text-muted">
-                    <i class="fa-solid fa-box-open fa-3x mb-3"></i>
-                    <h5>No Other Models</h5>
-                    <p>No other models are available.</p>
-                </div>
-            </div>
-        `);
-    }
-}
-
-// Function to attach event listeners (placeholder - implement based on your needs)
-function attachEventListeners(models) {
-    console.log('Attaching event listeners...');
-    
-    // Remove existing listeners to prevent duplicates
-    $('.color-select').off('change');
-    
-    // Attach color change event listeners
-    $('.color-select').on('change', function() {
-        const modelId = $(this).data('model-id');
-        const selectedColor = $(this).val();
-        console.log(`Color changed for model ${modelId} to ${selectedColor}`);
-        checkOrderForColor(modelId, selectedColor);
-    });
-    
-    console.log('Event listeners attached for', models.length, 'models');
-    console.log('Color selects found:', $('.color-select').length);
 }

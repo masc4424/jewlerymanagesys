@@ -1,4 +1,245 @@
 $(document).ready(function() {
+    let fullData = [];
+    let currentDateFilter = null;
+
+    const groupedColumns = [
+        { data: 'sl_no', title: 'SL No' },
+        { data: 'client', title: 'Client' },
+        {
+            data: null,
+            title: 'Model',
+            render: function (data, type, row) {
+                if (type !== 'display') return row.model_no || '';
+                let img = row.model_image
+                    ? `<div class="model-thumbnail me-2" data-bs-toggle="tooltip" title="Click to view">
+                            <img src="${row.model_image}" class="rounded-circle model-thumbnail-img"
+                                width="40" height="40"
+                                alt="Model ${row.model_no}"
+                                data-model-no="${row.model_no}"
+                                data-img-src="${row.model_image}"
+                                data-bs-target="#modelImageModal"
+                                data-bs-toggle="modal">
+                    </div>`
+                    : '';
+                return `<div class="d-flex align-items-center model-info">${img}<span>${row.model_no || 'N/A'}</span></div>`;
+            }
+        },
+        {
+            data: null,
+            title: 'Model Status',
+            render: function (data, type, row) {
+                if (type !== 'display') return '';
+                if (!row.orders?.length) return `<span class="badge bg-secondary">N/A</span>`;
+
+                let statusCounts = {};
+                let maxCount = 0;
+                let predominantStatus = 'N/A';
+
+                row.orders.forEach(order => {
+                    let status = order.status || 'N/A';
+                    statusCounts[status] = (statusCounts[status] || 0) + 1;
+                    if (statusCounts[status] > maxCount) {
+                        maxCount = statusCounts[status];
+                        predominantStatus = status;
+                    }
+                });
+
+                let badgeClass = 'bg-secondary';
+                let st = predominantStatus.toLowerCase();
+                if (st.includes('completed')) badgeClass = 'bg-success';
+                else if (st.includes('pending')) badgeClass = 'bg-warning';
+                else if (st.includes('processing') || st.includes('setting')) badgeClass = 'bg-info';
+                else if (st.includes('cancelled') || st.includes('canceled')) badgeClass = 'bg-danger';
+
+                let tooltipContent = Object.entries(row._modelStatusDistribution?.group || {})
+                    .map(([status, count]) => `${status}: ${count}`)
+                    .join('\n');
+
+                return `<span class="badge ${badgeClass}" data-bs-toggle="tooltip" title="${tooltipContent}">
+                            ${predominantStatus}${row.orders.length > 1 ? ` <small>(${row.orders.length})</small>` : ''}
+                        </span>`;
+            }
+        },
+        {
+            data: null,
+            title: 'Delivery Status',
+            render: function (data, type, row) {
+                if (type !== 'display') return '';
+                if (!row.orders?.length) return `<span class="badge bg-secondary">N/A</span>`;
+
+                let total = row.orders.length;
+                let delivered = row.delivered_count || 0;
+                let ratio = delivered / total;
+
+                let badgeClass = 'bg-warning';
+                let statusText = 'Not Delivered';
+                if (ratio === 1) {
+                    badgeClass = 'bg-success';
+                    statusText = 'All Delivered';
+                } else if (ratio > 0) {
+                    badgeClass = 'bg-info';
+                    statusText = `Partially Delivered (${delivered}/${total})`;
+                }
+
+                let tooltipContent = Object.entries(row._deliveryStatusDistribution?.group || {})
+                    .map(([status, count]) => `${status}: ${count}`)
+                    .join('\n');
+
+                return `<span class="badge ${badgeClass}" data-bs-toggle="tooltip" title="${tooltipContent}">${statusText}</span>`;
+            }
+        },
+        {
+            data: 'quantity',
+            title: 'Quantity',
+            render: function (data, type, row) {
+                if (!data && data !== 0) return 'N/A';
+
+                let tooltipContent = '<div><strong>Quantity by Color:</strong></div>';
+                let colorQuantityMap = {};
+
+                if (row.orders && row.orders.length > 0) {
+                    row.orders.forEach(order => {
+                        const color = order.color || 'N/A';
+                        const qty = order.quantity || 0;
+                        colorQuantityMap[color] = (colorQuantityMap[color] || 0) + qty;
+                    });
+
+                    for (const [color, qty] of Object.entries(colorQuantityMap)) {
+                        tooltipContent += `<div>${color}: ${qty}</div>`;
+                    }
+                }
+
+                // Store tooltip content in data attribute for later use
+                return `<span class="quantity-cell" data-tooltip-content="${tooltipContent.replace(/"/g, '&quot;')}">${data}</span>`;
+            }
+        },
+        {
+            data: 'repeated_order',
+            title: 'Repeated Order',
+            render: function (data, type, row) {
+                if (type !== 'display') return data || 0;
+                let tooltip = `Total Repeats: ${data || 0}\nIn Progress: ${row.in_progress || 0}`;
+                return `<span data-bs-toggle="tooltip" title="${tooltip}">${data || 0}</span>`;
+            }
+        },
+        { data: 'weight', title: 'Weight' },
+        {
+            data: null,
+            title: 'Delivery Date',
+            render: function (data, type, row) {
+                if (type !== 'display') return '';
+                if (!row.orders?.length) return 'N/A';
+                let dates = row.orders.map(o => o.delivery_date).filter(Boolean).sort();
+                let tooltip = dates.join('\n');
+                return `<span data-bs-toggle="tooltip" title="${tooltip}">${dates[0]}</span>`;
+            }
+        },
+        {
+            data: null,
+            title: 'Actions',
+            render: function (data, type, row) {
+                if (type !== 'display') return '';
+                return `
+                    <div class="action-menu">
+                        <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li class="dropdown-header">Group Actions</li>
+                            <li><a class="dropdown-item update-group-order" href="#" data-group-id="${row.sl_no}">
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Update Order</a></li>
+                            <li><a class="dropdown-item change-group-status" href="#" data-group-id="${row.sl_no}" data-model_id="${row.model_id}">
+                                <i class="fa-solid fa-toggle-on me-2"></i>Change Status</a></li>
+                            <li><a class="dropdown-item repeat-group-order" href="#" data-group-id="${row.sl_no}">
+                                <i class="fa-solid fa-rotate me-2"></i>Repeat Order</a></li>
+                            <li><a class="dropdown-item delete-group-order text-danger" href="#" data-group-id="${row.sl_no}">
+                                <i class="fa-solid fa-trash-can me-2"></i>Delete Order</a></li>
+                        </ul>
+                    </div>`;
+            }
+        }
+    ];
+
+    const flattenedColumns = [
+        { data: 'order_id', title: 'Order ID' },
+        { data: 'client', title: 'Client Name' },
+        {
+            data: 'model_no',
+            title: 'Model',
+            render: function(data, type, row) {
+                if (type !== 'display') return data || '';
+                return `
+                    <div class="d-flex align-items-center model-info">
+                        ${row.model_image ? `
+                            <div class="model-thumbnail me-2">
+                                <img src="${row.model_image}" class="rounded-circle model-thumbnail-img"
+                                    width="40" height="40" alt="Model ${data}"
+                                    data-bs-toggle="modal" data-bs-target="#modelImageModal"
+                                    data-model-no="${data}" data-img-src="${row.model_image}"
+                                    title="Click to view" data-bs-toggle="tooltip" data-bs-placement="top">
+                            </div>` : ''}
+                        <span>${data || 'N/A'}</span>
+                    </div>
+                `;
+            }
+        },
+        {
+            data: 'status',
+            title: 'Model Status',
+            render: function(data, type, row) {
+                if (type !== 'display') return data || '';
+                let badgeClass = 'bg-secondary';
+                const statusText = (data || 'N/A').toLowerCase();
+                if (statusText.includes('completed')) badgeClass = 'bg-success';
+                else if (statusText.includes('pending')) badgeClass = 'bg-warning';
+                else if (statusText.includes('processing') || statusText.includes('setting')) badgeClass = 'bg-info';
+                else if (statusText.includes('cancelled') || statusText.includes('canceled')) badgeClass = 'bg-danger';
+                return `<span class="badge ${badgeClass}" data-bs-toggle="tooltip" title="Status">${data || 'N/A'}</span>`;
+            }
+        },
+        {
+            data: 'delivered',
+            title: 'Delivery Status',
+            render: function(data, type, row) {
+                if (type !== 'display') return data || '';
+                const isDelivered = (data || '').toLowerCase() === 'yes';
+                const badgeClass = isDelivered ? 'bg-success' : 'bg-danger';
+                return `<span class="badge ${badgeClass}" data-bs-toggle="tooltip" title="Delivered">${data || 'No'}</span>`;
+            }
+        },
+        {
+            data: 'quantity',
+            title: 'Quantity',
+            render: function(data, type, row) {
+                if (type !== 'display') return data || 0;
+                return `<span data-bs-toggle="tooltip" title="Quantity">${data || 0}</span>`;
+            }
+        },
+        {
+            data: 'color',
+            title: 'Color',
+            render: function(data, type, row) {
+                return `<span class="badge bg-light text-dark border" data-bs-toggle="tooltip" title="Color">${data || 'N/A'}</span>`;
+            }
+        },
+        {
+            data: 'weight',
+            title: 'Weight',
+            render: function(data, type, row) {
+                return data ? `${data} gm` : 'N/A';
+            }
+        },
+        {
+            data: 'delivery_date',
+            title: 'Delivery Date',
+            render: function(data, type, row) {
+                if (!data) return 'N/A';
+                return `<span data-bs-toggle="tooltip" title="Delivery Date">${data}</span>`;
+            }
+        }
+    ];
+
+
     var csrftoken = $('[name=csrfmiddlewaretoken]').val();
     
     // Initialize DataTable
@@ -69,308 +310,95 @@ $(document).ready(function() {
                         global: quantityCounts
                     };
                 });
+
+                fullData = json.data; // store for summary
+                populateSummaryTable(fullData); // fill summary table
                 
                 return json.data;
             }
         },
-        columns: [
-            { data: 'sl_no' },
-            { data: 'client' },
-            {
-                data: null,
-                render: function(data, type, row) {
-                    if (type !== 'display') return row.model_no || '';
-                    var html = '<div class="d-flex align-items-center model-info">';
-                    if (row.model_image) {
-                        html += '<div class="model-thumbnail me-2">' +
-                            '<img src="' + row.model_image + '" class="rounded-circle model-thumbnail-img" ' +
-                            'width="40" height="40" alt="Model ' + row.model_no + '" ' +
-                            'data-bs-toggle="modal" data-bs-target="#modelImageModal" ' +
-                            'data-model-no="' + row.model_no + '" ' +
-                            'data-img-src="' + row.model_image + '" ' +
-                            'data-bs-toggle="tooltip" title="Click to view" ' +
-                            'data-bs-placement="top">' +
-                            '</div>';
-                    }
-                    html += '<span>' + (row.model_no || 'N/A') + '</span></div>';
-                    return html;
-                }
-            },
-            { 
-                // Model Status column
-                data: null,
-                render: function(data, type, row) {
-                    if (type !== 'display') return '';
-                    
-                    // For grouped orders, we'll show aggregated status info
-                    if (row.orders && row.orders.length > 0) {
-                        // Count statuses to find the predominant one
-                        let statusCounts = {};
-                        let maxCount = 0;
-                        let predominantStatus = 'N/A';
-                        
-                        row.orders.forEach(function(order) {
-                            let status = order.status || 'N/A';
-                            statusCounts[status] = (statusCounts[status] || 0) + 1;
-                            
-                            if (statusCounts[status] > maxCount) {
-                                maxCount = statusCounts[status];
-                                predominantStatus = status;
-                            }
-                        });
-                        
-                        // Set badge color based on status text
-                        let badgeClass = 'bg-secondary';
-                        if (predominantStatus.toLowerCase().includes('completed')) badgeClass = 'bg-success';
-                        if (predominantStatus.toLowerCase().includes('pending')) badgeClass = 'bg-warning';
-                        if (predominantStatus.toLowerCase().includes('processing') || 
-                            predominantStatus.toLowerCase().includes('setting')) badgeClass = 'bg-info';
-                        if (predominantStatus.toLowerCase().includes('cancelled') || 
-                            predominantStatus.toLowerCase().includes('canceled')) badgeClass = 'bg-danger';
-                        
-                        // Create tooltip content with group-specific distribution
-                        let tooltipContent = '<div>Status Distribution:</div>';
-                        
-                        // Add group-specific status counts to tooltip
-                        if (row._modelStatusDistribution && row._modelStatusDistribution.group) {
-                            for (const [status, count] of Object.entries(row._modelStatusDistribution.group)) {
-                                let statusLabel = status || 'N/A';
-                                tooltipContent += `<div>${statusLabel}: ${count}</div>`;
-                            }
-                        }
-                        
-                        // Show multi-order indicator if there's more than one order
-                        let multiOrderIndicator = '';
-                        if (row.orders.length > 1) {
-                            multiOrderIndicator = `<small class="ms-1">(${row.orders.length})</small>`;
-                        }
-                        
-                        return `<span class="badge ${badgeClass}" 
-                                  data-bs-toggle="tooltip" 
-                                  data-bs-html="true" 
-                                  title="${tooltipContent}">${predominantStatus}${multiOrderIndicator}</span>`;
-                    }
-                    
-                    // If there are no orders in the group, return N/A with a neutral badge
-                    return '<span class="badge bg-secondary">N/A</span>';
-                }
-            },
-            { 
-                // Delivery Status column
-                data: null,
-                render: function(data, type, row) {
-                    if (type !== 'display') return '';
-                    
-                    // For grouped orders
-                    if (row.orders && row.orders.length > 0) {
-                        // Calculate delivery ratio
-                        let totalOrders = row.orders.length;
-                        let deliveredOrders = row.delivered_count || 0;
-                        let deliveryRatio = deliveredOrders / totalOrders;
-                        
-                        // Determine badge class based on delivery ratio
-                        let badgeClass = 'bg-warning'; // Default: Not delivered
-                        let statusText = 'Not Delivered';
-                        
-                        if (deliveryRatio === 1) {
-                            badgeClass = 'bg-success';
-                            statusText = 'All Delivered';
-                        } else if (deliveryRatio > 0) {
-                            badgeClass = 'bg-info';
-                            statusText = `Partially Delivered (${deliveredOrders}/${totalOrders})`;
-                        }
-                        
-                        // Create tooltip content with group-specific distribution
-                        let tooltipContent = '<div>Delivery Status Distribution:</div>';
-                        
-                        // Add group-specific delivery status counts to tooltip
-                        if (row._deliveryStatusDistribution && row._deliveryStatusDistribution.group) {
-                            for (const [status, count] of Object.entries(row._deliveryStatusDistribution.group)) {
-                                tooltipContent += `<div>${status}: ${count}</div>`;
-                            }
-                        }
-                        
-                        return `<span class="badge ${badgeClass}" 
-                                  data-bs-toggle="tooltip" 
-                                  data-bs-html="true" 
-                                  title="${tooltipContent}">${statusText}</span>`;
-                    }
-                    
-                    // If there are no orders in the group, return N/A with a neutral badge
-                    return '<span class="badge bg-secondary">N/A</span>';
-                }
-            },
-            { 
-                // Quantity column
-                data: 'quantity',
-                render: function(data, type, row) {
-                    if (!data && data !== 0) return 'N/A';
-                    
-                    // Create tooltip content with quantity distribution
-                    let tooltipContent = '<div>Quantity Distribution:</div>';
-                    
-                    // Create a map of colors to quantities
-                    let colorQuantityMap = {};
-                    
-                    // Populate the map with color-quantity data from orders
-                    if (row.orders && row.orders.length > 0) {
-                        row.orders.forEach(function(order) {
-                            let qty = order.quantity;
-                            let color = order.color || 'N/A';
-                            
-                            if (!colorQuantityMap[color]) {
-                                colorQuantityMap[color] = 0;
-                            }
-                            
-                            // Sum quantities by color
-                            colorQuantityMap[color] += qty;
-                        });
-                        
-                        // Add color and quantities to tooltip
-                        for (const [color, quantity] of Object.entries(colorQuantityMap)) {
-                            tooltipContent += `<div>${color}: ${quantity}</div>`;
-                        }
-                    }
-                    
-                    return `<span data-bs-toggle="tooltip" 
-                                data-bs-html="true" 
-                                title="${tooltipContent}">${data}</span>`;
-                }
-            },
-            { 
-                // Repeated Order column
-                data: 'repeated_order',
-                render: function(data, type, row) {
-                    if (type !== 'display') return data || 0;
-                    
-                    // Create tooltip content for repeat orders
-                    let tooltipContent = '<div>Repeat Orders:</div>';
-                    let inProgress = row.in_progress || 0;
-                    
-                    tooltipContent += `<div>Total Repeats: ${data || 0}</div>`;
-                    tooltipContent += `<div>In Progress: ${inProgress}</div>`;
-                    
-                    // Badge removed, just showing the number with tooltip
-                    return `<span data-bs-toggle="tooltip" 
-                                data-bs-html="true" 
-                                title="${tooltipContent}">${data || 0}</span>`;
-                }
-            },
-            { 
-                data: 'weight',
-                render: function(data, type, row) {
-                    return data || 'N/A';
-                }
-            },
-            { 
-                data: null,
-                render: function(data, type, row) {
-                    if (type !== 'display') return '';
-                    
-                    // For grouped orders, show the earliest delivery date
-                    if (row.orders && row.orders.length > 0) {
-                        let dates = row.orders.map(order => order.delivery_date).filter(date => date);
-                        
-                        if (dates.length === 0) return 'N/A';
-                        
-                        // Sort dates and get the earliest
-                        dates.sort();
-                        let earliestDate = dates[0];
-                        
-                        // Create tooltip with all delivery dates
-                        let tooltipContent = '<div>Delivery Dates:</div>';
-                        dates.forEach(date => {
-                            tooltipContent += `<div>${date}</div>`;
-                        });
-                        
-                        return `<span data-bs-toggle="tooltip" 
-                                     data-bs-html="true" 
-                                     title="${tooltipContent}">${earliestDate}</span>`;
-                    }
-                    
-                    return 'N/A';
-                }
-            },
-            {
-                data: null,
-                render: function(data, type, row, meta) {
-                    if (type !== 'display') return '';
-                    
-                    // For grouped orders, create a simplified dropdown with consolidated actions
-                    if (row.orders && row.orders.length > 0) {
-                        let html = `
-                            <div class="action-menu">
-                                <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fa-solid fa-ellipsis-vertical"></i>
-                                </button>
-                                <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                    <li class="dropdown-header">Group Actions</li>
-                                    <li>
-                                        <a class="dropdown-item update-group-order" href="#" data-group-id="${row.sl_no}">
-                                            <i class="fa-solid fa-pen-to-square me-2"></i>Update Order
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item change-group-status" href="#" data-group-id="${row.sl_no}" data-model_id ="${row.model_id}">
-                                            <i class="fa-solid fa-toggle-on me-2"></i>Change Status
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item repeat-group-order" href="#" data-group-id="${row.sl_no}">
-                                            <i class="fa-solid fa-rotate me-2"></i>Repeat Order
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item delete-group-order text-danger" href="#" data-group-id="${row.sl_no}">
-                                            <i class="fa-solid fa-trash-can me-2"></i>Delete Order
-                                        </a>
-                                    </li>
-                                `;
-                                
-                                html += `
-                                            </div>
-                                        </div>
-                                    </li>
-                                `;
-                        
-                        html += `
-                                </ul>
-                            </div>
-                        `;
-                        
-                        return html;
-                    }
-                    
-                    // For rows without orders, provide a minimal action menu
-                    return `
-                        <div class="action-menu">
-                            <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                <i class="fa-solid fa-ellipsis-vertical"></i>
-                            </button>
-                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-                                <li class="dropdown-header">No Orders Available</li>
-                            </ul>
-                        </div>
-                    `;
-                }
-            }
-        ],
+        columns: groupedColumns,
         responsive: true,
         dom: 'Bfrtip',
         buttons: [
             'copy', 'csv', 'excel', 'pdf', 'print'
         ],
         order: [[0, 'asc']], // Default sorting by sl_no
-        drawCallback: function() {
-            // Initialize tooltips with custom options
+        drawCallback: function () {
+            // Clean up existing tooltips to prevent memory leaks
+            $('[data-bs-toggle="tooltip"]').tooltip('dispose');
+            
+            // Initialize all Bootstrap tooltips
             $('[data-bs-toggle="tooltip"]').tooltip({
                 html: true,
                 container: 'body',
                 placement: 'top',
-                trigger: 'hover',
-                template: '<div class="tooltip" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner custom-tooltip-inner"></div></div>'
+                trigger: 'hover focus',
+                delay: { show: 300, hide: 100 }
             });
         }
+    });
+
+    function populateSummaryTable(data) {
+        const $summaryBody = $('#summaryTable tbody');
+        $summaryBody.empty();
+
+        // Group by date + client
+        const summaryMap = {};
+
+        data.forEach(group => {
+            const key = `${group.date_of_order}__${group.client}`;
+            if (!summaryMap[key]) {
+                summaryMap[key] = {
+                    date_of_order: group.date_of_order,
+                    client: group.client,
+                    quantity: 0
+                };
+            }
+            summaryMap[key].quantity += group.quantity;
+        });
+
+        // Populate rows
+        for (const key in summaryMap) {
+            const item = summaryMap[key];
+            $summaryBody.append(`
+                <tr>
+                    <td>${item.date_of_order}</td>
+                    <td>${item.client}</td>
+                    <td class="text-primary fw-bold quantity-filter" style="cursor:pointer" data-date="${item.date_of_order}">
+                        ${item.quantity}
+                    </td>
+                </tr>
+            `);
+        }
+    }
+
+    $(document).on('click', '.quantity-filter', function () {
+        currentDateFilter = $(this).data('date');
+        const filtered = fullData.filter(item => item.date_of_order === currentDateFilter);
+
+        $('#summarySection').hide();
+        $('#usersSection').show();
+
+        $('#ordersFilterTabs button').removeClass('active');
+        $('#all-orders-tab').addClass('active');
+
+        $('#usersTable').DataTable().clear().destroy();
+        $('#usersTable').DataTable({
+            data: filtered,
+            columns: groupedColumns,
+            responsive: true,
+            dom: 'Bfrtip',
+            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+        });
+    });
+
+
+
+    $('#backToSummary').on('click', function () {
+        $('#usersSection').hide();
+        $('#summarySection').show();
+        currentDateFilter = null;
     });
 
     // Add these event handlers after the existing event handlers in your JavaScript file
@@ -1418,22 +1446,70 @@ $(document).ready(function() {
         });
     }
 
+    function flattenOrdersByDate(date) {
+        const result = [];
+        fullData.forEach(group => {
+            if (group.date_of_order === date) {
+                group.orders?.forEach(order => {
+                    result.push({
+                        order_id: order.order_id,
+                        client: group.client,
+                        model_no: group.model_no,
+                        status: order.status,
+                        delivered: order.delivered,
+                        quantity: order.quantity,
+                        color: order.color,
+                        weight: group.weight,
+                        delivery_date: order.delivery_date
+                    });
+                });
+            }
+        });
+        return result;
+    }
+
+
     // Tab filter handlers
-    $('#ordersFilterTabs button').on('click', function() {
-        let filter = $(this).data('filter');
-        // Use DataTables API to filter or reload with filter param
-        let table = $('#usersTable').DataTable();
-        
-        if (filter === 'all') {
-            table.ajax.url('/orders/json/').load();
-        } else if (filter === 'delivered') {
-            table.ajax.url('/orders/json/?status=delivered').load();
-        } else if (filter === 'not-delivered') {
-            table.ajax.url('/orders/json/?status=not-delivered').load();
-        }
-        
-        $('#ordersFilterTabs button').removeClass('active');
+    $('#ordersFilterTabs button').on('click', function () {
+        const filter = $(this).data('filter');
+        const $btns = $('#ordersFilterTabs button');
+        $btns.removeClass('active');
         $(this).addClass('active');
+
+        if (!currentDateFilter) {
+            toastr.warning('Please select a date from summary first.');
+            return;
+        }
+
+        if (filter === 'all') {
+            $('#usersTable').DataTable().clear().destroy();
+            $('#usersTable').DataTable({
+                data: fullData.filter(row => row.date_of_order === currentDateFilter),
+                columns: groupedColumns,
+                responsive: true,
+                dom: 'Bfrtip',
+                buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+            });
+            return;
+        }
+
+        const flattened = flattenOrdersByDate(currentDateFilter);
+        let filtered = [];
+
+        if (filter === 'delivered') {
+            filtered = flattened.filter(o => o.delivered === 'Yes');
+        } else if (filter === 'not-delivered') {
+            filtered = flattened.filter(o => o.delivered === 'No');
+        }
+
+        $('#usersTable').DataTable().clear().destroy();
+        $('#usersTable').DataTable({
+            data: filtered,
+            columns: flattenedColumns,
+            responsive: true,
+            dom: 'Bfrtip',
+            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+        });
     });
 
     // Initialize today's date for delivery date inputs
@@ -1657,4 +1733,393 @@ $(document).ready(function() {
             $('body').css('padding-right', '');
         });
     });
+
+    let selectedFile = null;
+    let validationPassed = false;
+
+    // Download template functionality
+    $('#downloadTemplate').on('click', function() {
+        window.location.href = '/download-order-template/';
+    });
+
+    // Add download existing orders button (optional)
+    const downloadExistingBtn = $('<button>')
+        .addClass('btn btn-outline-secondary btn-sm ms-2')
+        .html('<i class="bx bx-data"></i> Download Existing Orders')
+        .on('click', function() {
+            window.location.href = '/download-existing-orders/';
+        });
+    $('#downloadTemplate').parent().append(downloadExistingBtn);
+
+    // File selection - Fixed version with multiple approaches
+    $('#selectFileBtn').on('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Select file button clicked'); // Debug log
+        
+        // Try multiple approaches to trigger file input
+        const fileInput = document.getElementById('csvFileInput');
+        if (fileInput) {
+            fileInput.click();
+        } else {
+            console.error('File input not found');
+        }
+    });
+
+    // Alternative approach - also handle click on the upload area
+    $('#uploadArea').on('click', function(e) {
+        if (e.target === this || $(e.target).hasClass('upload-content') || $(e.target).closest('.upload-content').length) {
+            e.preventDefault();
+            $('#csvFileInput')[0].click();
+        }
+    });
+
+    // File input change - Enhanced version
+    $('#csvFileInput').on('change', function(e) {
+        console.log('File input changed'); // Debug log
+        const file = e.target.files[0];
+        if (file) {
+            console.log('File selected:', file.name); // Debug log
+            handleFileSelection(file);
+        }
+    });
+
+    // Drag and drop functionality
+    $('#uploadArea')
+        .on('dragover', function(e) {
+            e.preventDefault();
+            $(this).addClass('drag-over');
+        })
+        .on('dragleave', function(e) {
+            e.preventDefault();
+            $(this).removeClass('drag-over');
+        })
+        .on('drop', function(e) {
+            e.preventDefault();
+            $(this).removeClass('drag-over');
+            
+            const files = e.originalEvent.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelection(files[0]);
+            }
+        });
+
+    // Remove file
+    $('#removeFile').on('click', function() {
+        clearFileSelection();
+    });
+
+    // Process bulk upload
+    $('#processBulkUpload').on('click', function() {
+        if (selectedFile && validationPassed) {
+            processBulkUpload();
+        }
+    });
+
+    // Handle file selection
+    function handleFileSelection(file) {
+        console.log('Handling file selection:', file.name); // Debug log
+        
+        // Validate file type
+        const allowedTypes = ['.csv', '.xlsx', '.xls'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!allowedTypes.includes(fileExtension)) {
+            showAlert('Please select a CSV or Excel file.', 'danger');
+            return;
+        }
+
+        // Validate file size (max 10MB)
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        if (file.size > maxSize) {
+            showAlert('File size should not exceed 10MB.', 'danger');
+            return;
+        }
+
+        selectedFile = file;
+        
+        // Display file info
+        $('#fileName').text(file.name);
+        $('#fileSize').text(formatFileSize(file.size));
+        $('#fileInfo').show();
+        
+        // Hide upload area
+        $('#uploadArea').hide();
+        
+        // Reset validation
+        $('#validationResults').hide();
+        validationPassed = false;
+        $('#processBulkUpload').prop('disabled', true);
+        
+        // Auto-validate file
+        validateFile();
+    }
+
+    // Clear file selection
+    function clearFileSelection() {
+        selectedFile = null;
+        validationPassed = false;
+        
+        // Reset UI
+        $('#fileInfo').hide();
+        $('#uploadArea').show();
+        $('#validationResults').hide();
+        $('#uploadProgress').hide();
+        $('#processBulkUpload').prop('disabled', true);
+        
+        // Clear file input
+        $('#csvFileInput').val('');
+    }
+
+    // Validate file
+    function validateFile() {
+        if (!selectedFile) return;
+        
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        // Show progress
+        $('#uploadProgress').show();
+        updateProgress(0, 'Validating...');
+        
+        $.ajax({
+            url: '/validate-bulk-upload/',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(data) {
+                $('#uploadProgress').hide();
+                
+                if (data.valid) {
+                    validationPassed = true;
+                    $('#processBulkUpload').prop('disabled', false);
+                    
+                    // Show success message
+                    showValidationResults(data, 'success');
+                } else {
+                    validationPassed = false;
+                    $('#processBulkUpload').prop('disabled', true);
+                    
+                    // Show errors
+                    showValidationResults(data, 'danger');
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#uploadProgress').hide();
+                showAlert('Error validating file: ' + error, 'danger');
+                console.error('Validation error:', error);
+            }
+        });
+    }
+
+    // Process bulk upload
+    function processBulkUpload() {
+        if (!selectedFile || !validationPassed) return;
+        
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        
+        // Show progress
+        $('#uploadProgress').show();
+        updateProgress(0, 'Processing orders...');
+        $('#processBulkUpload').prop('disabled', true);
+        
+        $.ajax({
+            url: '/process-bulk-upload/',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(data) {
+                $('#uploadProgress').hide();
+                $('#processBulkUpload').prop('disabled', false);
+                
+                if (data.success) {
+                    showAlert(
+                        `Successfully created ${data.created_count} orders!` +
+                        (data.failed_count > 0 ? ` ${data.failed_count} orders failed.` : ''),
+                        'success'
+                    );
+                    
+                    // Show detailed results
+                    showProcessResults(data);
+                    
+                    // Only reload if there are no failed orders
+                    if (data.failed_count === 0) {
+                        // Close modal after success
+                        setTimeout(function() {
+                            $('#bulkUploadModal').modal('hide');
+                            // Refresh page to show new orders
+                            window.location.reload();
+                        }, 2000);
+                    } else {
+                        // Keep modal open so user can see the errors
+                        console.log('Failed orders:', data.failed_orders);
+                    }
+                } else {
+                    showAlert('Error processing upload: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#uploadProgress').hide();
+                $('#processBulkUpload').prop('disabled', false);
+                showAlert('Error processing upload: ' + error, 'danger');
+                console.error('Upload error:', error);
+            }
+        });
+    }
+
+    // Helper functions
+    function showValidationResults(data, type) {
+        $('#validationResults').show().removeClass().addClass(`alert alert-${type}`);
+        
+        let html = '<h6>Validation Results:</h6>';
+        html += `<p><strong>Total rows:</strong> ${data.total_rows}</p>`;
+        html += `<p><strong>Valid rows:</strong> ${data.valid_rows}</p>`;
+        
+        if (data.errors && data.errors.length > 0) {
+            html += '<h6 class="text-danger">Errors:</h6><ul>';
+            $.each(data.errors, function(index, error) {
+                html += `<li class="text-danger">${error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        if (data.warnings && data.warnings.length > 0) {
+            html += '<h6 class="text-warning">Warnings:</h6><ul>';
+            $.each(data.warnings, function(index, warning) {
+                html += `<li class="text-warning">${warning}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        $('#validationResults').html(html);
+    }
+
+    function showProcessResults(data) {
+        let html = '<div class="alert alert-info mt-3">';
+        html += '<h6>Processing Results:</h6>';
+        html += `<p><strong>Created:</strong> ${data.created_count} orders</p>`;
+        
+        if (data.failed_count > 0) {
+            html += `<p><strong>Failed:</strong> ${data.failed_count} orders</p>`;
+            html += '<h6>Failed Orders:</h6><ul>';
+            $.each(data.failed_orders, function(index, failed) {
+                html += `<li>Row ${failed.row}: ${failed.error}</li>`;
+            });
+            html += '</ul>';
+        }
+        
+        html += '</div>';
+        
+        // Insert after validation results
+        $('#validationResults').after(html);
+    }
+
+    function updateProgress(percent, text) {
+        $('#uploadProgress .progress-bar').css('width', percent + '%');
+        $('#uploadProgress small').text(text);
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    function showAlert(message, type) {
+        // Create alert element
+        const alert = $(`
+            <div class="alert alert-${type} alert-dismissible fade show">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+        
+        // Insert at top of modal body
+        $('#bulkUploadModal .modal-body').prepend(alert);
+        
+        // Auto remove after 5 seconds
+        setTimeout(function() {
+            alert.remove();
+        }, 5000);
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Reset modal when closed
+    $('#bulkUploadModal').on('hidden.bs.modal', function() {
+        clearFileSelection();
+    });
+
+    // Initialize drag and drop styling
+    initializeDragDropStyles();
+
+    // CSS for drag and drop styling
+    function initializeDragDropStyles() {
+        if (!$('#bulk-upload-styles').length) {
+            $('head').append(`
+                <style id="bulk-upload-styles">
+                    .bulk-upload-area {
+                        border: 2px dashed #dee2e6;
+                        border-radius: 8px;
+                        padding: 40px;
+                        text-align: center;
+                        background-color: #f8f9fa;
+                        transition: all 0.3s ease;
+                        cursor: pointer;
+                    }
+                    
+                    .bulk-upload-area:hover {
+                        border-color: #007bff;
+                        background-color: #e7f3ff;
+                    }
+                    
+                    .bulk-upload-area.drag-over {
+                        border-color: #007bff;
+                        background-color: #e7f3ff;
+                        transform: scale(1.02);
+                    }
+                    
+                    .upload-content {
+                        pointer-events: none;
+                    }
+                    
+                    /* Ensure buttons are clickable */
+                    .upload-content button {
+                        pointer-events: auto;
+                    }
+                </style>
+            `);
+        }
+    }
 });
+
+// Debug function to test if elements exist
+function debugElements() {
+    console.log('Select File Button:', $('#selectFileBtn').length);
+    console.log('File Input:', $('#csvFileInput').length);
+    console.log('Upload Area:', $('#uploadArea').length);
+}

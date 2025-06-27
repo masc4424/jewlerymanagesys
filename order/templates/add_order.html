@@ -8,28 +8,60 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h3>Select Client</h3>
-    <select class="form-control" id="clientSelect">
-        <option value="">-- Choose Client --</option>
-        {% for client in clients %}
-        <option value="{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</option>
-        {% endfor %}
-    </select>
+<div class="container py-5">
+    <!-- Top Row: Client Select on Left, Search + Cart on Right -->
+    <div class="row align-items-end mb-4">
+        <!-- Client Dropdown (smaller width) -->
+        <div class="col-md-4">
+            <label for="clientSelect" class="form-label">Select Client</label>
+            <select class="form-select" id="clientSelect">
+                <option value="">-- Choose Client --</option>
+                {% for client in clients %}
+                    <option value="{{ client.id }}">{{ client.first_name }} {{ client.last_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
 
-    <!-- Go to Cart Button -->
-    <div class="mt-3">
-        <a href="#" id="goToCartBtn" class="btn btn-info d-none">
-            Go to Cart <span id="cartItemCount" class="badge bg-light text-dark ms-1">0</span>
-        </a>
+        <!-- Search + Cart -->
+        <div class="col-md-8">
+            <div class="row">
+                <div class="col-md-9">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white">
+                            <i class="fa fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search models by name, status, weight, or color...">
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearch">
+                            <i class="fa fa-times"></i> Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="col-md-3 text-end mt-2 mt-md-0">
+                    <a href="#" id="goToCartBtn" class="btn btn-info w-100 d-none position-relative">
+                        Go to Cart
+                        <span id="cartItemCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-light text-dark">
+                            0
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
 
+    <!-- Search result count -->
+    <div id="searchResultCount" class="text-center mb-3 d-none text-muted small">
+        <!-- Result count appears here -->
+    </div>
 
-    <!-- Models container -->
-    <div id="modelsContainer" class="row mt-4 d-flex flex-wrap"></div>
+    <!-- Models Container -->
+    <div id="modelsContainer" class="row gy-4">
+        <!-- Model cards will be inserted here -->
+    </div>
 
-    <!-- Submit Order Button -->
-    <!-- <button class="btn btn-success mt-3" id="submitOrderBtn">Submit Order</button> -->
+    <!-- Pagination -->
+    <div id="paginationContainer" class="mt-4 d-flex justify-content-center">
+        <!-- Pagination will appear here -->
+    </div>
 </div>
 {% endblock %}
 

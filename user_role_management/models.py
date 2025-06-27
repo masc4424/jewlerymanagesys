@@ -36,3 +36,4 @@ class UserRole(models.Model):
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='userrole_updated_by')
     created_at = models.DateTimeField(default=timezone.now)
     updated_at = models.DateTimeField(auto_now=True)
+    

@@ -15,6 +15,7 @@ from datetime import date, timedelta, datetime
 from django.db.models import Sum
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from collections import defaultdict
 
 # @csrf_exempt
 # @require_http_methods(["GET", "POST"])
@@ -103,8 +104,16 @@ def get_orders_json(request):
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=500)
 
-    # GET logic (with grouping functionality)
+    # GET logic (with filtering and grouping functionality)
     orders = Order.objects.all().select_related('client', 'model', 'color', 'status')
+    
+    # Apply filtering based on query parameters
+    filter_status = request.GET.get('status')
+    if filter_status == 'delivered':
+        orders = orders.filter(delivered=True)
+    elif filter_status == 'not-delivered':
+        orders = orders.filter(delivered=False)
+    # If filter_status is None or 'all', show all orders (no additional filtering)
     
     # Create a dictionary to group orders
     grouped_orders = {}
@@ -538,7 +547,9 @@ def repeated_orders_data(request):
         'original_order'
     ).all()
 
-    data = []
+    # Group data by (date_of_reorder, original_order_id, client_id)
+    grouped_data = defaultdict(list)
+    
     for ro in repeated_orders:
         model = ro.original_order.model
         # Get client name - use full name if available, otherwise username
@@ -551,8 +562,16 @@ def repeated_orders_data(request):
         if model.model_img and model.model_img.name:
             model_img_url = static(f"model_img/{model.model_img.name.split('/')[-1]}")
         
-        data.append({
-            'id': ro.id,  # Adding ID for action buttons
+        # Create grouping key
+        group_key = (
+            ro.date_of_reorder.strftime('%Y-%m-%d'),
+            ro.original_order_id,
+            ro.client_id
+        )
+        
+        # Add order data to the group
+        order_data = {
+            'id': ro.id,
             'model_no': model.model_no,
             'model_img': model_img_url,
             'status_name': ro.status.status if ro.status else (model.status.status if model.status else 'N/A'),
@@ -564,16 +583,48 @@ def repeated_orders_data(request):
             'quantity_delivered': ro.quantity_delivered,
             'color_name': ro.color.color if ro.color else 'N/A',
             'color': ro.color.color if ro.color else '',
-            'client_name': client_name,  # Adding client name
+            'client_name': client_name,
             'order_date': ro.date_of_reorder.strftime('%Y-%m-%d'),
             'estimated_delivery': ro.est_delivery_date.strftime('%Y-%m-%d') if ro.est_delivery_date else '',
             'weight': str(model.weight),
-            'delivered': ro.delivered
-        })
+            'delivered': ro.delivered,
+            'repeat_order_id': ro.repeat_order_id
+        }
+        
+        grouped_data[group_key].append(order_data)
 
-    return JsonResponse({'data': data})
+    # Convert grouped data to a more structured format
+    structured_data = []
+    for (order_date, original_order_id, client_id), orders in grouped_data.items():
+        # Get common information from first order in group
+        first_order = orders[0]
+        
+        # Calculate totals for the group
+        total_quantity = sum(order['quantity'] for order in orders)
+        total_delivered = sum(order['quantity_delivered'] for order in orders)
+        
+        group_info = {
+            'group_key': f"{order_date}_{original_order_id}_{client_id}",
+            'order_date': order_date,
+            'original_order_id': original_order_id,
+            'client_id': client_id,
+            'client_name': first_order['client_name'],
+            'model_no': first_order['model_no'],
+            'model_img': first_order['model_img'],
+            'jewelry_type': first_order['jewelry_type'],
+            'total_quantity': total_quantity,
+            'total_delivered': total_delivered,
+            'order_count': len(orders),
+            'orders': orders  # Individual orders in this group
+        }
+        
+        structured_data.append(group_info)
+    
+    # Sort by order date (most recent first)
+    structured_data.sort(key=lambda x: x['order_date'], reverse=True)
 
-@login_required
+    return JsonResponse({'data': structured_data})
+
 @require_POST
 def update_repeated_order_status(request):
     """
@@ -624,7 +675,7 @@ def update_repeated_order_status(request):
         'message': 'Order status updated successfully'
     })
 
-def get_repeated_order_details(request, order_id):
+def get_repeated_order_details_old(request, order_id):
     """
     Get details of a specific repeated order
     """
@@ -644,6 +695,121 @@ def get_repeated_order_details(request, order_id):
     }
     
     return JsonResponse(data)
+
+def get_repeated_order_details(request, order_id):
+    """
+    Get details of a specific repeated order with grouped order information
+    """
+    order = get_object_or_404(RepeatedOrder, id=order_id)
+    
+    # Find all orders with the same client and model (grouped orders)
+    grouped_orders = RepeatedOrder.objects.filter(
+        client=order.client,
+        original_order__model=order.original_order.model
+    ).select_related('status', 'color', 'client', 'original_order__model')
+    
+    # Build response data
+    data = {
+        'id': order.id,
+        'status_id': order.status.id if order.status else None,
+        'status_name': order.status.status if order.status else 'N/A',
+        'quantity': order.quantity,
+        'quantity_delivered': order.quantity_delivered,
+        'est_delivery_date': order.est_delivery_date.strftime('%Y-%m-%d') if order.est_delivery_date else None,
+        'delivered': order.delivered,
+        'client_name': order.client.get_full_name() or order.client.username if order.client else 'N/A',
+        'model_no': order.original_order.model.model_no if hasattr(order.original_order, 'model') else 'N/A',
+        'color_name': order.color.color if order.color else 'N/A',
+        'is_grouped': grouped_orders.count() > 1,
+        'grouped_orders': []
+    }
+    
+    # If there are multiple orders for the same model, include their details
+    if grouped_orders.count() > 1:
+        for grouped_order in grouped_orders:
+            data['grouped_orders'].append({
+                'id': grouped_order.id,
+                'color_name': grouped_order.color.color if grouped_order.color else 'N/A',
+                'quantity': grouped_order.quantity,
+                'quantity_delivered': grouped_order.quantity_delivered,
+                'delivered': grouped_order.delivered,
+                'status_name': grouped_order.status.status if grouped_order.status else 'N/A'
+            })
+    
+    return JsonResponse(data)
+
+@csrf_exempt
+def update_repeated_order_status_bulk(request):
+    """
+    Update status for single or multiple repeated orders (for grouped orders)
+    """
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'message': 'Only POST method allowed'})
+    
+    try:
+        data = json.loads(request.body)
+        order_ids = data.get('order_ids', [])  # List of order IDs
+        update_mode = data.get('update_mode', 'single')  # 'single' or 'all'
+        
+        # Status update data
+        status_id = data.get('status_id')
+        quantity_delivered = data.get('quantity_delivered')
+        est_delivery_date = data.get('est_delivery_date')
+        delivered = data.get('delivered', False)
+        
+        if not order_ids:
+            return JsonResponse({'success': False, 'message': 'No order IDs provided'})
+        
+        updated_orders = []
+        
+        for order_id in order_ids:
+            try:
+                order = get_object_or_404(RepeatedOrder, id=order_id)
+                
+                # Update status if provided
+                if status_id:
+                    try:
+                        status = ModelStatus.objects.get(id=status_id)
+                        order.status = status
+                    except ModelStatus.DoesNotExist:
+                        continue
+                
+                # Update quantity delivered if provided
+                if quantity_delivered is not None:
+                    order.quantity_delivered = int(quantity_delivered)
+                
+                # Update estimated delivery date if provided
+                if est_delivery_date:
+                    from datetime import datetime
+                    order.est_delivery_date = datetime.strptime(est_delivery_date, '%Y-%m-%d').date()
+                
+                # Update delivered status
+                order.delivered = delivered
+                
+                order.save()
+                updated_orders.append({
+                    'id': order.id,
+                    'color': order.color.color if order.color else 'N/A',
+                    'status': order.status.status if order.status else 'N/A'
+                })
+                
+            except Exception as e:
+                print(f"Error updating order {order_id}: {str(e)}")
+                continue
+        
+        if updated_orders:
+            return JsonResponse({
+                'success': True, 
+                'message': f'Successfully updated {len(updated_orders)} order(s)',
+                'updated_orders': updated_orders
+            })
+        else:
+            return JsonResponse({'success': False, 'message': 'No orders were updated'})
+            
+    except json.JSONDecodeError:
+        return JsonResponse({'success': False, 'message': 'Invalid JSON data'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': str(e)})
 
 def get_model_statuses(request):
     """
@@ -685,7 +851,6 @@ def get_repeated_orders_api(request):
     
     return JsonResponse({'data': data})
 
-@login_required
 @require_POST
 def add_to_cart_ajax(request):
     """
@@ -745,7 +910,6 @@ def add_to_cart_ajax(request):
         'total_quantity': total_quantity
     })
 
-@login_required
 @require_GET
 def cart_item_count(request, client_id):
     """
