@@ -422,49 +422,53 @@ def create_repeated_order(request):
     if not cart_items.exists():
         return JsonResponse({'status': 'error', 'message': 'No cart items found with an order_id'}, status=400)
 
-    repeated_orders = []
-
-    # Optional: Validate all orders exist before processing
-    order_ids = list(cart_items.values_list('order_id', flat=True).distinct())
-    existing_orders = Order.objects.filter(id__in=order_ids)
-    if existing_orders.count() != len(order_ids):
-        return JsonResponse({'status': 'error', 'message': 'Some orders not found'}, status=404)
-
+    # Group cart items by order_id
+    from collections import defaultdict
+    grouped_items = defaultdict(list)
+    
     for item in cart_items:
+        grouped_items[item.order_id].append(item)
+
+    repeated_orders_by_original = []
+
+    for order_id, items in grouped_items.items():
         try:
-            # Get the original order for each cart item individually
-            original_order = Order.objects.get(id=item.order_id)
+            original_order = Order.objects.get(id=order_id)
         except Order.DoesNotExist:
-            # This shouldn't happen if validation above passed
             continue
 
-        repeated = RepeatedOrder.objects.create(
-            original_order=original_order,
-            client=request.user,
-            color=item.color,
-            quantity=item.quantity,
-            est_delivery_date=None
-        )
-        repeated.repeat_order_id = str(repeated.id)
-        repeated.save()
+        repeated_items = []
+        
+        for item in items:
+            repeated = RepeatedOrder.objects.create(
+                original_order=original_order,
+                client=request.user,
+                color=item.color,
+                quantity=item.quantity,
+                est_delivery_date=None
+            )
+            repeated.repeat_order_id = str(repeated.id)
+            repeated.save()
 
-        # Delete only specific cart item (filtered by client, model, and color)
-        ClientAddToCart.objects.filter(
-            client=request.user,
-            model=item.model,
-            color=item.color
-        ).delete()
+            # Delete the specific cart item
+            ClientAddToCart.objects.filter(id=item.id).delete()
 
-        repeated_orders.append({
-            'repeat_order_id': repeated.repeat_order_id,
-            'model_no': item.model.model_no,
-            'quantity': item.quantity
+            repeated_items.append({
+                'repeat_order_id': repeated.repeat_order_id,
+                'model_no': item.model.model_no,
+                'quantity': item.quantity
+            })
+
+        repeated_orders_by_original.append({
+            'original_order_id': order_id,
+            'repeated_orders': repeated_items
         })
 
     return JsonResponse({
         'status': 'success',
         'message': 'Repeated orders created successfully',
-        'data': repeated_orders
+        'data': repeated_orders_by_original,
+        'total_original_orders': len(repeated_orders_by_original)
     })
 
 @login_required
