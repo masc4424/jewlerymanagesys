@@ -44,7 +44,7 @@ def dashboard_client_render(request):
         'user': user_with_role  # Pass the enhanced user object to the template
     })
 
-
+@login_required(login_url='login_auth')
 def client_modal(request):
     if request.method == "GET" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         html = render(request, 'client_side_modal.html').content.decode('utf-8')

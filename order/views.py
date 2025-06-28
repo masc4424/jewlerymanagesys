@@ -2,13 +2,14 @@ from django.shortcuts import render
 from product_inv.models import *
 from user_role_management.models import *
 import logging
-
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.models import User
 # Initialize logger
 log = logging.getLogger(__name__)
 
+@login_required(login_url='login_auth')
 def order_list(request):
     # Fetch all statuses from ModelStatus table
     statuses = ModelStatus.objects.all()
@@ -17,6 +18,7 @@ def order_list(request):
     }
     return render(request, 'order_list.html', context)
 
+@login_required(login_url='login_auth')
 def add_order(request):
     try:
         client_role = Role.objects.get(role_name='Client')
@@ -25,18 +27,23 @@ def add_order(request):
         clients = User.objects.none()
     return render(request, 'add_order.html', {'clients': clients})
 
+@login_required(login_url='login_auth')
 def defective_order(request):
     return render(request, 'defective_order.html')
 
+@login_required(login_url='login_auth')
 def repeted_order(request):
     return render(request, 'repeted_order.html')
 
+@login_required(login_url='login_auth')
 def invoice_list(request):
     return render(request, 'invoice_list.html')
 
+@login_required(login_url='login_auth')
 def invoice_add(request):
     return render(request,'invoice_add.html')
 
+@login_required(login_url='login_auth')
 def client_order_list(request):
     userprofile = UserProfile.objects.get(user=request.user)
 
@@ -58,6 +65,7 @@ def client_order_list(request):
         'user': user_with_role
     })
 
+@login_required(login_url='login_auth')
 def add_to_cart_side_view(request, client_id):
     if request.method == "GET" and request.headers.get('x-requested-with') == 'XMLHttpRequest':
         client = get_object_or_404(User, id=client_id)
