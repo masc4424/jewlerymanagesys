@@ -46,17 +46,6 @@ $(document).ready(function() {
                             ${summary.total_quantity}
                         </button>
                     </td>
-                    <td>
-                        <div class="btn-group" role="group" aria-label="Actions">
-                            <button type="button" class="btn btn-sm btn-info view-details-btn" 
-                                data-date="${summary.order_date}" 
-                                data-client="${summary.client_name}"
-                                data-bs-toggle="tooltip" 
-                                title="View detailed breakdown">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                    </td>
                 </tr>
             `;
             summaryTableBody.append(row);
@@ -562,19 +551,19 @@ $(document).ready(function() {
                     var weight = firstOrder.weight;
                     return weight ? weight + ' g' : '';
                 }}, 
-                { data: null, render: function(data, type, row) {
-                    // FIXED: Use the first individual order's ID instead of grouped parent ID
-                    var orderId = row.orders && row.orders.length > 0 ? row.orders[0].id : row.id;
+                // { data: null, render: function(data, type, row) {
+                //     // FIXED: Use the first individual order's ID instead of grouped parent ID
+                //     var orderId = row.orders && row.orders.length > 0 ? row.orders[0].id : row.id;
                     
-                    return `
-                        <div class="btn-group" role="group">
-                            <button type="button" class="btn btn-sm btn-primary update-status" 
-                                data-id="${orderId}" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
-                                Update Status
-                            </button>
-                        </div>
-                    `;
-                }}
+                //     return `
+                //         <div class="btn-group" role="group">
+                //             <button type="button" class="btn btn-sm btn-primary update-status" 
+                //                 data-id="${orderId}" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+                //                 Update Status
+                //             </button>
+                //         </div>
+                //     `;
+                // }}
             ],
             dom: 'Bfrtip',
             buttons: [
