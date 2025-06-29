@@ -228,8 +228,11 @@ $(document).ready(function() {
         showDetailedView();
         
         // Switch to My Orders tab if not already active
-        const myOrdersTab = new bootstrap.Tab(document.querySelector('#my-orders-tab'));
-        myOrdersTab.show();
+        // const myOrdersTab = new bootstrap.Tab(document.querySelector('#my-orders-tab'));
+        // myOrdersTab.show();
+
+        const reOrderTab = new bootstrap.Tab(document.querySelector('#reorders-tab'));
+        reOrderTab.show();
         
         // Apply date filter to both tables
         applyDateFilterToBothTables(selectedDate);
