@@ -5,6 +5,87 @@ $(document).ready(function() {
     // Fetch product data using modelNo
     fetchProductData(modelNo);
 });
+// On badge click (stone or stone type)
+$(document).on('click', '.stone-count-badge, .type-count-badge', function (e) {
+    e.preventDefault();
+
+    const isStone = $(this).hasClass('stone-count-badge');
+    const data = $(this).data(isStone ? 'stone' : 'type');
+
+    // Hide any open offcanvas
+    $('.offcanvas').each(function () {
+        const offcanvasInstance = bootstrap.Offcanvas.getInstance(this);
+        if (offcanvasInstance) {
+            offcanvasInstance.hide();
+        }
+    });
+    $('#clientSideModalTemp, #clientSideModal').remove();
+    $('.modal-backdrop, .offcanvas-backdrop').remove();
+    $('body').removeClass('modal-open offcanvas-open');
+
+    // Show temporary loading offcanvas
+    $('body').append(`
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="clientSideModalTemp">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title">Loading...</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+            </div>
+            <div class="offcanvas-body text-center">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+        </div>
+    `);
+    const tempModal = new bootstrap.Offcanvas(document.getElementById('clientSideModalTemp'));
+    tempModal.show();
+
+    // Create content for side modal
+    let htmlContent = `
+        <div class="offcanvas offcanvas-end" tabindex="-1" id="clientSideModal">
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title">${isStone ? data.stone_name : data.type_name} </h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+            </div>
+            <div class="offcanvas-body">
+    `;
+
+    if (isStone) {
+        htmlContent += `<p>Total Count: <strong>${data.total_count}</strong></p>`;
+        data.stone_distribution.forEach(type => {
+            if (type.count > 0) {
+                htmlContent += `<div class="mb-2"><strong>${type.type_name} (${type.count} )</strong><ul>`;
+                type.distribution.forEach(detail => {
+                    if (detail.count > 0) {
+                        htmlContent += `<li>${detail.length}x${detail.breadth}mm - ${detail.count} </li>`;
+                    }
+                });
+                htmlContent += `</ul></div>`;
+            }
+        });
+    } else {
+        htmlContent += `<p>Total Count: <strong>${data.count}</strong></p><ul>`;
+        data.distribution.forEach(detail => {
+            if (detail.count > 0) {
+                htmlContent += `<li>${detail.length}x${detail.breadth}mm - ${detail.count} </li>`;
+            }
+        });
+        htmlContent += `</ul>`;
+    }
+
+    htmlContent += `
+            </div>
+        </div>
+    `;
+
+    setTimeout(() => {
+        $('#clientSideModalTemp').remove();
+        $('#clientSideModal').remove();
+        $('.offcanvas-backdrop').remove();
+        $('#clientSideModalPlaceholder').html(htmlContent);
+        const finalModal = new bootstrap.Offcanvas(document.getElementById('clientSideModal'));
+        finalModal.show();
+    }, 400); // Simulate async delay
+});
+
 
 function fetchProductData(modelNo) {
     $.ajax({
@@ -263,7 +344,7 @@ function renderStoneCard(stone) {
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white justify-content-between align-items-center">
                     <h5 class="mb-2">${stone.stone_name} 
-                        <span class="badge bg-label-primary ms-2">${stone.total_count} stones</span>
+                        <span class="badge bg-label-primary ms-2 stone-count-badge" data-stone='${JSON.stringify(stone)}'>${stone.total_count}</span>
                     </h5>
 
                     <div>
@@ -291,7 +372,7 @@ function renderStoneCard(stone) {
                 <div class="p-2 mb-2 bg-light rounded">
                     <div class="justify-content-between mb-2">
                         <div class="mb-2">${type.type_name} 
-                            <span class="badge bg-label-info ms-2">${type.count} stones</span>
+                            <span class="badge bg-label-info ms-2 type-count-badge" data-type='${JSON.stringify(type)}'>${type.count} </span>
                         </div>
 
                         <div>

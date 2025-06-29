@@ -119,15 +119,22 @@ def get_model_distribution(model_no):
                 for detail in type_details:
                     detail_percentage = (detail.weight / type_total_weight * 100) if type_total_weight > 0 else 0
                     
+                    # Get count from StoneCount model
+                    detail_count = StoneCount.objects.filter(
+                        model=model,
+                        stone_type_details=detail
+                    ).aggregate(total=Sum('count'))['total'] or 0
+
                     type_info['distribution'].append({
                         'detail_id': detail.id,
-                        # 'shape': detail.shape,
-                        'length': detail.length,  # Changed from size to length
-                        'breadth': detail.breadth,  # Added breadth
+                        'length': detail.length,
+                        'breadth': detail.breadth,
                         'weight': str(detail.weight),
                         'rate': str(detail.rate),
-                        'percentage': round(detail_percentage, 2)
+                        'percentage': round(detail_percentage, 2),
+                        'count': detail_count  # 👈 Add count here
                     })
+
                 
                 if type_info['distribution']:
                     stone_data['stone_distribution'].append(type_info)
