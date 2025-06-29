@@ -48,7 +48,16 @@ def get_model_distribution(model_no):
         # Process each stone (Marquise, Pan, etc.)
         for stone in stones:
             stone_types = StoneType.objects.filter(stone=stone, raw_stones__model=model).distinct()
-            
+            stone_type_ids = [st.id for st in stone_types]
+
+            # Fetch all stone counts for this stone in this model
+            stone_counts = StoneCount.objects.filter(
+                model=model,
+                stone_type_details__stone_type__in=stone_type_ids,
+                stone_type_details__stone=stone
+            )
+
+            total_count = stone_counts.aggregate(total=Sum('count'))['total'] or 0
             # Calculate total weight for this stone
             stone_details = StoneTypeDetail.objects.filter(
                 stone=stone,
@@ -68,6 +77,7 @@ def get_model_distribution(model_no):
                 'stone_name': stone.name,
                 'total_weight': round(stone_total_weight, 2),  # Add total weight
                 'total_rate': round(stone_total_rate, 2),  # Add total rate
+                'total_count': total_count,
                 'percentage_in_model': round(stone_percentage, 2),
                 'stone_distribution': []
             }
@@ -90,7 +100,10 @@ def get_model_distribution(model_no):
                 type_stone_total_rate = sum(detail.rate for detail in type_details) or Decimal(0)
 
                 type_stone_total_weight = sum(detail.weight for detail in type_details) or 0
-                
+                stone_type_count = stone_counts.filter(
+                    stone_type_details__stone_type=stone_type
+                ).aggregate(total=Sum('count'))['total'] or 0
+
                 type_info = {
                     'type_id': stone_type.id,
                     'type_name': stone_type.type_name,
@@ -98,6 +111,7 @@ def get_model_distribution(model_no):
                     'percentage_in_model': round(type_percentage_in_model, 2),
                     'type_stone_total_rate':type_stone_total_rate,
                     'type_stone_total_weight':type_stone_total_weight,
+                    'count': stone_type_count,
                     'distribution': []
                 }
                 
@@ -105,15 +119,22 @@ def get_model_distribution(model_no):
                 for detail in type_details:
                     detail_percentage = (detail.weight / type_total_weight * 100) if type_total_weight > 0 else 0
                     
+                    # Get count from StoneCount model
+                    detail_count = StoneCount.objects.filter(
+                        model=model,
+                        stone_type_details=detail
+                    ).aggregate(total=Sum('count'))['total'] or 0
+
                     type_info['distribution'].append({
                         'detail_id': detail.id,
-                        # 'shape': detail.shape,
-                        'length': detail.length,  # Changed from size to length
-                        'breadth': detail.breadth,  # Added breadth
+                        'length': detail.length,
+                        'breadth': detail.breadth,
                         'weight': str(detail.weight),
                         'rate': str(detail.rate),
-                        'percentage': round(detail_percentage, 2)
+                        'percentage': round(detail_percentage, 2),
+                        'count': detail_count  # 👈 Add count here
                     })
+
                 
                 if type_info['distribution']:
                     stone_data['stone_distribution'].append(type_info)
@@ -660,25 +681,41 @@ def get_stone_types(request, stone_id):
     type_list = [{'id': t.id, 'type_name': t.type_name} for t in types]
     return JsonResponse(type_list, safe=False)
 
-# New endpoint to get stone type details
+# # New endpoint to get stone type details
+# def get_stone_type_details(request, type_id):
+#     try:
+#         # Get all details for this type
+#         details = StoneTypeDetail.objects.filter(stone_type_id=type_id)
+#         if details.exists():
+#             details_list = [{
+#                 'weight': float(detail.weight),
+#                 'length': detail.length,
+#                 'breadth': detail.breadth,
+#                 'rate': float(detail.rate)
+#                 # Add 'shape' back if needed
+#                 # 'shape': detail.shape,
+#             } for detail in details]
+#             return JsonResponse(details_list, safe=False)
+#         return JsonResponse([], safe=False)
+#     except Exception as e:
+#         return JsonResponse({'error': str(e)}, status=500)
+    
 def get_stone_type_details(request, type_id):
     try:
         # Get all details for this type
         details = StoneTypeDetail.objects.filter(stone_type_id=type_id)
         if details.exists():
             details_list = [{
+                'id': detail.id,  # ADD THIS LINE
                 'weight': float(detail.weight),
                 'length': detail.length,
                 'breadth': detail.breadth,
                 'rate': float(detail.rate)
-                # Add 'shape' back if needed
-                # 'shape': detail.shape,
             } for detail in details]
             return JsonResponse(details_list, safe=False)
         return JsonResponse([], safe=False)
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-    
 def get_model(request, model_id):
     model = get_object_or_404(Model, id=model_id)
     model_colors = ModelColor.objects.filter(model=model).values_list('color', flat=True)
