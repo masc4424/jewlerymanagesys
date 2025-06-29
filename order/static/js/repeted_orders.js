@@ -283,6 +283,8 @@ $(document).ready(function() {
         
         // Apply filters to main table with date and client only
         filterMainTable(date, client);
+
+        $('#reOrderheader').text(`Re Orders List for ${client} on ${formatDate(date)}`);
         
         // Show back button
         if (!$('#backToSummary').length) {
@@ -326,6 +328,8 @@ $(document).ready(function() {
         
         // Hide the main table container
         $('#mainTableContainer').hide();
+
+        $('#reOrderheader').text('Re Orders List');
         
         // Hide the back button
         $('#backToSummary').hide();
@@ -551,19 +555,19 @@ $(document).ready(function() {
                     var weight = firstOrder.weight;
                     return weight ? weight + ' g' : '';
                 }}, 
-                // { data: null, render: function(data, type, row) {
-                //     // FIXED: Use the first individual order's ID instead of grouped parent ID
-                //     var orderId = row.orders && row.orders.length > 0 ? row.orders[0].id : row.id;
+                { data: null, render: function(data, type, row) {
+                    // FIXED: Use the first individual order's ID instead of grouped parent ID
+                    var orderId = row.orders && row.orders.length > 0 ? row.orders[0].id : row.id;
                     
-                //     return `
-                //         <div class="btn-group" role="group">
-                //             <button type="button" class="btn btn-sm btn-primary update-status" 
-                //                 data-id="${orderId}" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
-                //                 Update Status
-                //             </button>
-                //         </div>
-                //     `;
-                // }}
+                    return `
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-primary update-status" 
+                                data-id="${orderId}" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+                                Update Status
+                            </button>
+                        </div>
+                    `;
+                }}
             ],
             dom: 'Bfrtip',
             buttons: [

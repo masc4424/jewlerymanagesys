@@ -4,7 +4,7 @@ $(document).ready(function() {
 
     const groupedColumns = [
         { data: 'sl_no', title: 'SL No' },
-        { data: 'client', title: 'Client' },
+        // { data: 'client', title: 'Client' },
         {
             data: null,
             title: 'Model',
@@ -161,8 +161,14 @@ $(document).ready(function() {
     ];
 
     const flattenedColumns = [
-        { data: 'order_id', title: 'Order ID' },
-        { data: 'client', title: 'Client Name' },
+        { 
+            data: null, 
+            title: 'SL No',
+            render: function(data, type, row, meta) {
+                return meta.row + 1;
+            }
+        },
+        // { data: 'client', title: 'Client Name' },
         {
             data: 'model_no',
             title: 'Model',
@@ -202,9 +208,15 @@ $(document).ready(function() {
             title: 'Delivery Status',
             render: function(data, type, row) {
                 if (type !== 'display') return data || '';
-                const isDelivered = (data || '').toLowerCase() === 'yes';
+                
+                // Check for both "Yes" and "Delivered" values
+                const isDelivered = (data || '').toLowerCase() === 'yes' || 
+                                (data || '').toLowerCase() === 'delivered';
+                
                 const badgeClass = isDelivered ? 'bg-success' : 'bg-danger';
-                return `<span class="badge ${badgeClass}" data-bs-toggle="tooltip" title="Delivered">${data || 'No'}</span>`;
+                const displayText = isDelivered ? 'Delivered' : 'Not Delivered';
+                
+                return `<span class="badge ${badgeClass}" data-bs-toggle="tooltip" title="${displayText}">${displayText}</span>`;
             }
         },
         {
@@ -235,6 +247,30 @@ $(document).ready(function() {
             render: function(data, type, row) {
                 if (!data) return 'N/A';
                 return `<span data-bs-toggle="tooltip" title="Delivery Date">${data}</span>`;
+            }
+        },
+        {
+            data: null,
+            title: 'Actions',
+            render: function (data, type, row) {
+                if (type !== 'display') return '';
+                return `
+                    <div class="action-menu">
+                        <button class="btn btn-sm btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa-solid fa-ellipsis-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                            <li class="dropdown-header">Individual Order Actions</li>
+                            <li><a class="dropdown-item update-individual-order" href="#" data-order-id="${row.order_id}">
+                                <i class="fa-solid fa-pen-to-square me-2"></i>Update Order</a></li>
+                            <li><a class="dropdown-item change-individual-status" href="#" data-order-id="${row.order_id}" data-model_id="${row.model_id}">
+                                <i class="fa-solid fa-toggle-on me-2"></i>Change Status</a></li>
+                            <li><a class="dropdown-item repeat-individual-order" href="#" data-order-id="${row.order_id}">
+                                <i class="fa-solid fa-rotate me-2"></i>Repeat Order</a></li>
+                            <li><a class="dropdown-item delete-individual-order text-danger" href="#" data-order-id="${row.order_id}">
+                                <i class="fa-solid fa-trash-can me-2"></i>Delete Order</a></li>
+                        </ul>
+                    </div>`;
             }
         }
     ];
@@ -365,7 +401,7 @@ $(document).ready(function() {
                 <tr>
                     <td>${item.date_of_order}</td>
                     <td>${item.client}</td>
-                    <td class="text-primary fw-bold quantity-filter" style="cursor:pointer" data-date="${item.date_of_order}">
+                    <td class="text-primary fw-bold quantity-filter" style="cursor:pointer" data-client="${item.client}" data-date="${item.date_of_order}">
                         ${item.quantity}
                     </td>
                 </tr>
@@ -375,7 +411,11 @@ $(document).ready(function() {
 
     $(document).on('click', '.quantity-filter', function () {
         currentDateFilter = $(this).data('date');
+        const clientName = $(this).data('client');
         const filtered = fullData.filter(item => item.date_of_order === currentDateFilter);
+
+        const headerText = `New Designs ordered for ${clientName} on ${currentDateFilter}`;
+        $('.content-wrapper h4').text(headerText);
 
         $('#summarySection').hide();
         $('#usersSection').show();
@@ -396,6 +436,7 @@ $(document).ready(function() {
 
 
     $('#backToSummary').on('click', function () {
+        $('.content-wrapper h4').text('New Designs');
         $('#usersSection').hide();
         $('#summarySection').show();
         currentDateFilter = null;
@@ -1497,9 +1538,15 @@ $(document).ready(function() {
         let filtered = [];
 
         if (filter === 'delivered') {
-            filtered = flattened.filter(o => o.delivered === 'Yes');
+            filtered = flattened.filter(o => o.delivered === 'Yes').map(o => ({
+                ...o,
+                delivered: 'Delivered'
+            }));
         } else if (filter === 'not-delivered') {
-            filtered = flattened.filter(o => o.delivered === 'No');
+            filtered = flattened.filter(o => o.delivered === 'No').map(o => ({
+                ...o,
+                delivered: 'Not Delivered'
+            }));
         }
 
         $('#usersTable').DataTable().clear().destroy();
