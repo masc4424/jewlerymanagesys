@@ -582,7 +582,7 @@ $('#model_img').on('change', function (event) {
                     <td>${formatNumber(rate)}</td>
                     <td>${count}</td>
                     <td>
-                        <button type="button" class="btn bg-label-danger btn-sm remove-stone">Remove</button>
+                        <button type="button" class="btn bg-label-danger btn-sm remove-stone"><i class="bx bx-trash"></i></button>
                     </td>
                 </tr>
             `;
@@ -876,7 +876,7 @@ $('#model_img').on('change', function (event) {
                 <td>${rate ? formatNumber(rate) : 'N/A'}</td>
                 <td>${totalValue ? formatNumber(totalValue) : 'N/A'}</td>
                 <td>
-                    <button type="button" class="btn bg-label-danger btn-sm remove-raw-material">Remove</button>
+                    <button type="button" class="btn bg-label-danger btn-sm remove-raw-material"><i class="bx bx-trash"></i></button>
                 </td>
             </tr>
         `;

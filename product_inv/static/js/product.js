@@ -262,7 +262,10 @@ function renderStoneCard(stone) {
         <div class="stone-card">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white justify-content-between align-items-center">
-                    <h5 class="mb-2">${stone.stone_name}</h5>
+                    <h5 class="mb-2">${stone.stone_name} 
+                        <span class="badge bg-label-primary ms-2">${stone.total_count} stones</span>
+                    </h5>
+
                     <div>
                         <span class="badge bg-label-primary">${stone.percentage_in_model}%</span>
                         <span class="badge bg-label-secondary">${stone.total_rate}&#8377;</span>
@@ -287,7 +290,10 @@ function renderStoneCard(stone) {
         stoneCard += `
                 <div class="p-2 mb-2 bg-light rounded">
                     <div class="justify-content-between mb-2">
-                        <div class="mb-2">${type.type_name}</div>
+                        <div class="mb-2">${type.type_name} 
+                            <span class="badge bg-label-info ms-2">${type.count} stones</span>
+                        </div>
+
                         <div>
                             <span class="badge bg-secondary">${type.percentage_in_stone}%</span>
                             <span class="badge bg-secondary">${type.type_stone_total_rate}&#8377;</span>

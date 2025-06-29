@@ -47,5 +47,6 @@ class StoneTypeDetail(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"{self.shape} - {self.length}x{self.breadth}"
+        return f"{self.length}x{self.breadth}"
+        # return f"{self.shape} - {self.length}x{self.breadth}"
 
