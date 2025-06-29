@@ -430,7 +430,7 @@ $(document).ready(function() {
                 { data: null, render: function(data, type, row, meta) {
                     return meta.row + 1; // Sr. No. column (auto-incremented)
                 }},
-                { data: "client_name" }, // Client column
+                // { data: "client_name" }, // Client column
                 { data: null, render: function(data, type, row) {
                     // Model column with image - made clickable with color data attribute
                     return `

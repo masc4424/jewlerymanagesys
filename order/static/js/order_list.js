@@ -414,7 +414,13 @@ $(document).ready(function() {
         const clientName = $(this).data('client');
         const filtered = fullData.filter(item => item.date_of_order === currentDateFilter);
 
-        const headerText = `New Designs ordered for ${clientName} on ${currentDateFilter}`;
+        const formattedDate = new Date(currentDateFilter).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+
+        const headerText = `New Designs ordered for ${clientName} on ${formattedDate}`;
         $('.content-wrapper h4').text(headerText);
 
         $('#summarySection').hide();
