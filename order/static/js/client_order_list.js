@@ -159,7 +159,12 @@ $(document).ready(function() {
         ajax: {
             url: '/api/client/orders/',
             dataSrc: function(json) {
-                return createOrderSummary(json.data);
+                const summary = createOrderSummary(json.data);
+                // Add client_name to each summary row
+                return summary.map(row => ({
+                    ...row,
+                    client_name: json.client_name
+                }));
             }
         },
         columns: [
@@ -172,7 +177,7 @@ $(document).ready(function() {
                 title: 'Total Quantity', 
                 data: 'total_quantity',
                 render: function(data, type, row) {
-                    return `<a href="#" class="text-primary fw-bold quantity-filter-link" data-order-date="${row.order_date}" style="text-decoration: none;">${data}</a>`;
+                    return `<a href="#" class="text-primary fw-bold quantity-filter-link" data-order-date="${row.order_date}" data-client-name="${row.client_name}" style="text-decoration: none;">${data}</a>`;
                 }
             },
             { 
@@ -223,7 +228,17 @@ $(document).ready(function() {
     $(document).on('click', '.quantity-filter-link', function(e) {
         e.preventDefault();
         const selectedDate = $(this).data('order-date');
-        
+        const clientName = $(this).data('client-name');
+
+        // Format the date to "Jan 26, 2025" format
+        const dateObj = new Date(selectedDate);
+        const formattedDate = dateObj.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+        $('#order_client_name').text(`Order on ${formattedDate} for ${clientName}`).removeClass('d-none');
+
         // Show detailed view
         showDetailedView();
         
@@ -271,6 +286,7 @@ $(document).ready(function() {
         
         // Clear all filters
         clearAllFilters();
+        $('#order_client_name').text('').addClass('d-none');
     });
 
     function clearAllFilters() {

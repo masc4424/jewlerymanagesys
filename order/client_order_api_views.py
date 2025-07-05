@@ -122,6 +122,9 @@ def client_orders_api(request):
         Q(order__client=user) | Q(repeated_order_id__isnull=False)
     ).select_related('order')
     
+    # Get client name - adjust this based on your User/Client model structure
+    client_name = user.get_full_name() or user.username  # Or user.client.name if you have a separate Client model
+    
     data = []
     
     # Process regular orders
@@ -143,6 +146,7 @@ def client_orders_api(request):
         
         data.append({
             'id': order.id,
+            'client_name': client_name,
             'model_no': order.model.model_no,
             'model_img': model_img_url,
             'status': status,
@@ -179,6 +183,7 @@ def client_orders_api(request):
         
         data.append({
             'id': repeated_order.id,
+            'client_name': client_name,
             'model_no': repeated_order.original_order.model.model_no,
             'model_img': model_img_url,
             'status': status,
@@ -212,7 +217,7 @@ def client_orders_api(request):
         for model_no, orders in models.items():
             result[order_date][model_no] = orders
     
-    return JsonResponse({'data': result})
+    return JsonResponse({'data': result, 'client_name': client_name})
 
 @require_POST
 @login_required
