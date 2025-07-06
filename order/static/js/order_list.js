@@ -135,6 +135,16 @@ $(document).ready(function() {
             }
         },
         {
+            data:null,
+            title:'Material',
+            render: function(row) {
+            const cacheBuster = new Date().getTime();
+            return `<a href="/product/${row.model_no}/?_=${cacheBuster}" title="View Material">
+                        <i class="bx bx-show"></i> &gt; 
+                    </a>`;
+            }
+        },
+        {
             data: null,
             title: 'Actions',
             render: function (data, type, row) {

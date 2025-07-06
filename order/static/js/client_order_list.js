@@ -310,6 +310,11 @@ $(document).ready(function() {
         });
         $('#order_client_name').text(`Order on ${formattedDate} for ${clientName}`).removeClass('d-none');
 
+        $('#my-orders .filter-btn').each(function() {
+            $(this)
+                .data('order_date', selectedDate)        // still needed for JS
+                .attr('data-order_date', selectedDate);  // adds visible attribute to HTML
+        });
         // Show detailed view
         showDetailedView();
         
@@ -1077,46 +1082,74 @@ $(document).ready(function() {
         imageModal.show();
     });
 
-    // My Orders Tab Filters - Changed to "All", "Delivered", "Not Delivered"
-    $('#my-orders .filter-btn').on('click', function() {
+    // My Orders Tab Filters - Fixed version
+    $('#my-orders .filter-btn').on('click', function () {
         const filterValue = $(this).data('filter');
-        
-        // Clear date filter first
-        $('.active-filter-indicator').remove();
-        
-        // Update active button
+        const filterDate = $(this).data('order_date') || window.selectedOrderDate;
+
+        console.log('Filtering:', filterValue, 'Date:', filterDate);
+
+        // Clear all previous filters
+        $.fn.dataTable.ext.search = [];
+
         $('#my-orders .filter-btn').removeClass('active');
         $(this).addClass('active');
-        
-        // Clear existing filters
-        while($.fn.dataTable.ext.search.length > 0) {
-            $.fn.dataTable.ext.search.pop();
-        }
-        
-        if (filterValue === 'delivered') {
-            $.fn.dataTable.ext.search.push(
-                function(settings, data, dataIndex) {
-                    if (settings.nTable.id !== 'myOrdersTable') {
-                        return true;
+
+        // Add new filter for both tables
+        $.fn.dataTable.ext.search.push(function (settings, data, dataIndex) {
+            // Apply only to the two order tables
+            if (settings.nTable.id !== 'myOrdersTable' && settings.nTable.id !== 'reordersTable') {
+                return true;
+            }
+
+            const table = settings.nTable.id === 'myOrdersTable' ? myOrdersTable : reordersTable;
+            const order = table.row(dataIndex).data();
+
+            const statusMatch =
+                filterValue === 'all-orders' ||
+                (filterValue === 'delivered' && order.delivered === true) ||
+                (filterValue === 'not-delivered' && (!order.delivered || order.delivered === 'partial'));
+
+            let dateMatch = true;
+
+            if (filterDate) {
+                const normalizeDate = (d) => {
+                    if (!d) return '';
+                    if (typeof d === 'string') {
+                        if (d.match(/^\d{4}-\d{2}-\d{2}$/)) return d;
+                        if (d.includes('T')) return d.split('T')[0];
+                        const parsed = new Date(d);
+                        return !isNaN(parsed.getTime()) ? parsed.toISOString().split('T')[0] : '';
                     }
-                    const order = myOrdersTable.row(dataIndex).data();
-                    return order.delivered === true;
-                }
-            );
-        } else if (filterValue === 'not-delivered') {
-            $.fn.dataTable.ext.search.push(
-                function(settings, data, dataIndex) {
-                    if (settings.nTable.id !== 'myOrdersTable') {
-                        return true;
+                    if (d instanceof Date && !isNaN(d.getTime())) {
+                        return d.toISOString().split('T')[0];
                     }
-                    const order = myOrdersTable.row(dataIndex).data();
-                    return order.delivered === false;
-                }
-            );
-        }
-        
+                    return '';
+                };
+
+                const orderDate = normalizeDate(order.order_date);
+                const selectedDate = normalizeDate(filterDate);
+                dateMatch = orderDate === selectedDate;
+
+                console.log(
+                    `Date comparison: ${orderDate} === ${selectedDate} = ${dateMatch} Final result: ${statusMatch && dateMatch}`
+                );
+            }
+
+            return statusMatch && dateMatch;
+        });
+
+        // Redraw both tables
         myOrdersTable.draw();
+        reordersTable.draw();
+
+        // Force redraw for responsive adjustments
+        setTimeout(() => {
+            myOrdersTable.columns.adjust().draw(false);
+            reordersTable.columns.adjust().draw(false);
+        }, 50);
     });
+
 
     // Handle reorder filter dropdown change
     $('#reorders .filter-btn').on('click', function() {

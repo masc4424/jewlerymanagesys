@@ -555,6 +555,16 @@ $(document).ready(function() {
                     var weight = firstOrder.weight;
                     return weight ? weight + ' g' : '';
                 }}, 
+                {
+                    data:null,
+                    title:'Material',
+                    render: function(row) {
+                    const cacheBuster = new Date().getTime();
+                    return `<a href="/product/${row.model_no}/?_=${cacheBuster}" title="View Material">
+                                <i class="bx bx-show"></i> &gt; 
+                            </a>`;
+                    }
+                },
                 { data: null, render: function(data, type, row) {
                     // FIXED: Use the first individual order's ID instead of grouped parent ID
                     var orderId = row.orders && row.orders.length > 0 ? row.orders[0].id : row.id;
