@@ -90,6 +90,77 @@ $(document).ready(function() {
                     return `${row.quantity} (${row.color})`;
                 }
             },
+            // { 
+            //     title: 'Pending', 
+            //     data: null,
+            //     render: function(data, type, row) {
+            //         console.log('Quantity Delivered row data:', row); // Debug log
+                    
+            //         let totalDelivered = 0;
+            //         let totalQuantity = 0;
+
+            //         if (Array.isArray(row)) {
+            //             row.forEach(order => {
+            //                 totalDelivered += order.quantity_delivered || 0;
+            //                 totalQuantity += order.quantity || 0;
+            //             });
+            //         } else if (Array.isArray(row.individual_orders)) {
+            //             // Corrected: handle grouped orders properly
+            //             row.individual_orders.forEach(order => {
+            //                 totalDelivered += order.quantity_delivered || 0;
+            //                 totalQuantity += order.quantity || 0;
+            //             });
+            //         } else if (row.hasOwnProperty('quantity_delivered')) {
+            //             totalDelivered = row.quantity_delivered || 0;
+            //             totalQuantity = row.quantity || 0;
+            //         }
+                    
+            //         console.log('Calculated delivered/total:', totalDelivered, '/', totalQuantity); // Debug log
+                    
+            //         // Color coding based on delivery status
+            //         let badgeClass = 'bg-secondary';
+            //         if (totalDelivered === totalQuantity && totalDelivered > 0) {
+            //             badgeClass = 'bg-success';
+            //         } else if (totalDelivered > 0) {
+            //             badgeClass = 'bg-warning';
+            //         }
+                    
+            //         return `<span class="badge ${badgeClass}">${totalDelivered}/${totalQuantity}</span>`;
+            //     }
+            // },
+            {
+                title: 'Pending Quantity', 
+                data: null,
+                render: function(data, type, row) {
+                    let totalDelivered = 0;
+                    let totalQuantity = 0;
+
+                    if (Array.isArray(row)) {
+                        row.forEach(order => {
+                            totalDelivered += order.quantity_delivered || 0;
+                            totalQuantity += order.quantity || 0;
+                        });
+                    } else if (Array.isArray(row.individual_orders)) {
+                        row.individual_orders.forEach(order => {
+                            totalDelivered += order.quantity_delivered || 0;
+                            totalQuantity += order.quantity || 0;
+                        });
+                    } else if (row.hasOwnProperty('quantity_delivered')) {
+                        totalDelivered = row.quantity_delivered || 0;
+                        totalQuantity = row.quantity || 0;
+                    }
+
+                    const pending = totalQuantity - totalDelivered;
+                    let badgeClass = 'bg-secondary';
+                    if (pending === 0 && totalQuantity > 0) {
+                        badgeClass = 'bg-success';
+                    } else if (pending > 0 && totalDelivered > 0) {
+                        badgeClass = 'bg-warning';
+                    }
+
+                    return `<span class="badge ${badgeClass}">${pending}</span>`;
+                }
+            },
             { 
                 title: 'Order Date', 
                 data: 'order_date',
@@ -579,6 +650,77 @@ $(document).ready(function() {
                     return `<span title="${colorDetails}" data-bs-toggle="tooltip" data-bs-placement="top">${row.quantity}</span>`;
                 }
             },
+            // { 
+            //     title: 'Pending', 
+            //     data: null,
+            //     render: function(data, type, row) {
+            //         console.log('Quantity Delivered row data:', row); // Debug log
+                    
+            //         let totalDelivered = 0;
+            //         let totalQuantity = 0;
+
+            //         if (Array.isArray(row)) {
+            //             row.forEach(order => {
+            //                 totalDelivered += order.quantity_delivered || 0;
+            //                 totalQuantity += order.quantity || 0;
+            //             });
+            //         } else if (Array.isArray(row.individual_orders)) {
+            //             // Corrected: handle grouped orders properly
+            //             row.individual_orders.forEach(order => {
+            //                 totalDelivered += order.quantity_delivered || 0;
+            //                 totalQuantity += order.quantity || 0;
+            //             });
+            //         } else if (row.hasOwnProperty('quantity_delivered')) {
+            //             totalDelivered = row.quantity_delivered || 0;
+            //             totalQuantity = row.quantity || 0;
+            //         }
+                    
+            //         console.log('Calculated delivered/total:', totalDelivered, '/', totalQuantity); // Debug log
+                    
+            //         // Color coding based on delivery status
+            //         let badgeClass = 'bg-secondary';
+            //         if (totalDelivered === totalQuantity && totalDelivered > 0) {
+            //             badgeClass = 'bg-success';
+            //         } else if (totalDelivered > 0) {
+            //             badgeClass = 'bg-warning';
+            //         }
+                    
+            //         return `<span class="badge ${badgeClass}">${totalDelivered}/${totalQuantity}</span>`;
+            //     }
+            // },
+            {
+                title: 'Pending Quantity', 
+                data: null,
+                render: function(data, type, row) {
+                    let totalDelivered = 0;
+                    let totalQuantity = 0;
+
+                    if (Array.isArray(row)) {
+                        row.forEach(order => {
+                            totalDelivered += order.quantity_delivered || 0;
+                            totalQuantity += order.quantity || 0;
+                        });
+                    } else if (Array.isArray(row.individual_orders)) {
+                        row.individual_orders.forEach(order => {
+                            totalDelivered += order.quantity_delivered || 0;
+                            totalQuantity += order.quantity || 0;
+                        });
+                    } else if (row.hasOwnProperty('quantity_delivered')) {
+                        totalDelivered = row.quantity_delivered || 0;
+                        totalQuantity = row.quantity || 0;
+                    }
+
+                    const pending = totalQuantity - totalDelivered;
+                    let badgeClass = 'bg-secondary';
+                    if (pending === 0 && totalQuantity > 0) {
+                        badgeClass = 'bg-success';
+                    } else if (pending > 0 && totalDelivered > 0) {
+                        badgeClass = 'bg-warning';
+                    }
+
+                    return `<span class="badge ${badgeClass}">${pending}</span>`;
+                }
+            },
             { 
                 title: 'Order Date', 
                 data: 'order_date',
@@ -673,6 +815,77 @@ $(document).ready(function() {
                     return `<span title="${colorDetails}" data-bs-toggle="tooltip" data-bs-placement="top">${row.quantity}</span>`;
                 }
             },
+            // { 
+            //     title: 'Quantity Delivered', 
+            //     data: null,
+            //     render: function(data, type, row) {
+            //         console.log('Quantity Delivered row data:', row); // Debug log
+                    
+            //         let totalDelivered = 0;
+            //         let totalQuantity = 0;
+
+            //         if (Array.isArray(row)) {
+            //             row.forEach(order => {
+            //                 totalDelivered += order.quantity_delivered || 0;
+            //                 totalQuantity += order.quantity || 0;
+            //             });
+            //         } else if (Array.isArray(row.individual_orders)) {
+            //             // Corrected: handle grouped orders properly
+            //             row.individual_orders.forEach(order => {
+            //                 totalDelivered += order.quantity_delivered || 0;
+            //                 totalQuantity += order.quantity || 0;
+            //             });
+            //         } else if (row.hasOwnProperty('quantity_delivered')) {
+            //             totalDelivered = row.quantity_delivered || 0;
+            //             totalQuantity = row.quantity || 0;
+            //         }
+                    
+            //         console.log('Calculated delivered/total:', totalDelivered, '/', totalQuantity); // Debug log
+                    
+            //         // Color coding based on delivery status
+            //         let badgeClass = 'bg-secondary';
+            //         if (totalDelivered === totalQuantity && totalDelivered > 0) {
+            //             badgeClass = 'bg-success';
+            //         } else if (totalDelivered > 0) {
+            //             badgeClass = 'bg-warning';
+            //         }
+                    
+            //         return `<span class="badge ${badgeClass}">${totalDelivered}/${totalQuantity}</span>`;
+            //     }
+            // },
+            {
+            title: 'Pending Quantity', 
+            data: null,
+            render: function(data, type, row) {
+                let totalDelivered = 0;
+                let totalQuantity = 0;
+
+                if (Array.isArray(row)) {
+                    row.forEach(order => {
+                        totalDelivered += order.quantity_delivered || 0;
+                        totalQuantity += order.quantity || 0;
+                    });
+                } else if (Array.isArray(row.individual_orders)) {
+                    row.individual_orders.forEach(order => {
+                        totalDelivered += order.quantity_delivered || 0;
+                        totalQuantity += order.quantity || 0;
+                    });
+                } else if (row.hasOwnProperty('quantity_delivered')) {
+                    totalDelivered = row.quantity_delivered || 0;
+                    totalQuantity = row.quantity || 0;
+                }
+
+                const pending = totalQuantity - totalDelivered;
+                let badgeClass = 'bg-secondary';
+                if (pending === 0 && totalQuantity > 0) {
+                    badgeClass = 'bg-success';
+                } else if (pending > 0 && totalDelivered > 0) {
+                    badgeClass = 'bg-warning';
+                }
+
+                return `<span class="badge ${badgeClass}">${pending}</span>`;
+            }
+        },
             { 
                 title: 'Order Date', 
                 data: 'order_date',

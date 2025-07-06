@@ -152,6 +152,7 @@ def client_orders_api(request):
             'status': status,
             'jewelry_type': order.model.jewelry_type.name,
             'quantity': order.quantity,
+            'quantity_delivered': getattr(order, 'quantity_delivered', 0),  # Add quantity_delivered for regular orders
             'color': order.color.color if order.color else 'N/A',
             'order_date': order.date_of_order.isoformat(),
             'est_delivery_date': order.est_delivery_date.isoformat() if order.est_delivery_date else None,
@@ -189,6 +190,7 @@ def client_orders_api(request):
             'status': status,
             'jewelry_type': repeated_order.original_order.model.jewelry_type.name,
             'quantity': repeated_order.quantity,
+            'quantity_delivered': repeated_order.quantity_delivered,  # Add quantity_delivered for repeated orders
             'color': repeated_order.color.color if repeated_order.color else 'N/A',
             'order_date': repeated_order.date_of_reorder.isoformat(),
             'est_delivery_date': repeated_order.est_delivery_date.isoformat() if repeated_order.est_delivery_date else None,
