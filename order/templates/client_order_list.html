@@ -73,8 +73,9 @@
 
 {% block content %}
     <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between mb-3">
+        <div class="">
             <h4>My Orders</h4>
+            <h6 class="d-none" id="order_client_name">Order on date for client_name</h6>
         </div>
 
         <div class="row mb-4 summary-view" id="summarySection">
@@ -111,13 +112,13 @@
             <!-- Tabs Navigation -->
             <ul class="nav nav-tabs mb-3" id="orderTabs" role="tablist">
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link fs-5 active" id="my-orders-tab" data-bs-toggle="tab" data-bs-target="#my-orders" type="button" role="tab" aria-controls="my-orders" aria-selected="true">
-                        New Order Status
+                    <button class="nav-link fs-5 active" id="reorders-tab" data-bs-toggle="tab" data-bs-target="#reorders" type="button" role="tab" aria-controls="reorders" aria-selected="true">
+                        Re-Orders
                     </button>
                 </li>
                 <li class="nav-item" role="presentation">
-                    <button class="nav-link fs-5" id="reorders-tab" data-bs-toggle="tab" data-bs-target="#reorders" type="button" role="tab" aria-controls="reorders" aria-selected="false">
-                        Re-Orders
+                    <button class="nav-link fs-5" id="my-orders-tab" data-bs-toggle="tab" data-bs-target="#my-orders" type="button" role="tab" aria-controls="my-orders" aria-selected="false">
+                        Order Status
                     </button>
                 </li>
                 <!-- <li class="nav-item" role="presentation">
@@ -130,11 +131,11 @@
             <!-- Tabs Content -->
             <div class="tab-content" id="orderTabsContent">
                 <!-- My Orders Tab -->
-                <div class="tab-pane fade show active" id="my-orders" role="tabpanel" aria-labelledby="my-orders-tab">
+                <div class="tab-pane fade" id="my-orders" role="tabpanel" aria-labelledby="my-orders-tab">
                     <div class="d-flex flex-wrap mb-3">
                         <button class="btn btn-sm btn-outline-primary filter-btn active" data-filter="all-orders">All Status</button>
                         <button class="btn btn-sm btn-outline-success filter-btn" data-filter="delivered">Delivered</button>
-                        <button class="btn btn-sm btn-outline-warning filter-btn" data-filter="not-delivered">Not Delivered</button>
+                        <button class="btn btn-sm btn-outline-warning filter-btn" data-filter="not-delivered">Pending</button>
                     </div>
                     <div class="card shadow-sm">
                         <div class="card-body">
@@ -153,7 +154,7 @@
                 </div>
                 
                 <!-- Reorders Tab -->
-                <div class="tab-pane fade" id="reorders" role="tabpanel" aria-labelledby="reorders-tab">
+                <div class="tab-pane fade show active" id="reorders" role="tabpanel" aria-labelledby="reorders-tab">
                     <div class="mb-3">
                         <div class="dropdown">
                             <button class="btn btn-outline-primary dropdown-toggle" type="button" id="reorderFilterDropdown" data-bs-toggle="dropdown" aria-expanded="false">

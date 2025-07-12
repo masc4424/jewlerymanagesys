@@ -55,7 +55,7 @@ $(document).ready(function () {
             const formattedDate = `${day}${getDaySuffix(day)} ${month}, ${year}`;
     
             // Update the header for 'Todays Rate'
-            $('#metalTable thead th').eq(3).html(`Todays Rate <small class="text">(${formattedDate})</small>`);
+            // $('#metalTable thead th').eq(3).html(`Todays Rate <small class="text">(${formattedDate})</small>`);
         }
     });
 

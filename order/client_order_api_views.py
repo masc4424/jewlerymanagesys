@@ -122,6 +122,9 @@ def client_orders_api(request):
         Q(order__client=user) | Q(repeated_order_id__isnull=False)
     ).select_related('order')
     
+    # Get client name - adjust this based on your User/Client model structure
+    client_name = user.get_full_name() or user.username  # Or user.client.name if you have a separate Client model
+    
     data = []
     
     # Process regular orders
@@ -143,11 +146,13 @@ def client_orders_api(request):
         
         data.append({
             'id': order.id,
+            'client_name': client_name,
             'model_no': order.model.model_no,
             'model_img': model_img_url,
             'status': status,
             'jewelry_type': order.model.jewelry_type.name,
             'quantity': order.quantity,
+            'quantity_delivered': getattr(order, 'quantity_delivered', 0),  # Add quantity_delivered for regular orders
             'color': order.color.color if order.color else 'N/A',
             'order_date': order.date_of_order.isoformat(),
             'est_delivery_date': order.est_delivery_date.isoformat() if order.est_delivery_date else None,
@@ -179,11 +184,13 @@ def client_orders_api(request):
         
         data.append({
             'id': repeated_order.id,
+            'client_name': client_name,
             'model_no': repeated_order.original_order.model.model_no,
             'model_img': model_img_url,
             'status': status,
             'jewelry_type': repeated_order.original_order.model.jewelry_type.name,
             'quantity': repeated_order.quantity,
+            'quantity_delivered': repeated_order.quantity_delivered,  # Add quantity_delivered for repeated orders
             'color': repeated_order.color.color if repeated_order.color else 'N/A',
             'order_date': repeated_order.date_of_reorder.isoformat(),
             'est_delivery_date': repeated_order.est_delivery_date.isoformat() if repeated_order.est_delivery_date else None,
@@ -212,7 +219,7 @@ def client_orders_api(request):
         for model_no, orders in models.items():
             result[order_date][model_no] = orders
     
-    return JsonResponse({'data': result})
+    return JsonResponse({'data': result, 'client_name': client_name})
 
 @require_POST
 @login_required
