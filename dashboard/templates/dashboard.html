@@ -37,7 +37,7 @@
                   </div>
                 </div>
                 <span class="fw-semibold d-block mb-1">Total Models</span>
-                <h2 class="card-title mb-2">0</h2>
+                <h2 class="card-title mb-2">{{models.count}}</h2>
               </div>
             </div>
           </a>
@@ -55,7 +55,7 @@
                     </div>
                   </div>
                   <span class="fw-semibold d-block mb-1">Re Orders</span>
-                  <h2 class="card-title mb-2">0</h2>
+                  <h2 class="card-title mb-2">{{reorder.count}}</h2>
                 </div>
               </div>
           </a>
@@ -76,36 +76,6 @@
                 </div>
               </div>
             </a>
-        </div>
-        
-        <!-- Card 5 -->
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
-                  <div class="card-title float-end">
-                    <div class="">
-                      <img src="{% static 'dash_img/Total_weight.svg' %}" alt="Total weight Icon" class="h-8 w-8">
-                    </div>
-                  </div>
-                  <span class="fw-semibold d-block mb-1">Total Weight</span>
-                  <h2 class="card-title mb-2">0kg</h2>
-                </div>
-              </div>
-        </div>
-        
-        <!-- Card 6 -->
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-body">
-                  <div class="card-title float-end">
-                    <div class="">
-                      <img src="{% static 'dash_img/Colors.svg' %}" alt="Colors Icon" class="h-8 w-8">
-                    </div>
-                  </div>
-                  <span class="fw-semibold d-block mb-1">Colours Available</span>
-                  <h2 class="card-title mb-2">0</h2>
-                </div>
-              </div>
         </div>
 
         {% for metal in metals %}

@@ -581,8 +581,80 @@ $(document).ready(function() {
             ],
             dom: 'Bfrtip',
             buttons: [
-                'copy', 'excel', 'pdf', 'print'
+                {
+                    extend: 'copy',
+                    title: function () {
+                        const date = summaryData?.[0]?.order_date;
+                        if (date) {
+                            const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                            return `Order Date: ${formattedDate}`;
+                        }
+                        return 'Repeated Orders';
+                    },
+                    exportOptions: {
+                        columns: ':not(:last-child):not(:nth-last-child(2))'
+                    }
+                },
+                {
+                    extend: 'excel',
+                    title: function () {
+                        const date = summaryData?.[0]?.order_date;
+                        if (date) {
+                            const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                            return `Order Date: ${formattedDate}`;
+                        }
+                        return 'Repeated Orders';
+                    },
+                    exportOptions: {
+                        columns: ':not(:last-child):not(:nth-last-child(2))'
+                    }
+                },
+                {
+                    extend: 'pdf',
+                    title: function () {
+                        const date = summaryData?.[0]?.order_date;
+                        if (date) {
+                            const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                            return `Order Date: ${formattedDate}`;
+                        }
+                        return 'Repeated Orders';
+                    },
+                    exportOptions: {
+                        columns: ':not(:last-child):not(:nth-last-child(2))'
+                    }
+                },
+                {
+                    extend: 'print',
+                    title: function () {
+                        const date = summaryData?.[0]?.order_date;
+                        if (date) {
+                            const formattedDate = new Date(date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            });
+                            return `Order Date: ${formattedDate}`;
+                        }
+                        return 'Repeated Orders';
+                    },
+                    exportOptions: {
+                        columns: ':not(:last-child):not(:nth-last-child(2))'
+                    }
+                }
             ],
+
             responsive: true,
             initComplete: function() {
                 console.log('DataTable initialized successfully');
