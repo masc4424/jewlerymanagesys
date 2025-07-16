@@ -80,20 +80,81 @@
 
         {% for metal in metals %}
           <div class="col-md-4 mb-4">
-            <a href="{% url 'metal_list' %}" style="text-decoration: none; color: inherit;">
-              <div class="card shadow-sm border-0">
-                <div class="card-body">
-                  <div class="card-title float-end">
-                    <img src="{% static 'dash_img/Revenue.svg' %}" alt="Metal Icon" class="h-8 w-8">
-                  </div>
-                  <span class="fw-semibold d-block mb-1">{{ metal.name }}</span>
-                  <h2 class="card-title mb-2">
-                    {{ metal.total_available_weight|floatformat:2 }} {{ metal.unit }}
-                  </h2>
+            <div class="card shadow-sm border-0 edit-btn" data-id="{{ metal.id }}" style="cursor: pointer;">
+              <div class="card-body">
+                <div class="card-title float-end">
+                  <img src="{% static 'dash_img/Revenue.svg' %}" alt="Metal Icon" class="h-8 w-8">
                 </div>
+                <span class="fw-semibold d-block mb-1">{{ metal.name }}</span>
+                <h2 class="card-title mb-2">
+                  {{ metal.total_available_weight|floatformat:2 }} {{ metal.unit }}
+                </h2>
               </div>
-            </a>
+            </div>
           </div>
         {% endfor %}
+
 </div>
+
+<!-- Edit Metal Modal -->
+<div class="modal fade" id="editMetalModal" tabindex="-1" aria-labelledby="editMetalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editMetalModalLabel">Edit Metal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editMetalForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="editMetalId" name="id">
+                    <div class="mb-3">
+                        <label for="editMetalUniqueId" class="form-label">Metal ID</label>
+                        <input type="text" class="form-control" id="editMetalUniqueId" name="metal_unique_id" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="editMetalName" class="form-label">Metal Name</label>
+                        <input type="text" class="form-control" id="editMetalName" name="name" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="editTotalAvailableWeight" class="form-label">Total Available Weight</label>
+                            <input type="number" step="0.01" class="form-control" id="editTotalAvailableWeight"
+                                name="total_available_weight" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editUnit" class="form-label">Unit</label>
+                            <select class="form-select" id="editUnit" name="unit">
+                                <option value="gram">Gram</option>
+                                <option value="kg">Kilogram</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="editThresholdLimit" class="form-label">Threshold Limit</label>
+                            <input type="number" step="0.01" class="form-control" id="editThresholdLimit"
+                                name="threshold_limit" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="editThresholdUnit" class="form-label">Threshold Unit</label>
+                            <select class="form-select" id="editThresholdUnit" name="threshold_unit">
+                                <option value="gram">Gram</option>
+                                <option value="kg">Kilogram</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="updateMetalBtn">Update Metal</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{% static 'js/cards_dash.js' %}"></script>
 {% endblock %}
