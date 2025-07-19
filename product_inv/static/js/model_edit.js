@@ -505,6 +505,33 @@ $('#model_img').on('change', function (event) {
             }
         });
     }
+     // Bind remove event to all rows
+        $('#savedStonesTable tbody').on('click', '.remove-stone', function() {
+            const row = $(this).closest('tr');
+            const index = row.data('index');
+            
+            // Get the stone ID to remove from used stones
+            const removedStone = addedStones[index];
+            if (removedStone && removedStone.stone_id) {
+                // Only remove from usedStoneIds if this was the last instance of this stone
+                const remainingOfThisStone = addedStones.filter(s => s.stone_id === removedStone.stone_id);
+                if (remainingOfThisStone.length <= 1) {
+                    usedStoneIds.delete(removedStone.stone_id.toString());
+                }
+            }
+            
+            // Remove from array and table
+            addedStones.splice(index, 1);
+            row.remove();
+            
+            // Recalculate totals
+            calculateTotalStoneDetails();
+            
+            // Re-index remaining rows
+            $('#savedStonesTable tbody tr').each(function(i) {
+                $(this).attr('data-index', i);
+            });
+        });
      // Function to save stone data
      function saveStoneData(formContainer) {
         const stoneNameSelect = formContainer.find('.stone-name-select');
@@ -599,33 +626,7 @@ $('#model_img').on('change', function (event) {
         // Remove the form
         formContainer.remove();
         
-        // Bind remove event to all rows
-        $('#savedStonesTable tbody').on('click', '.remove-stone', function() {
-            const row = $(this).closest('tr');
-            const index = row.data('index');
-            
-            // Get the stone ID to remove from used stones
-            const removedStone = addedStones[index];
-            if (removedStone && removedStone.stone_id) {
-                // Only remove from usedStoneIds if this was the last instance of this stone
-                const remainingOfThisStone = addedStones.filter(s => s.stone_id === removedStone.stone_id);
-                if (remainingOfThisStone.length <= 1) {
-                    usedStoneIds.delete(removedStone.stone_id.toString());
-                }
-            }
-            
-            // Remove from array and table
-            addedStones.splice(index, 1);
-            row.remove();
-            
-            // Recalculate totals
-            calculateTotalStoneDetails();
-            
-            // Re-index remaining rows
-            $('#savedStonesTable tbody tr').each(function(i) {
-                $(this).attr('data-index', i);
-            });
-        });
+       
     }
     // Function to populate a stone dropdown with data
     function populateStoneDropdown(select) {
