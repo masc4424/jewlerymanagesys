@@ -2,6 +2,92 @@ $(document).ready(function() {
     let fullData = [];
     let currentDateFilter = null;
 
+    function getExportButtons() {
+        const exportOptions = {
+            columns: ':not(:last-child):not(:nth-last-child(2))' // Exclude last two columns
+        };
+
+        return [
+            {
+                extend: 'copy',
+                title: function () {
+                    if (currentDateFilter) {
+                        const formattedDate = new Date(currentDateFilter).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        return `Order Date: ${formattedDate}`;
+                    }
+                    return 'Orders Data';
+                },
+                exportOptions: exportOptions
+            },
+            {
+                extend: 'csv',
+                title: function () {
+                    if (currentDateFilter) {
+                        const formattedDate = new Date(currentDateFilter).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        return `Order Date: ${formattedDate}`;
+                    }
+                    return 'Orders Data';
+                },
+                exportOptions: exportOptions
+            },
+            {
+                extend: 'excel',
+                title: function () {
+                    if (currentDateFilter) {
+                        const formattedDate = new Date(currentDateFilter).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        return `Order Date: ${formattedDate}`;
+                    }
+                    return 'Orders Data';
+                },
+                exportOptions: exportOptions
+            },
+            {
+                extend: 'pdf',
+                title: function () {
+                    if (currentDateFilter) {
+                        const formattedDate = new Date(currentDateFilter).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        return `Order Date: ${formattedDate}`;
+                    }
+                    return 'Orders Data';
+                },
+                exportOptions: exportOptions
+            },
+            {
+                extend: 'print',
+                title: function () {
+                    if (currentDateFilter) {
+                        const formattedDate = new Date(currentDateFilter).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                        return `Order Date: ${formattedDate}`;
+                    }
+                    return 'Orders Data';
+                },
+                exportOptions: exportOptions
+            }
+        ];
+    }
+
+
+
     const groupedColumns = [
         { data: 'sl_no', title: 'SL No' },
         // { data: 'client', title: 'Client' },
@@ -366,9 +452,7 @@ $(document).ready(function() {
         columns: groupedColumns,
         responsive: true,
         dom: 'Bfrtip',
-        buttons: [
-            'copy', 'csv', 'excel', 'pdf', 'print'
-        ],
+        buttons: getExportButtons(),
         order: [[0, 'asc']], // Default sorting by sl_no
         drawCallback: function () {
             // Clean up existing tooltips to prevent memory leaks
@@ -445,7 +529,7 @@ $(document).ready(function() {
             columns: groupedColumns,
             responsive: true,
             dom: 'Bfrtip',
-            buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+            buttons: getExportButtons()
         });
     });
 
@@ -1545,7 +1629,7 @@ $(document).ready(function() {
                 columns: groupedColumns,
                 responsive: true,
                 dom: 'Bfrtip',
-                buttons: ['copy', 'csv', 'excel', 'pdf', 'print']
+                buttons: getExportButtons()
             });
             return;
         }

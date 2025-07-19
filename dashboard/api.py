@@ -81,8 +81,8 @@ def get_client_models(request):
                 stone_counts.append({
                     'count': stone_count.count,
                     'stone_name': stone_count.stone_type_details.stone_type.type_name,
-                    'stone_size': stone_count.stone_type_details.size,
-                    'stone_quality': stone_count.stone_type_details.quality
+                    'stone_size': getattr(stone_count.stone_type_details, 'size', None),
+                    'stone_quality': getattr(stone_count.stone_type_details, 'quality', None)
                 })
 
             try:

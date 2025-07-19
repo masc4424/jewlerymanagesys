@@ -2,7 +2,9 @@ from django.shortcuts import render
 from django.http import JsonResponse
 from user_role_management.models import *
 from django.contrib.auth.decorators import login_required
-from jewl_metals.models import Metal 
+from jewl_metals.models import *
+from product_inv.models import *
+from order.models import *
 
 @login_required(login_url='login_auth')
 def dashboard_render(request):
@@ -15,11 +17,15 @@ def dashboard_render(request):
         role_name = "Guest"
 
     metals = Metal.objects.all()
+    total_models = Model.objects.all()
+    reorder = RepeatedOrder.objects.all()
 
     return render(request, 'dashboard.html', {
         'userprofile': userprofile,
         'role_name': role_name,
-        'metals': metals,  
+        'metals': metals, 
+        'models':total_models,
+        'reorder': reorder,
     })
 
 @login_required(login_url='login_auth')
