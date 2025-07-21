@@ -6,12 +6,90 @@ $(document).ready(function() {
     fetchProductData(modelNo);
 });
 // On badge click (stone or stone type)
+// $(document).on('click', '.stone-count-badge, .type-count-badge', function (e) {
+//     e.preventDefault();
+
+//     const isStone = $(this).hasClass('stone-count-badge');
+//     const data = $(this).data(isStone ? 'stone' : 'type');
+
+//     // Hide any open offcanvas
+//     $('.offcanvas').each(function () {
+//         const offcanvasInstance = bootstrap.Offcanvas.getInstance(this);
+//         if (offcanvasInstance) {
+//             offcanvasInstance.hide();
+//         }
+//     });
+//     $('#clientSideModalTemp, #clientSideModal').remove();
+//     $('.modal-backdrop, .offcanvas-backdrop').remove();
+//     $('body').removeClass('modal-open offcanvas-open');
+
+//     // Show temporary loading offcanvas
+//     $('body').append(`
+//         <div class="offcanvas offcanvas-end" tabindex="-1" id="clientSideModalTemp">
+//             <div class="offcanvas-header">
+//                 <h5 class="offcanvas-title">Loading...</h5>
+//                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+//             </div>
+//             <div class="offcanvas-body text-center">
+//                 <div class="spinner-border text-primary" role="status"></div>
+//             </div>
+//         </div>
+//     `);
+//     const tempModal = new bootstrap.Offcanvas(document.getElementById('clientSideModalTemp'));
+//     tempModal.show();
+
+//     // Create content for side modal
+//     let htmlContent = `
+//         <div class="offcanvas offcanvas-end" tabindex="-1" id="clientSideModal">
+//             <div class="offcanvas-header">
+//                 <h5 class="offcanvas-title">${isStone ? data.stone_name : data.type_name} </h5>
+//                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
+//             </div>
+//             <div class="offcanvas-body">
+//     `;
+
+//     if (isStone) {
+//         htmlContent += `<p>Total Count: <strong>${data.total_count}</strong></p>`;
+//         data.stone_distribution.forEach(type => {
+//             if (type.count > 0) {
+//                 htmlContent += `<div class="mb-2"><strong>${type.type_name} (${type.count} )</strong><ul>`;
+//                 type.distribution.forEach(detail => {
+//                     if (detail.count > 0) {
+//                         htmlContent += `<li>${detail.length}x${detail.breadth}mm - ${detail.count} </li>`;
+//                     }
+//                 });
+//                 htmlContent += `</ul></div>`;
+//             }
+//         });
+//     } else {
+//         htmlContent += `<p>Total Count: <strong>${data.count}</strong></p><ul>`;
+//         data.distribution.forEach(detail => {
+//             if (detail.count > 0) {
+//                 htmlContent += `<li>${detail.length}x${detail.breadth}mm - ${detail.count} </li>`;
+//             }
+//         });
+//         htmlContent += `</ul>`;
+//     }
+
+//     htmlContent += `
+//             </div>
+//         </div>
+//     `;
+
+//     setTimeout(() => {
+//         $('#clientSideModalTemp').remove();
+//         $('#clientSideModal').remove();
+//         $('.offcanvas-backdrop').remove();
+//         $('#clientSideModalPlaceholder').html(htmlContent);
+//         const finalModal = new bootstrap.Offcanvas(document.getElementById('clientSideModal'));
+//         finalModal.show();
+//     }, 400); // Simulate async delay
+// });
 $(document).on('click', '.stone-count-badge, .type-count-badge', function (e) {
     e.preventDefault();
-
     const isStone = $(this).hasClass('stone-count-badge');
     const data = $(this).data(isStone ? 'stone' : 'type');
-
+    
     // Hide any open offcanvas
     $('.offcanvas').each(function () {
         const offcanvasInstance = bootstrap.Offcanvas.getInstance(this);
@@ -19,10 +97,11 @@ $(document).on('click', '.stone-count-badge, .type-count-badge', function (e) {
             offcanvasInstance.hide();
         }
     });
+    
     $('#clientSideModalTemp, #clientSideModal').remove();
     $('.modal-backdrop, .offcanvas-backdrop').remove();
     $('body').removeClass('modal-open offcanvas-open');
-
+    
     // Show temporary loading offcanvas
     $('body').append(`
         <div class="offcanvas offcanvas-end" tabindex="-1" id="clientSideModalTemp">
@@ -35,47 +114,58 @@ $(document).on('click', '.stone-count-badge, .type-count-badge', function (e) {
             </div>
         </div>
     `);
+    
     const tempModal = new bootstrap.Offcanvas(document.getElementById('clientSideModalTemp'));
     tempModal.show();
-
+    
     // Create content for side modal
     let htmlContent = `
         <div class="offcanvas offcanvas-end" tabindex="-1" id="clientSideModal">
             <div class="offcanvas-header">
-                <h5 class="offcanvas-title">${isStone ? data.stone_name : data.type_name} </h5>
+                <h5 class="offcanvas-title">${isStone ? data.stone_name : data.type_name}</h5>
                 <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
             </div>
             <div class="offcanvas-body">
     `;
-
+    
     if (isStone) {
-        htmlContent += `<p>Total Count: <strong>${data.total_count}</strong></p>`;
+        htmlContent += `<p>Total Stone Count: <strong>${data.total_count}</strong></p>`;
+        
         data.stone_distribution.forEach(type => {
             if (type.count > 0) {
-                htmlContent += `<div class="mb-2"><strong>${type.type_name} (${type.count} )</strong><ul>`;
+                // Count unique dimensions for THIS specific type
+                const dimensionCount = type.distribution.filter(detail => detail.count > 0).length;
+                
+                htmlContent += `<div class="mb-2"><strong>${type.type_name} (${dimensionCount} dimensions)</strong><ul>`;
                 type.distribution.forEach(detail => {
                     if (detail.count > 0) {
-                        htmlContent += `<li>${detail.length}x${detail.breadth}mm - ${detail.count} </li>`;
+                        htmlContent += `<li>${detail.length}x${detail.breadth}mm - ${detail.count}</li>`;
                     }
                 });
                 htmlContent += `</ul></div>`;
             }
         });
     } else {
-        htmlContent += `<p>Total Count: <strong>${data.count}</strong></p><ul>`;
+        // Count unique dimensions for type
+        const dimensionCount = data.distribution.filter(detail => detail.count > 0).length;
+        
+        htmlContent += `<p>Total Stone Count: <strong>${data.count}</strong></p>`;
+        htmlContent += `<p>Dimensions: <strong>${dimensionCount}</strong></p>`;
+        htmlContent += `<ul>`;
+        
         data.distribution.forEach(detail => {
             if (detail.count > 0) {
-                htmlContent += `<li>${detail.length}x${detail.breadth}mm - ${detail.count} </li>`;
+                htmlContent += `<li>${detail.length}x${detail.breadth}mm - ${detail.count}</li>`;
             }
         });
         htmlContent += `</ul>`;
     }
-
+    
     htmlContent += `
             </div>
         </div>
     `;
-
+    
     setTimeout(() => {
         $('#clientSideModalTemp').remove();
         $('#clientSideModal').remove();
@@ -85,7 +175,6 @@ $(document).on('click', '.stone-count-badge, .type-count-badge', function (e) {
         finalModal.show();
     }, 400); // Simulate async delay
 });
-
 
 function fetchProductData(modelNo) {
     $.ajax({
