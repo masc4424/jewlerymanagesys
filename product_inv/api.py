@@ -569,7 +569,9 @@ def create_model(request):
                 'model_no': model_no,
                 'jewelry_type': jewelry_type,
                 'status': model_status,
-                'is_active': is_active_value
+                'is_active': is_active_value,
+                'created_by': None if current_user.is_superuser else current_user,
+                'updated_by': None if current_user.is_superuser else current_user
             }
             
             # Add optional fields only if they have values
@@ -1102,6 +1104,8 @@ def edit_model(request, model_id):
             model.jewelry_type = jewelry_type
             model.status = model_status  # Add status update
             model.is_active = is_active_value  # Update is_active field
+            if not request.user.is_superuser:
+                model.updated_by = request.user
             model.save()
 
             # Clear and re-create model colors

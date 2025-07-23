@@ -12,46 +12,46 @@ class JewelryTypeAdmin(admin.ModelAdmin):
 
 @admin.register(ModelStatus)
 class ModelStatusAdmin(admin.ModelAdmin):
-    list_display = ('id', 'status', 'created_at')
+    list_display = ('id', 'status', 'created_by','updated_by', 'created_at', 'updated_at')
     search_fields = ('status',)
     list_filter = ('created_at',)
 
 
 @admin.register(Model)
 class ModelAdmin(admin.ModelAdmin):
-    list_display = ('model_no', 'length', 'breadth', 'weight', 'jewelry_type', 'status')
+    list_display = ('model_no', 'length', 'breadth', 'weight', 'jewelry_type', 'status', 'created_by','updated_by', 'created_at', 'updated_at')
     search_fields = ('model_no',)
     list_filter = ('jewelry_type', 'status')
 
 
 @admin.register(ModelColor)
 class ModelColorAdmin(admin.ModelAdmin):
-    list_display = ('model', 'color')
+    list_display = ('model', 'color', 'created_by','updated_by', 'created_at', 'updated_at')
     search_fields = ('model__model_no', 'color')
     list_filter = ('color',)
 
 
 @admin.register(RawMaterial)
 class RawMaterialAdmin(admin.ModelAdmin):
-    list_display = ('model', 'metal', 'weight', 'unit')
+    list_display = ('model', 'metal', 'weight', 'unit', 'created_by','updated_by', 'created_at', 'updated_at')
     search_fields = ('model__model_no', 'metal__name')
     list_filter = ('unit',)
 
 
 @admin.register(RawStones)
 class RawStonesAdmin(admin.ModelAdmin):
-    list_display = ('model', 'stone_type')
+    list_display = ('model', 'stone_type', 'created_by','updated_by', 'created_at', 'updated_at')
     search_fields = ('model__model_no', 'stone_type__type_name')
 
 
 @admin.register(StoneCount)
 class StoneCountAdmin(admin.ModelAdmin):
-    list_display = ('model', 'stone_type_details', 'count')
+    list_display = ('model', 'stone_type_details', 'count', 'created_by','updated_by', 'created_at', 'updated_at')
     search_fields = ('model__model_no', 'stone_type_details__stone_type__type_name')
 
 
 @admin.register(ModelClient)
 class ModelClientAdmin(admin.ModelAdmin):
-    list_display = ('model', 'client', 'created_by', 'created_at')
+    list_display = ('model', 'client', 'created_by','updated_by', 'created_at', 'updated_at')
     search_fields = ('model__model_no', 'client__username')
     list_filter = ('created_at',)

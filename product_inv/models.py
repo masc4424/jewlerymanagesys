@@ -21,6 +21,8 @@ class ModelStatus(models.Model):
     """
     id = models.AutoField(primary_key=True)
     status = models.CharField(max_length=50)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_model_statuses')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_model_statuses')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -40,13 +42,20 @@ class Model(models.Model):
     jewelry_type = models.ForeignKey(JewelryType, on_delete=models.CASCADE, related_name='models')
     status = models.ForeignKey(ModelStatus, on_delete=models.SET_NULL, null=True, blank=True) 
     is_active = models.CharField(max_length=1, choices=[('Y', 'Yes'), ('N', 'No')], default='Y')
-
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_models')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_models')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
         return self.model_no
 
 class ModelColor(models.Model):
     model = models.ForeignKey(Model, on_delete=models.CASCADE, related_name='model_colors')
-    color = models.CharField(max_length=50)  # Text field for color
+    color = models.CharField(max_length=50)  
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_model_colors')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_model_colors')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ('model', 'color')  # Ensures a model can't have duplicate colors
@@ -64,7 +73,11 @@ class RawMaterial(models.Model):
     model = models.ForeignKey(Model, on_delete=models.CASCADE, related_name='raw_materials')
     metal = models.ForeignKey(Metal, on_delete=models.CASCADE, related_name='raw_materials')
     weight = models.DecimalField(max_digits=10, decimal_places=2)
-    unit = models.CharField(max_length=2, choices=UNIT_CHOICES, default='g')  # Default to grams
+    unit = models.CharField(max_length=2, choices=UNIT_CHOICES, default='g') 
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_raw_materials')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_raw_materials')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.metal.name} ({self.metal.metal_unique_id}) for {self.model.model_no} - {self.weight}{self.unit}"
@@ -72,6 +85,10 @@ class RawMaterial(models.Model):
 class RawStones(models.Model):
     model = models.ForeignKey(Model, on_delete=models.CASCADE, related_name='raw_stones')
     stone_type = models.ForeignKey(StoneType, on_delete=models.CASCADE, related_name='raw_stones')
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_raw_stones')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_raw_stones')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"{self.stone_type.type_name} for {self.model.model_no}"
@@ -81,7 +98,10 @@ class StoneCount(models.Model):
     count = models.IntegerField()
     stone_type_details = models.ForeignKey(StoneTypeDetail, on_delete=models.CASCADE, related_name='stone_counts')
     model = models.ForeignKey('Model', on_delete=models.CASCADE, related_name='stone_counts')
- 
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_stone_counts')
+    updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_stone_counts')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
         return f"{self.model.model_no} - {self.stone_type_details.stone_type.type_name} ({self.count})"
 
