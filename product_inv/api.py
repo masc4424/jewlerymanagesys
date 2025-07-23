@@ -506,6 +506,7 @@ def get_models_by_jewelry_type(request, jewelry_type_name=None):
 def create_model(request):
     if request.method == 'POST':
         try:
+            current_user = request.user
             # Get form data
             model_no = request.POST.get('model_no')
             length = request.POST.get('length')
