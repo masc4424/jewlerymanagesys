@@ -11,8 +11,9 @@ $(document).ready(function () {
         $('#paginationContainer').empty();
         $('#searchResultCount').addClass('d-none');
         
-        // Clear search
+        // Clear search and category
         $('#searchInput').val('');
+        $('#categorySelect').empty().append('<option value="">All</option>');
         currentPage = 1;
 
         // Show or hide Go to Cart button
@@ -52,38 +53,74 @@ $(document).ready(function () {
         $.get(`/client/${clientId}/models/`, function (data) {
             allModels = data.models;
             filteredModels = [...allModels]; // Initially show all models
+            
+            // Populate category dropdown
+            populateCategoryDropdown();
+            
             displayModels();
         });
     });
 
+    // Function to populate category dropdown
+    function populateCategoryDropdown() {
+        const categories = [...new Set(allModels.map(model => model.jewelry_type))].filter(type => type !== "N/A").sort();
+        
+        $('#categorySelect').empty().append('<option value="">All</option>');
+        
+        categories.forEach(category => {
+            $('#categorySelect').append(`<option value="${category}">${category}</option>`);
+        });
+        
+        // Select first actual category (not "All")
+        if (categories.length > 0) {
+            $('#categorySelect').val(categories[0]);
+            applyFilters(); // Apply the filter immediately
+        }
+    }
+
+    // Category filter functionality
+    $('#categorySelect').change(function() {
+        currentPage = 1; // Reset to first page
+        applyFilters();
+    });
+
     // Search functionality
     $('#searchInput').on('input', function() {
-        const searchTerm = $(this).val().toLowerCase().trim();
-        
-        if (searchTerm === '') {
-            filteredModels = [...allModels];
-        } else {
-            filteredModels = allModels.filter(model => {
-                return (
-                    model.model_no.toLowerCase().includes(searchTerm) ||
-                    model.status_name.toLowerCase().includes(searchTerm) ||
-                    model.weight.toString().toLowerCase().includes(searchTerm) ||
-                    model.colors.some(color => color.color.toLowerCase().includes(searchTerm))
-                );
-            });
-        }
-        
         currentPage = 1; // Reset to first page
-        displayModels();
+        applyFilters();
     });
 
     // Clear search
     $('#clearSearch').click(function() {
         $('#searchInput').val('');
-        filteredModels = [...allModels];
+        $('#categorySelect').val(''); // Reset to "All"
         currentPage = 1;
-        displayModels();
+        applyFilters();
     });
+
+    // Function to apply both search and category filters
+    function applyFilters() {
+        const searchTerm = $('#searchInput').val().toLowerCase().trim();
+        const selectedCategory = $('#categorySelect').val();
+        
+        filteredModels = allModels.filter(model => {
+            // Category filter
+            const categoryMatch = !selectedCategory || model.jewelry_type === selectedCategory;
+            
+            // Search filter
+            const searchMatch = !searchTerm || (
+                model.model_no.toLowerCase().includes(searchTerm) ||
+                model.status_name.toLowerCase().includes(searchTerm) ||
+                model.weight.toString().toLowerCase().includes(searchTerm) ||
+                model.colors.some(color => color.color.toLowerCase().includes(searchTerm)) ||
+                model.jewelry_type.toLowerCase().includes(searchTerm)
+            );
+            
+            return categoryMatch && searchMatch;
+        });
+        
+        displayModels();
+    }
 
     // Function to display models with pagination
     function displayModels() {
@@ -102,7 +139,7 @@ $(document).ready(function () {
                 <div class="col-12 text-center py-5">
                     <i class="fa fa-search fa-3x text-muted mb-3"></i>
                     <h5 class="text-muted">No models found</h5>
-                    <p class="text-muted">Try adjusting your search criteria</p>
+                    <p class="text-muted">Try adjusting your search criteria or category filter</p>
                 </div>
             `);
             $('#paginationContainer').empty();
@@ -117,6 +154,7 @@ $(document).ready(function () {
                         <div class="position-relative">
                             <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
                             <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}X${model.breadth}</span>
+                            <span class="badge bg-info position-absolute" style="top: 40px; left: 8px;">${model.jewelry_type}</span>
                             <img src="${model.image}" class="card-img-top" alt="${model.model_no}" style="height: 180px; object-fit: cover;">
                         </div>
                         <div class="card-body p-2">
@@ -162,11 +200,21 @@ $(document).ready(function () {
     // Function to update search result count
     function updateSearchResultCount() {
         const searchTerm = $('#searchInput').val().trim();
+        const selectedCategory = $('#categorySelect').val();
         const resultCount = $('#searchResultCount');
         
-        if (searchTerm !== '') {
+        if (searchTerm !== '' || selectedCategory !== '') {
+            let filterText = '';
+            if (searchTerm && selectedCategory) {
+                filterText = `"<em>${searchTerm}</em>" in category "<em>${selectedCategory}</em>"`;
+            } else if (searchTerm) {
+                filterText = `"<em>${searchTerm}</em>"`;
+            } else if (selectedCategory) {
+                filterText = `category "<em>${selectedCategory}</em>"`;
+            }
+            
             resultCount.removeClass('d-none').html(`
-                Found <strong>${filteredModels.length}</strong> model(s) matching "<em>${searchTerm}</em>"
+                Found <strong>${filteredModels.length}</strong> model(s) matching ${filterText}
             `);
         } else {
             resultCount.addClass('d-none');

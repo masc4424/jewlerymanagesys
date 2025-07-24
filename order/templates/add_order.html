@@ -24,8 +24,9 @@
 
         <!-- Search + Cart -->
         <div class="col-md-8">
-            <div class="row">
-                <div class="col-md-9">
+            <div class="row align-items-center"> <!-- Added align-items-center -->
+                <div class="col-md-6">
+                    <label class="form-label invisible">Search</label> <!-- Placeholder label for alignment -->
                     <div class="input-group">
                         <span class="input-group-text bg-white">
                             <i class="fa fa-search text-muted"></i>
@@ -36,7 +37,15 @@
                         </button>
                     </div>
                 </div>
-                <div class="col-md-3 text-end mt-2 mt-md-0">
+                <div class="col-md-3">
+                    <label for="categorySelect" class="form-label">Category</label>
+                    <select class="form-select" id="categorySelect">
+                        <option value="">All</option>
+                        <!-- Options will be populated dynamically -->
+                    </select>
+                </div>
+                <div class="col-md-3 text-end">
+                    <label class="form-label invisible">Cart</label> <!-- Placeholder label for alignment -->
                     <a href="#" id="goToCartBtn" class="btn btn-info w-100 d-none position-relative">
                         Go to Cart
                         <span id="cartItemCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-light text-dark">

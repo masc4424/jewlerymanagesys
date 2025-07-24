@@ -253,7 +253,7 @@ def delete_order(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
 
 def client_models(request, client_id):
-    model_clients = ModelClient.objects.filter(client_id=client_id).select_related('model__status')
+    model_clients = ModelClient.objects.filter(client_id=client_id).select_related('model__status', 'model__jewelry_type')
     models = []
 
     for mc in model_clients:
@@ -269,8 +269,9 @@ def client_models(request, client_id):
             'model_no': model.model_no,
             'weight': str(model.weight),
             'image': image_path,
+            'status_name': model.status.status if model.status else "N/A",
+            'jewelry_type': model.jewelry_type.name if model.jewelry_type else "N/A",
             'colors': list(colors),
-            'status_name': model.status.status if model.status else "N/A"
         })
 
     return JsonResponse({'models': models})
