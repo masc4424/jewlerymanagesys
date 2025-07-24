@@ -69,37 +69,39 @@
     </div>
 
     <!-- Combined Filter and Tabs Section -->
-    <div class="d-flex justify-content-between align-items-end mb-3">
-        <!-- Tabs Navigation (Left Side) -->
-        <ul class="nav nav-tabs mb-0" id="modelsTabs" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fs-5 active" id="ready-to-deliver-tab" data-bs-toggle="tab" data-bs-target="#ready-to-deliver" type="button" role="tab" aria-controls="ready-to-deliver" aria-selected="true">
-                    Delivered Items
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fs-5" id="others-tab" data-bs-toggle="tab" data-bs-target="#others" type="button" role="tab" aria-controls="others" aria-selected="false">
-                    New Design Status
-                </button>
-            </li>
-        </ul>
-        
-        <!-- Filter and Search Section (Right Side) -->
-        <div class="d-flex align-items-center gap-3 flex-wrap">
-            <!-- Search Bar -->
-            <div class="input-group" style="width: 250px;">
-                <span class="input-group-text">
-                    <i class="fa-solid fa-search"></i>
-                </span>
-                <input type="text" class="form-control" id="searchInput" placeholder="Search models...">
-                <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Clear search">
-                    <i class="fa-solid fa-times"></i>
-                </button>
-            </div>
-            
-            <!-- Category Filter -->
-            <div class="d-flex align-items-center">
-                <select class="form-select" id="categoryFilter" style="width: 200px;">
+    <div class="row mb-3">
+        <!-- Tabs Navigation (Full width on mobile, side-by-side on md+) -->
+        <div class="col-12 col-md-6 mb-2 mb-md-0">
+            <ul class="nav nav-tabs" id="modelsTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fs-6 active w-100 text-start" id="ready-to-deliver-tab" data-bs-toggle="tab" data-bs-target="#ready-to-deliver" type="button" role="tab" aria-controls="ready-to-deliver" aria-selected="true">
+                        Delivered Items
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fs-6 w-100 text-start" id="others-tab" data-bs-toggle="tab" data-bs-target="#others" type="button" role="tab" aria-controls="others" aria-selected="false">
+                        New Design Status
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Filter and Search Section -->
+        <div class="col-12 col-md-6">
+            <div class="d-flex flex-column flex-md-row gap-2">
+                <!-- Search -->
+                <div class="input-group w-100">
+                    <span class="input-group-text">
+                        <i class="fa-solid fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" id="searchInput" placeholder="Search models...">
+                    <button class="btn btn-outline-secondary" type="button" id="clearSearch" title="Clear search">
+                        <i class="fa-solid fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- Category Filter -->
+                <select class="form-select w-100" id="categoryFilter">
                     <option value="">All Categories</option>
                 </select>
             </div>
