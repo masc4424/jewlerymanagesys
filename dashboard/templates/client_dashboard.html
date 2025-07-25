@@ -72,18 +72,24 @@
     <div class="row mb-3">
         <!-- Tabs Navigation (Full width on mobile, side-by-side on md+) -->
         <div class="col-12 col-md-6 mb-2 mb-md-0">
-            <ul class="nav nav-tabs" id="modelsTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link fs-6 active w-100 text-start" id="ready-to-deliver-tab" data-bs-toggle="tab" data-bs-target="#ready-to-deliver" type="button" role="tab" aria-controls="ready-to-deliver" aria-selected="true">
-                        Delivered Items
-                    </button>
-                </li>
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link fs-6 w-100 text-start" id="others-tab" data-bs-toggle="tab" data-bs-target="#others" type="button" role="tab" aria-controls="others" aria-selected="false">
-                        New Design Status
-                    </button>
-                </li>
-            </ul>
+            <div class="d-flex overflow-auto">
+                <ul class="nav nav-tabs flex-nowrap" id="modelsTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fs-6 active text-nowrap" id="ready-to-deliver-tab"
+                            data-bs-toggle="tab" data-bs-target="#ready-to-deliver" type="button"
+                            role="tab" aria-controls="ready-to-deliver" aria-selected="true">
+                            Delivered Items
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link fs-6 text-nowrap" id="others-tab"
+                            data-bs-toggle="tab" data-bs-target="#others" type="button"
+                            role="tab" aria-controls="others" aria-selected="false">
+                            New Design Status
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
 
         <!-- Filter and Search Section -->
