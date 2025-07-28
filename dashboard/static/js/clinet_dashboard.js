@@ -606,16 +606,17 @@ function checkOrderForColor(modelId, selectedColor) {
 
 function updateOrderButton(modelId, result) {
     const $addBtn = $(`#add-btn-${modelId}`);
-    
+
     if (result.order_exists && result.is_delivered) {
         $addBtn.removeClass('btn-secondary').addClass('btn-success');
         $addBtn.html('Re-order <i class="fa-solid fa-rotate-right"></i>');
+        $addBtn.show(); // Ensure it's visible
     } else if (result.order_exists) {
         $addBtn.removeClass('btn-success').addClass('btn-secondary');
         $addBtn.text('In Progress');
+        $addBtn.show(); // Ensure it's visible
     } else {
-        $addBtn.removeClass('btn-success').addClass('btn-secondary');
-        $addBtn.text('No Order for this Color');
+        $addBtn.hide(); // Hide the button if no order exists
     }
 }
 
