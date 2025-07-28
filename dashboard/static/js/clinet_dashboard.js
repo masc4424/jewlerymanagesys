@@ -426,15 +426,24 @@ function generateModelCard(model) {
                         </div>
                         
                         <!-- Image -->
-                        <img src="${optimizedImageUrl || model.model_img || ''}" 
-                             class="card-img-top cursor-pointer" 
-                             alt="${escapedModelNo}" 
-                             style="height: 180px; width: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; position: absolute; top: 0;"
-                             loading="lazy"
-                             decoding="async"
-                             onload="this.style.opacity=1; document.getElementById('loading-${model.id}').style.display='none';"
-                             onerror="this.style.opacity=1; document.getElementById('loading-${model.id}').innerHTML='<i class=&quot;fa-solid fa-image-slash&quot;></i><br><small>Image not available</small>';"
-                             onclick="openImageModal('${escapedImageUrl}', '${escapedModelNo}', '${escapedJewelryType}', '${escapedWeight}', '${escapedLength}', '${escapedBreadth}')">
+                        <img 
+                            src="${optimizedImageUrl || model.model_img || ''}"
+                            srcset="
+                                ${model.model_img}?w=200&q=70 200w,
+                                ${model.model_img}?w=300&q=80 300w,
+                                ${model.model_img}?w=600&q=85 600w
+                            "
+                            sizes="(max-width: 768px) 100vw, 300px"
+                            class="card-img-top cursor-pointer"
+                            alt="${escapedModelNo}"
+                            style="height: 180px; width: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; position: absolute; top: 0;"
+                            width="300" height="180"
+                            loading="lazy"
+                            decoding="async"
+                            onload="this.style.opacity=1; document.getElementById('loading-${model.id}').style.display='none';"
+                            onerror="this.style.opacity=1; document.getElementById('loading-${model.id}').innerHTML='<i class=&quot;fa-solid fa-image-slash&quot;></i><br><small>Image not available</small>';"
+                            onclick="openImageModal('${escapedImageUrl}', '${escapedModelNo}', '${escapedJewelryType}', '${escapedWeight}', '${escapedLength}', '${escapedBreadth}')"
+                        >
                     </div>
                 </div>
                 <div class="card-body p-2">
