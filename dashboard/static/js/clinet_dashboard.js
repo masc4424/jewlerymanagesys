@@ -399,28 +399,59 @@ function loadJewelryTypes() {
 function generateModelCard(model) {
     const hasDeliveredOrder = model.order && model.order.order_id && model.order.is_delivered;
     
+    // Simple URL optimization (add parameters if your server supports them)
+    const optimizedImageUrl = model.model_img + '?w=300&h=200&q=80'; // Remove this line if your server doesn't support it
+    
+    // Escape quotes and special characters to prevent HTML breaking
+    const escapedImageUrl = (model.model_img || '').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
+    const escapedModelNo = (model.model_no || '').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
+    const escapedJewelryType = (model.jewelry_type_name || '').replace(/'/g, '&apos;').replace(/"/g, '&quot;');
+    const escapedWeight = (model.weight || '0').toString().replace(/'/g, '&apos;');
+    const escapedLength = (model.length || '0').toString().replace(/'/g, '&apos;');
+    const escapedBreadth = (model.breadth || '0').toString().replace(/'/g, '&apos;');
+    
     return `
         <div class="col-md-3 mb-3">
             <div class="card h-100 shadow-sm" id="model-${model.id}">
                 <div class="position-relative">
-                    <span class="badge bg-secondary position-absolute top-0 start-0 m-2">${model.status_name}</span>
-                    <span class="badge bg-dark position-absolute top-0 end-0 m-2">${model.length}x${model.breadth}cm</span>
-                    <img src="${model.model_img}" class="card-img-top cursor-pointer" alt="${model.model_no}" 
-                         style="height: 180px; object-fit: cover;" 
-                         onclick="openImageModal('${model.model_img}', '${model.model_no}', '${model.jewelry_type_name}', '${model.weight}', '${model.length}', '${model.breadth}')">
+                    <span class="badge bg-secondary position-absolute top-0 start-0 m-2" style="z-index: 2;">${model.status_name || 'N/A'}</span>
+                    <span class="badge bg-dark position-absolute top-0 end-0 m-2" style="z-index: 2;">${model.length || 0}x${model.breadth || 0}cm</span>
+                    
+                    <!-- Simple optimized image with loading -->
+                    <div style="height: 180px; background: #f8f9fa; display: flex; align-items: center; justify-content: center; position: relative;">
+                        <!-- Loading state -->
+                        <div id="loading-${model.id}" class="text-center text-muted" style="position: absolute; z-index: 1;">
+                            <div class="spinner-border spinner-border-sm mb-2" role="status"></div>
+                            <div class="small">Loading...</div>
+                        </div>
+                        
+                        <!-- Image -->
+                        <img src="${optimizedImageUrl || model.model_img || ''}" 
+                             class="card-img-top cursor-pointer" 
+                             alt="${escapedModelNo}" 
+                             style="height: 180px; width: 100%; object-fit: cover; opacity: 0; transition: opacity 0.3s; position: absolute; top: 0;"
+                             loading="lazy"
+                             decoding="async"
+                             onload="this.style.opacity=1; document.getElementById('loading-${model.id}').style.display='none';"
+                             onerror="this.style.opacity=1; document.getElementById('loading-${model.id}').innerHTML='<i class=&quot;fa-solid fa-image-slash&quot;></i><br><small>Image not available</small>';"
+                             onclick="openImageModal('${escapedImageUrl}', '${escapedModelNo}', '${escapedJewelryType}', '${escapedWeight}', '${escapedLength}', '${escapedBreadth}')">
+                    </div>
                 </div>
                 <div class="card-body p-2">
                     <div class="row align-items-center">
                         <div class="col-6">
-                            <h6 class="card-title mb-0">${model.model_no}</h6>
-                            <small class="text-muted">${model.jewelry_type_name} &bull; </small>
-                            <small class="text-muted">${model.weight}gm</small>
+                            <h6 class="card-title mb-0">${model.model_no || 'N/A'}</h6>
+                            <small class="text-muted">${model.jewelry_type_name || 'Unknown'} &bull; </small>
+                            <small class="text-muted">${model.weight || 0}gm</small>
                         </div>
                         
                         <div class="col-6">
                             <label for="color-select-${model.id}" class="form-label mb-1 small">Color:</label>
                             <select id="color-select-${model.id}" class="form-select form-select-sm color-select" data-model-id="${model.id}" data-order-id="${model.order ? model.order.order_id : ''}">
-                                ${model.colors.map(color => `<option value="${color.id}">${color.color}</option>`).join('')}
+                                ${model.colors && model.colors.length > 0 ? 
+                                    model.colors.map(color => `<option value="${color.id || ''}">${color.color || 'Unknown'}</option>`).join('') 
+                                    : '<option value="">No colors available</option>'
+                                }
                             </select>
                         </div>
                     </div>
@@ -442,13 +473,38 @@ function generateModelCard(model) {
                                 <button class="btn btn-success btn-md" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
                                     Re-order <i class="fa-solid fa-rotate-right"></i>
                                 </button>
-                            ` : ``}
+                            ` : `
+                                <button class="btn btn-primary btn-md" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
+                                    Add to Cart <i class="fa-solid fa-cart-plus"></i>
+                                </button>
+                            `}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     `;
+}
+
+// Helper function to safely insert the generated HTML
+function insertModelCard(containerId, model) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        // Use innerHTML to render as HTML, not textContent
+        container.innerHTML += generateModelCard(model);
+    } else {
+        console.error(`Container with ID '${containerId}' not found`);
+    }
+}
+
+// Alternative: Replace all content
+function replaceModelCards(containerId, models) {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = models.map(model => generateModelCard(model)).join('');
+    } else {
+        console.error(`Container with ID '${containerId}' not found`);
+    }
 }
 
 function showAlert(type, message) {
