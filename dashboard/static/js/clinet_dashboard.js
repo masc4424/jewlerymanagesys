@@ -1,48 +1,35 @@
 $(document).ready(function () {
     showLoader();
-    // Fix for tab highlighting
-    $('.nav-link').on('click', function (e) {
-        // Remove active class from all tabs
-        $('.nav-link').removeClass('active');
-        // Add active class to clicked tab
-        $(this).addClass('active');
-    });
     
-    // Bootstrap 5 tab event handler (alternative approach)
-    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-        // Remove active class from all tabs
-        $('.nav-link').removeClass('active');
-        // Add active class to the active tab
-        $(e.target).addClass('active');
-    });
-    
-    loadModels();
+    // Initialize the page
+    loadJewelryTypes(); // Load filter options first
+    loadModels(); // Then load models with default settings
     updateCartCount();
     
     // Add event listeners for filtering
-    $('#categoryFilter').on('change', filterModels);
-    $('#searchInput').on('input', filterModels);
+    $('#categoryFilter').on('change', function() {
+        resetToFirstPage();
+        loadModels();
+    });
+    
+    $('#searchInput').on('input', debounce(function() {
+        resetToFirstPage();
+        loadModels();
+    }, 500)); // Debounce search to avoid too many API calls
+    
     $('#clearSearch').on('click', function() {
         $('#searchInput').val('');
-        filterModels();
+        resetToFirstPage();
+        loadModels();
     });
 
+    // Tab switching
     $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-        // Remove active class from all tabs
         $('.nav-link').removeClass('active');
-        // Add active class to the active tab
         $(e.target).addClass('active');
-
-        // Reset page for the newly active tab
-        const activeTab = $(e.target).attr('id');
-        if (activeTab === 'ready-to-deliver-tab') {
-            deliveredCurrentPage = 1;
-        } else {
-            othersCurrentPage = 1;
-        }
         
-        // Re-evaluate pagination visibility when tab is switched
-        handleTabPaginationVisibility();
+        resetToFirstPage();
+        loadModels();
     });
 });
 
@@ -55,99 +42,115 @@ function hideLoader() {
     $('#main-loader').addClass('d-none').hide();
 }
 
+function resetToFirstPage() {
+    currentPage = 1;
+}
+
 let allModels = [];
 
 let deliveredCurrentPage = 1;
 let othersCurrentPage = 1;
+let currentPage = 1;
 let itemsPerPage = 8;
+let isLoading = false;
 let deliveredModels = [];
 let otherModels = [];
 let deliveredTotalPages = 1;
 let othersTotalPages = 1;
 
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+
 // Load all models via AJAX
 function loadModels() {
+    if (isLoading) return; // Prevent multiple simultaneous requests
+    
+    isLoading = true;
+    showLoader();
+    
+    const activeTab = $('.nav-link.active').attr('id');
+    const tabType = activeTab === 'ready-to-deliver-tab' ? 'delivered' : 'others';
+    const categoryFilter = $('#categoryFilter').val();
+    const searchTerm = $('#searchInput').val().trim();
+    
+    const params = {
+        page: currentPage,
+        page_size: itemsPerPage,
+        tab: tabType
+    };
+    
+    if (categoryFilter) {
+        params.category = categoryFilter;
+    }
+    
+    if (searchTerm) {
+        params.search = searchTerm;
+    }
+    
     $.ajax({
         url: '/api/client/models/',
         type: 'GET',
+        data: params,
         dataType: 'json',
         success: function (response) {
             if (response.status === 'success') {
-                allModels = response.data; // Store all models for filtering
-                renderModels(allModels); // Initial render
-                loadJewelryTypes();
+                renderModels(response.data, response.pagination);
             } else {
                 showAlert('warning', response.message);
-                hideLoader();
             }
         },
         error: function (xhr, status, error) {
             console.error('Error:', error);
             showAlert('danger', `Error: ${error}`);
+        },
+        complete: function() {
+            isLoading = false;
+            hideLoader();
         }
     });
 }
 
-function renderModels(models) {
-    // Split models based on delivery status
-    deliveredModels = models.filter(model => model.order && model.order.is_delivered);
-    otherModels = models.filter(model => !(model.order && model.order.is_delivered));
+function renderModels(models, pagination) {
+    const activeTab = $('.nav-link.active').attr('id');
+    const isDeliveredTab = activeTab === 'ready-to-deliver-tab';
     
-    // Calculate pagination for both tabs
-    deliveredTotalPages = Math.ceil(deliveredModels.length / itemsPerPage);
-    othersTotalPages = Math.ceil(otherModels.length / itemsPerPage);
+    let modelsHtml = '';
     
-    // Reset to page 1 if current page exceeds total pages for each tab
-    if (deliveredCurrentPage > deliveredTotalPages && deliveredTotalPages > 0) {
-        deliveredCurrentPage = 1;
-    }
-    if (othersCurrentPage > othersTotalPages && othersTotalPages > 0) {
-        othersCurrentPage = 1;
-    }
-    
-    // Calculate pagination for delivered items
-    const deliveredStartIndex = (deliveredCurrentPage - 1) * itemsPerPage;
-    const deliveredEndIndex = deliveredStartIndex + itemsPerPage;
-    const paginatedDeliveredModels = deliveredModels.slice(deliveredStartIndex, deliveredEndIndex);
-    
-    // Calculate pagination for other items
-    const othersStartIndex = (othersCurrentPage - 1) * itemsPerPage;
-    const othersEndIndex = othersStartIndex + itemsPerPage;
-    const paginatedOtherModels = otherModels.slice(othersStartIndex, othersEndIndex);
-    
-    // Generate HTML for both tabs with their respective paginated results
-    let readyToDeliverHtml = '';
-    let othersHtml = '';
-    
-    // Render delivered items (paginated)
-    paginatedDeliveredModels.forEach((model) => {
-        readyToDeliverHtml += generateModelCard(model);
+    // Generate HTML for models
+    models.forEach((model) => {
+        modelsHtml += generateModelCard(model);
     });
     
-    // Render other items (paginated)
-    paginatedOtherModels.forEach((model) => {
-        othersHtml += generateModelCard(model);
-    });
-
-    // Update the DOM with generated HTML
-    $('#ready-to-deliver-cards').html(readyToDeliverHtml);
-    $('#others-cards').html(othersHtml);
-    
-    // Show/hide empty states
-    if (deliveredModels.length === 0) {
-        $('#ready-to-deliver-empty').removeClass('d-none');
+    // Update the appropriate tab content
+    if (isDeliveredTab) {
+        $('#ready-to-deliver-cards').html(modelsHtml);
+        
+        if (models.length === 0) {
+            $('#ready-to-deliver-empty').removeClass('d-none');
+        } else {
+            $('#ready-to-deliver-empty').addClass('d-none');
+        }
     } else {
-        $('#ready-to-deliver-empty').addClass('d-none');
+        $('#others-cards').html(modelsHtml);
+        
+        if (models.length === 0) {
+            $('#others-empty').removeClass('d-none');
+        } else {
+            $('#others-empty').addClass('d-none');
+        }
     }
     
-    if (otherModels.length === 0) {
-        $('#others-empty').removeClass('d-none');
-    } else {
-        $('#others-empty').addClass('d-none');
-    }
-    
-    // Generate pagination based on active tab
-    generatePagination();
+    // Generate pagination
+    generatePagination(pagination);
     
     // Add event listeners for color selection
     $('.color-select').on('change', function() {
@@ -157,17 +160,14 @@ function renderModels(models) {
     });
     
     // Initial check for each model's default color
-    const activeTab = $('.nav-link.active').attr('id');
-    const modelsToCheck = activeTab === 'ready-to-deliver-tab' ? paginatedDeliveredModels : paginatedOtherModels;
-    
-    modelsToCheck.forEach((model) => {
+    models.forEach((model) => {
         const defaultColor = $(`#color-select-${model.id}`).val();
         if (defaultColor) {
             checkOrderForColor(model.id, defaultColor);
         }
     });
     
-    // Add image modal if it doesn't exist
+    // Add image modal functionality
     if ($('#imageZoomModal').length === 0) {
         addImageZoomModal();
         initializeImageZoom();
@@ -175,25 +175,12 @@ function renderModels(models) {
 }
 
 // Updated generatePagination function
-function generatePagination() {
+function generatePagination(pagination) {
     const $paginationList = $('#pagination-list');
     const $paginationContainer = $('#pagination-container');
     
-    const activeTab = $('.nav-link.active').attr('id');
-    let currentPage, totalPages, activeTabData;
-    
-    if (activeTab === 'ready-to-deliver-tab') {
-        currentPage = deliveredCurrentPage;
-        totalPages = deliveredTotalPages;
-        activeTabData = deliveredModels;
-    } else {
-        currentPage = othersCurrentPage;
-        totalPages = othersTotalPages;
-        activeTabData = otherModels;
-    }
-    
-    // Hide pagination if only one page, no results, or no models in active tab
-    if (totalPages <= 1 || activeTabData.length === 0) {
+    // Hide pagination if only one page or no results
+    if (pagination.total_pages <= 1) {
         $paginationContainer.addClass('d-none');
         $('#pagination-info').addClass('d-none');
         return;
@@ -201,6 +188,9 @@ function generatePagination() {
     
     $paginationContainer.removeClass('d-none');
     $paginationList.empty();
+    
+    const currentPage = pagination.current_page;
+    const totalPages = pagination.total_pages;
     
     // Previous button
     const prevDisabled = currentPage === 1 ? 'disabled' : '';
@@ -273,20 +263,21 @@ function generatePagination() {
         </li>
     `);
     
-    // Add pagination info
-    const startItem = (currentPage - 1) * itemsPerPage + 1;
-    const endItem = Math.min(currentPage * itemsPerPage, activeTabData.length);
-    
+    // Update pagination info
+    updatePaginationInfo(pagination);
+}
+
+function updatePaginationInfo(pagination) {
     if ($('#pagination-info').length === 0) {
-        $paginationContainer.after(`
+        $('#pagination-container').after(`
             <div id="pagination-info" class="text-center mt-2">
                 <small class="text-muted">
-                    Showing ${startItem} to ${endItem} of ${activeTabData.length} models
+                    Showing ${pagination.start_index} to ${pagination.end_index} of ${pagination.total_items} models
                 </small>
             </div>
         `);
     } else {
-        $('#pagination-info small').text(`Showing ${startItem} to ${endItem} of ${activeTabData.length} models`);
+        $('#pagination-info small').text(`Showing ${pagination.start_index} to ${pagination.end_index} of ${pagination.total_items} models`);
         $('#pagination-info').removeClass('d-none');
     }
 }
@@ -299,57 +290,12 @@ function handleTabPaginationVisibility() {
 
 // Go to specific page
 window.goToPage = function(page) {
-    const activeTab = $('.nav-link.active').attr('id');
-    let currentPage, totalPages;
-    
-    if (activeTab === 'ready-to-deliver-tab') {
-        currentPage = deliveredCurrentPage;
-        totalPages = deliveredTotalPages;
-    } else {
-        currentPage = othersCurrentPage;
-        totalPages = othersTotalPages;
-    }
-    
-    if (page < 1 || page > totalPages || page === currentPage) {
+    if (page < 1 || isLoading) {
         return;
     }
     
-    // Update the appropriate page variable
-    if (activeTab === 'ready-to-deliver-tab') {
-        deliveredCurrentPage = page;
-    } else {
-        othersCurrentPage = page;
-    }
-    
-    // Get current filtered models (don't re-filter, just use current filter state)
-    const selectedCategory = $('#categoryFilter').val();
-    const searchTerm = $('#searchInput').val().toLowerCase().trim();
-    
-    let filtered = allModels;
-    
-    // Apply the same filters that are currently active
-    if (selectedCategory) {
-        filtered = filtered.filter(model => 
-            model.jewelry_type_name && model.jewelry_type_name.toLowerCase().includes(selectedCategory.toLowerCase())
-        );
-    }
-    
-    if (searchTerm) {
-        filtered = filtered.filter(model => {
-            const modelNo = model.model_no ? model.model_no.toLowerCase() : '';
-            const jewelryType = model.jewelry_type_name ? model.jewelry_type_name.toLowerCase() : '';
-            const status = model.status_name ? model.status_name.toLowerCase() : '';
-            const weight = model.weight ? model.weight.toString() : '';
-            
-            return modelNo.includes(searchTerm) || 
-                   jewelryType.includes(searchTerm) || 
-                   status.includes(searchTerm) ||
-                   weight.includes(searchTerm);
-        });
-    }
-    
-    // Re-render with the filtered models (this will use the updated page numbers)
-    renderModels(filtered);
+    currentPage = page;
+    loadModels();
     
     // Scroll to top of the models section
     $('html, body').animate({
@@ -440,29 +386,17 @@ function loadJewelryTypes() {
                 });
                 
                 $('#categoryFilter').html(optionsHtml);
-                
-                // Auto-select the first jewelry type if available AND models are loaded
-                if (jewelryTypes.length > 0 && allModels.length > 0) {
-                    $('#categoryFilter').val(jewelryTypes[0].name);
-                    // Trigger the filtering to load data for the selected category
-                    filterModels();
-                }
-
-                hideLoader();
             } else {
                 console.error('Failed to load jewelry types:', response.message);
-                hideLoader();
             }
         },
         error: function (xhr, status, error) {
             console.error('Error loading jewelry types:', error);
-            hideLoader();
         }
     });
 }
 
 function generateModelCard(model) {
-    // Check if order exists AND is delivered to show Re-order button
     const hasDeliveredOrder = model.order && model.order.order_id && model.order.is_delivered;
     
     return `
@@ -477,14 +411,12 @@ function generateModelCard(model) {
                 </div>
                 <div class="card-body p-2">
                     <div class="row align-items-center">
-                        <!-- Left side: Model info -->
                         <div class="col-6">
                             <h6 class="card-title mb-0">${model.model_no}</h6>
                             <small class="text-muted">${model.jewelry_type_name} &bull; </small>
                             <small class="text-muted">${model.weight}gm</small>
                         </div>
                         
-                        <!-- Right side: Color dropdown with label -->
                         <div class="col-6">
                             <label for="color-select-${model.id}" class="form-label mb-1 small">Color:</label>
                             <select id="color-select-${model.id}" class="form-select form-select-sm color-select" data-model-id="${model.id}" data-order-id="${model.order ? model.order.order_id : ''}">
@@ -493,7 +425,6 @@ function generateModelCard(model) {
                         </div>
                     </div>
                     
-                    <!-- Center: Add button and controls -->
                     <div class="row mt-2">
                         <div class="col-12 text-center">
                             <div id="cart-controls-${model.id}" class="d-none">
@@ -507,7 +438,6 @@ function generateModelCard(model) {
                                 </div>
                             </div>
                             
-                            <!-- Re-order button: Will be visible only if there's a delivered order -->
                             ${hasDeliveredOrder ? `
                                 <button class="btn btn-success btn-md" onclick="showCartControls(${model.id})" id="add-btn-${model.id}">
                                     Re-order <i class="fa-solid fa-rotate-right"></i>
@@ -519,6 +449,20 @@ function generateModelCard(model) {
             </div>
         </div>
     `;
+}
+
+function showAlert(type, message) {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    `;
+    $('#response-container').html(alertHtml);
+    
+    setTimeout(() => {
+        $('.alert').alert('close');
+    }, 5000);
 }
 
 function addImageZoomModal() {
@@ -559,47 +503,64 @@ function addImageZoomModal() {
     `);
 }
 
+const colorCheckCache = new Map();
+
 function checkOrderForColor(modelId, selectedColor) {
-    // Make sure model ID is properly passed as a number
+    const cacheKey = `${modelId}-${selectedColor}`;
+    
+    // Check cache first
+    if (colorCheckCache.has(cacheKey)) {
+        const cachedResult = colorCheckCache.get(cacheKey);
+        updateOrderButton(modelId, cachedResult);
+        return;
+    }
+    
     modelId = parseInt(modelId);
     
-    // Add console logging for debugging
-    console.log(`Checking order for model ${modelId} with color ${selectedColor}`);
-    
-    // Show loading state
     const $addBtn = $(`#add-btn-${modelId}`);
     $addBtn.removeClass('btn-success btn-secondary').addClass('btn-secondary');
     $addBtn.html('<i class="fa-solid fa-spinner fa-spin"></i> Checking...');
     
-    // Ensure the URL is correct with numeric model ID
     $.ajax({
         url: `/api/client/models/${modelId}/order/`,
         type: 'GET',
         data: { color: selectedColor },
-        contentType: "application/json; charset=utf-8",
         dataType: 'json',
         success: function (response) {
-            console.log('Response:', response);
-            if (response.status === 'success' && response.data && response.data.order_exists && response.data.is_delivered) {
-                // Order exists AND is delivered
-                $addBtn.removeClass('btn-secondary').addClass('btn-success');
-                $addBtn.html('Re-order <i class="fa-solid fa-rotate-right"></i>');
-            } else if (response.status === 'success' && response.data && response.data.order_exists) {
-                // Order exists but not delivered
-                $addBtn.removeClass('btn-success').addClass('btn-secondary');
-                $addBtn.text('In Progress');
-            } else {
-                // No order exists
-                $addBtn.removeClass('btn-success').addClass('btn-secondary');
-                $addBtn.text('No Order for this Color');
+            if (response.status === 'success' && response.data) {
+                const result = {
+                    order_exists: response.data.order_exists,
+                    is_delivered: response.data.is_delivered
+                };
+                
+                // Cache the result
+                colorCheckCache.set(cacheKey, result);
+                
+                updateOrderButton(modelId, result);
             }
         },
         error: function (xhr, status, error) {
             console.error('Error checking order:', xhr.status, xhr.responseText);
+            const $addBtn = $(`#add-btn-${modelId}`);
             $addBtn.removeClass('btn-success').addClass('btn-secondary');
             $addBtn.text('Error Checking Order');
         }
     });
+}
+
+function updateOrderButton(modelId, result) {
+    const $addBtn = $(`#add-btn-${modelId}`);
+    
+    if (result.order_exists && result.is_delivered) {
+        $addBtn.removeClass('btn-secondary').addClass('btn-success');
+        $addBtn.html('Re-order <i class="fa-solid fa-rotate-right"></i>');
+    } else if (result.order_exists) {
+        $addBtn.removeClass('btn-success').addClass('btn-secondary');
+        $addBtn.text('In Progress');
+    } else {
+        $addBtn.removeClass('btn-success').addClass('btn-secondary');
+        $addBtn.text('No Order for this Color');
+    }
 }
 
 // Function to open the image modal

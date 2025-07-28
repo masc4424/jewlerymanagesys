@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from product_inv.models import *
 from django.templatetags.static import static
 from django.views.decorators.http import require_POST
@@ -15,7 +16,7 @@ from order.models import Order
 @login_required(login_url='login_auth')
 def get_client_models(request):
     """
-    Retrieve all models associated with the logged-in client without using DRF
+    Retrieve paginated models associated with the logged-in client with server-side filtering
     """
     if request.method != 'GET':
         return JsonResponse({
@@ -24,18 +25,82 @@ def get_client_models(request):
         }, status=405)
         
     try:
+        # Get query parameters
+        page = request.GET.get('page', 1)
+        page_size = int(request.GET.get('page_size', 8))
+        category_filter = request.GET.get('category', '')
+        search_term = request.GET.get('search', '').strip()
+        tab_type = request.GET.get('tab', 'delivered')  # 'delivered' or 'others'
+        
+        # Limit page size to prevent abuse
+        page_size = min(page_size, 50)
+        
         # Get all ModelClient entries where client is the logged-in user
         model_clients = ModelClient.objects.filter(client=request.user)
-        
-        # Extract the model IDs from the ModelClient relations
         model_ids = model_clients.values_list('model_id', flat=True)
         
-        # Get the actual model objects
-        models = Model.objects.filter(id__in=model_ids)
+        # Start with base queryset
+        models_query = Model.objects.filter(id__in=model_ids).select_related(
+            'jewelry_type', 'status'
+        ).prefetch_related(
+            'model_colors', 'raw_materials__metal', 'raw_stones__stone_type',
+            'stone_counts__stone_type_details__stone_type'
+        )
         
-        # Manually serialize the model data
+        # Apply category filter
+        if category_filter:
+            models_query = models_query.filter(
+                jewelry_type__name__icontains=category_filter
+            )
+        
+        # Apply search filter
+        if search_term:
+            from django.db.models import Q
+            models_query = models_query.filter(
+                Q(model_no__icontains=search_term) |
+                Q(jewelry_type__name__icontains=search_term) |
+                Q(status__status__icontains=search_term) |
+                Q(weight__icontains=search_term)
+            )
+        
+        # Get all models first to check order status
+        all_models = list(models_query)
+        
+        # Filter based on tab type and order status
+        filtered_models = []
+        for model in all_models:
+            try:
+                order = Order.objects.filter(
+                    client=request.user,
+                    model=model,
+                    color__in=model.model_colors.all()
+                ).first()
+                
+                has_delivered_order = order and order.delivered
+                
+                if tab_type == 'delivered' and has_delivered_order:
+                    filtered_models.append((model, order))
+                elif tab_type == 'others' and not has_delivered_order:
+                    filtered_models.append((model, order))
+                    
+            except Exception as e:
+                # If there's an error checking order status, include in 'others'
+                if tab_type == 'others':
+                    filtered_models.append((model, None))
+        
+        # Paginate the filtered results
+        paginator = Paginator(filtered_models, page_size)
+        
+        try:
+            paginated_models = paginator.page(page)
+        except PageNotAnInteger:
+            paginated_models = paginator.page(1)
+        except EmptyPage:
+            paginated_models = paginator.page(paginator.num_pages)
+        
+        # Serialize the paginated model data
         models_data = []
-        for model in models:
+        for model, order in paginated_models:
             # Get base URL for media
             if settings.MEDIA_URL.startswith('http'):
                 media_base_url = settings.MEDIA_URL
@@ -84,27 +149,16 @@ def get_client_models(request):
                     'stone_size': getattr(stone_count.stone_type_details, 'size', None),
                     'stone_quality': getattr(stone_count.stone_type_details, 'quality', None)
                 })
-
-            try:
-                # Filter orders by model AND its colors
-                order = Order.objects.filter(
-                    client=request.user,
-                    model=model,
-                    color__in=model.model_colors.all()
-                ).first()
-
-                if order:
-                    order_data = {
-                        'order_id': order.id,
-                        'is_delivered': order.delivered  # Add delivery status
-                    }
-                else:
-                    order_data = None
-
-            except Order.DoesNotExist:
-                order_data = None
             
-            # Create model data dictionary with null checks for float conversions
+            # Order data
+            order_data = None
+            if order:
+                order_data = {
+                    'order_id': order.id,
+                    'is_delivered': order.delivered
+                }
+            
+            # Create model data dictionary
             model_data = {
                 'id': model.id,
                 'model_no': model.model_no,
@@ -123,10 +177,21 @@ def get_client_models(request):
             
             models_data.append(model_data)
         
+        # Return paginated response
         return JsonResponse({
             'status': 'success',
             'message': 'Client models retrieved successfully',
-            'data': models_data
+            'data': models_data,
+            'pagination': {
+                'current_page': paginated_models.number,
+                'total_pages': paginator.num_pages,
+                'total_items': paginator.count,
+                'has_next': paginated_models.has_next(),
+                'has_previous': paginated_models.has_previous(),
+                'page_size': page_size,
+                'start_index': paginated_models.start_index(),
+                'end_index': paginated_models.end_index()
+            }
         })
         
     except ObjectDoesNotExist as e:
@@ -143,17 +208,12 @@ def get_client_models(request):
             'status': 'error',
             'message': f"An error occurred: {str(e)}"
         }, status=500)
-
         
 @login_required(login_url='login_auth')
 def check_order_for_color(request, model_id):
     """
     Check if an order exists for the logged-in client and selected model color
     """
-    # Debug logging to see what parameters are coming in
-    print(f"check_order_for_color called with model_id: {model_id}, type: {type(model_id)}")
-    print(f"GET parameters: {request.GET}")
-    
     if request.method != 'GET':
         return JsonResponse({
             'status': 'error',
@@ -178,10 +238,10 @@ def check_order_for_color(request, model_id):
         }, status=400)
     
     try:
-        model = Model.objects.get(id=model_id)
+        model = Model.objects.select_related().get(id=model_id)
         
-        # Check if there's an order for the given model and color
-        order = Order.objects.filter(
+        # Use select_related to optimize the query
+        order = Order.objects.select_related('client', 'model').filter(
             client=request.user,
             model=model
         ).first()
@@ -209,7 +269,7 @@ def check_order_for_color(request, model_id):
             'status': 'error',
             'message': str(e)
         }, status=500)
-    
+       
 @login_required
 @require_POST
 def add_to_cart(request):
